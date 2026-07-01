@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chorusgraph"
+version = "0.8.0"
+description = "LangGraph adapter with durable Route Ledger and safe cache gate"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Insight IT Solutions" }]
+dependencies = [
+    "httpx>=0.27",
+    "langgraph>=0.2.0",
+    "langgraph-checkpoint-sqlite>=2.0",
+    "numpy>=1.24",
+    "pydantic>=2.0",
+    "prismlang>=0.1.1",
+]
+
+[project.optional-dependencies]
+postgres = ["psycopg[binary]>=3.1"]
+postgres-checkpoint = ["langgraph-checkpoint-postgres>=2.0"]
+cortex = ["prismcortex[prism,gemini]>=0.1"]
+gemini = ["google-genai>=1.0"]
+dev = [
+    "pytest>=8.0",
+]
+
+[project.scripts]
+chorusgraph-demo = "chorusgraph.examples.demo_graph:main"
+chorusgraph-finance = "chorusgraph.examples.finance_agent.run:main"
+chorusgraph-finance-memory = "chorusgraph.examples.finance_agent.run_memory_demo:main"
+chorusgraph-finance-patterns = "chorusgraph.examples.finance_agent.run_patterns_demo:main"
+chorusgraph-shadow = "chorusgraph.shadow.harness:main"
+chorusgraph-replay = "chorusgraph.shadow.replay.cli:main"
+chorusgraph-benchmark = "benchmark.run:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["chorusgraph*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "."]

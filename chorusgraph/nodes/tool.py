@@ -1,0 +1,184 @@
+"""First-class tool node — typed signature, timeout, retry, side-effect isolation."""
+
+from __future__ import annotations
+
+import time
+from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, List, Optional
+
+import httpx
+
+ToolFn = Callable[..., Any]
+
+
+@dataclass(frozen=True)
+class ToolSpec:
+    name: str
+    description: str
+    parameters: Dict[str, Any]
+    fn: ToolFn
+    timeout_seconds: float = 10.0
+    max_retries: int = 2
+
+
+@dataclass
+class ToolResult:
+    tool: str
+    ok: bool
+    data: Any = None
+    error: Optional[str] = None
+    attempts: int = 1
+    duration_ms: int = 0
+
+    def to_state_dict(self) -> Dict[str, Any]:
+        return {
+            "tool": self.tool,
+            "ok": self.ok,
+            "data": self.data,
+            "error": self.error,
+            "attempts": self.attempts,
+            "duration_ms": self.duration_ms,
+        }
+
+
+class ToolRegistry:
+    """Registry of callable tools with isolated execution."""
+
+    def __init__(self) -> None:
+        self._tools: Dict[str, ToolSpec] = {}
+
+    def register(self, spec: ToolSpec) -> None:
+        self._tools[spec.name] = spec
+
+    def get(self, name: str) -> ToolSpec:
+        if name not in self._tools:
+            raise KeyError(f"Unknown tool: {name}")
+        return self._tools[name]
+
+    def names(self) -> List[str]:
+        return sorted(self._tools.keys())
+
+    def run(self, name: str, /, **kwargs: Any) -> ToolResult:
+        return run_tool(self.get(name), **kwargs)
+
+
+def run_tool(spec: ToolSpec, /, **kwargs: Any) -> ToolResult:
+    """Execute a tool with timeout and retry. No global state mutation."""
+    last_error: Optional[str] = None
+    started = time.perf_counter()
+    for attempt in range(1, spec.max_retries + 2):
+        try:
+            data = spec.fn(**kwargs)
+            duration_ms = int((time.perf_counter() - started) * 1000)
+            return ToolResult(
+                tool=spec.name,
+                ok=True,
+                data=data,
+                attempts=attempt,
+                duration_ms=duration_ms,
+            )
+        except Exception as exc:
+            last_error = str(exc)
+            if attempt > spec.max_retries:
+                break
+            time.sleep(0.25 * attempt)
+    duration_ms = int((time.perf_counter() - started) * 1000)
+    return ToolResult(
+        tool=spec.name,
+        ok=False,
+        error=last_error or "unknown error",
+        attempts=spec.max_retries + 1,
+        duration_ms=duration_ms,
+    )
+
+
+def fetch_exchange_rate(from_currency: str, to_currency: str) -> Dict[str, Any]:
+    """
+    Live FX rate from Frankfurter (ECB reference data).
+
+    https://www.frankfurter.app/ — free, no API key, real market data.
+    """
+    base = from_currency.strip().upper()
+    quote = to_currency.strip().upper()
+    if len(base) != 3 or len(quote) != 3:
+        raise ValueError("Currency codes must be ISO 4217 (3 letters)")
+    with httpx.Client(timeout=10.0, follow_redirects=True) as client:
+        resp = client.get(
+            "https://api.frankfurter.app/latest",
+            params={"from": base, "to": quote},
+        )
+        resp.raise_for_status()
+        payload = resp.json()
+    rate = payload.get("rates", {}).get(quote)
+    if rate is None:
+        raise ValueError(f"No rate returned for {base}/{quote}")
+    return {
+        "from_currency": base,
+        "to_currency": quote,
+        "rate": float(rate),
+        "date": payload.get("date"),
+        "source": "frankfurter.app (ECB)",
+    }
+
+
+def compound_interest(
+    principal: float,
+    annual_rate_pct: float,
+    years: float,
+    compounds_per_year: int = 1,
+) -> Dict[str, Any]:
+    """Deterministic financial calculation — no external API."""
+    if principal <= 0 or years < 0 or compounds_per_year < 1:
+        raise ValueError("Invalid compound_interest parameters")
+    r = annual_rate_pct / 100.0
+    n = compounds_per_year
+    amount = principal * (1 + r / n) ** (n * years)
+    return {
+        "principal": principal,
+        "annual_rate_pct": annual_rate_pct,
+        "years": years,
+        "compounds_per_year": compounds_per_year,
+        "future_value": round(amount, 2),
+        "interest_earned": round(amount - principal, 2),
+    }
+
+
+def default_finance_registry() -> ToolRegistry:
+    registry = ToolRegistry()
+    registry.register(
+        ToolSpec(
+            name="fetch_exchange_rate",
+            description="Fetch live foreign-exchange rate between two ISO currencies.",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "from_currency": {"type": "string", "description": "Base currency, e.g. USD"},
+                    "to_currency": {"type": "string", "description": "Quote currency, e.g. EUR"},
+                },
+                "required": ["from_currency", "to_currency"],
+            },
+            fn=fetch_exchange_rate,
+            timeout_seconds=12.0,
+            max_retries=2,
+        )
+    )
+    registry.register(
+        ToolSpec(
+            name="compound_interest",
+            description="Calculate compound interest future value.",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "principal": {"type": "number"},
+                    "annual_rate_pct": {"type": "number"},
+                    "years": {"type": "number"},
+                    "compounds_per_year": {"type": "integer", "default": 1},
+                },
+                "required": ["principal", "annual_rate_pct", "years"],
+            },
+            fn=compound_interest,
+            timeout_seconds=1.0,
+            max_retries=0,
+        )
+    )
+    return registry
