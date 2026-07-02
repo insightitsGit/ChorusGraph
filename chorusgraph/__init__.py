@@ -1,6 +1,6 @@
 """ChorusGraph — LangGraph adapter with durable Route Ledger observability."""
 
-__version__ = "0.8.0"
+__version__ = "0.9.0"
 
 from chorusgraph.adapter import RunnableWithLedger, wrap
 from chorusgraph.cache_gate import Decision, DecisionKind, SidecarStore, gate, seed_cache_entry

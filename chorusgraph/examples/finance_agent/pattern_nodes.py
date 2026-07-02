@@ -14,7 +14,8 @@ from chorusgraph.examples.finance_agent.nodes import (
     make_writer_handler,
 )
 from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
-from chorusgraph.nodes.roles import ResearcherNode, ValidatorNode, WriterNode
+from chorusgraph.nodes.roles import ResearcherNode, ValidatorNode
+from chorusgraph.transforms.templates import try_template_draft
 
 
 def _trace_dicts(trace) -> List[Dict[str, Any]]:
@@ -60,26 +61,8 @@ def make_plan_solve_handler(runtime: FinanceRuntime, *, policy: PlanPolicy | Non
 
 
 def make_pattern_writer_handler(runtime: FinanceRuntime):
-    base = make_writer_handler(runtime)
-    role_node = WriterNode("writer")
-
-    def writer_node(state: Dict[str, Any]) -> Dict[str, Any]:
-        tool_results = state.get("tool_results") or []
-        if tool_results:
-            patched = dict(state)
-            patched["tool_result"] = {"observations": tool_results}
-            out = base(patched)
-            gemini = runtime.ensure_gemini()
-            message = state.get("message") or ""
-            system = role_node.role.system_prompt if role_node.role else ""
-            user = f"User question: {message}\n\nTool observations (authoritative): {tool_results}"
-            draft = gemini.generate(system, user, history=state.get("conversation_history"))
-            out["draft_response"] = draft
-            out["rule_chain"] = list(out.get("rule_chain") or []) + ["writer=multi_tool_observations"]
-            return out
-        return base(state)
-
-    return writer_node
+    """Unified writer — template/ONNX path handles single and multi-tool results."""
+    return make_writer_handler(runtime)
 
 
 def make_reflection_validator_handler(runtime: FinanceRuntime, *, policy: PlanPolicy | None = None):
@@ -113,6 +96,15 @@ def make_reflection_validator_handler(runtime: FinanceRuntime, *, policy: PlanPo
             return ValidationVerdict(approved=approved, notes=notes)
 
         def revise(text: str, verdict: ValidationVerdict) -> str:
+            rewritten = try_template_draft(
+                message=state.get("message") or "",
+                tool_result=tool_result if tool_result else None,
+                tool_results=tool_results,
+            )
+            if rewritten:
+                for rate in all_rates:
+                    if _rate_in_text(rate, rewritten):
+                        return rewritten
             gemini = runtime.ensure_gemini()
             system = role_node.role.system_prompt if role_node.role else ""
             user = (

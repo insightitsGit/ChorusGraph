@@ -9,7 +9,7 @@ import pytest
 
 from benchmark.measure import ComparisonReport, TaskMeasurement
 from benchmark.thresholds import H4_DEMO_COARSE, H4_DEMO_VERIFY, measured_thresholds
-from benchmark.workload import REPEAT_MODEL, generate_workload, workload_stats
+from benchmark.workload import REPEAT_BANDS, REPEAT_MODEL, generate_workload, repeat_model_for_band, workload_stats
 
 
 def test_measured_thresholds_not_h4_demo():
@@ -19,12 +19,95 @@ def test_measured_thresholds_not_h4_demo():
     assert t.coarse == 0.88
 
 
+def test_repeat_bands_sum_to_one():
+    for band, model in REPEAT_BANDS.items():
+        total = sum(model.values())
+        assert abs(total - 1.0) < 1e-9, f"band {band} weights sum to {total}"
+
+
+def test_generate_workload_repeat_band_changes_distribution():
+    low = generate_workload(200, seed=1, repeat_band_pct=20)
+    high = generate_workload(200, seed=1, repeat_band_pct=60)
+    low_stats = workload_stats(low)
+    high_stats = workload_stats(high)
+    assert low_stats["exact_repeat"] < high_stats["exact_repeat"]
+
+
+def test_score_task_success_content_not_tool_calls():
+    from benchmark.measure import score_task_success
+
+    assert score_task_success(
+        message="USD/EUR rate?",
+        answer="The rate is 0.8785 today.",
+    )
+    assert not score_task_success(message="USD/EUR rate?", answer="Sorry, no data.")
+
+
+def test_analyze_produces_ci():
+    from benchmark.analyze import analyze_container, bootstrap_ci
+    from benchmark.measure import TaskMeasurement
+
+    rows = [
+        TaskMeasurement(
+            task_id=f"t{i}",
+            session_id="s",
+            container="A",
+            message="q",
+            variant="novel",
+            latency_ms=100 + i,
+            llm_calls=2,
+            tokens_in=100,
+            tokens_out=50,
+            cost_usd=0.001,
+            task_success=True,
+            answer="rate 0.88",
+        )
+        for i in range(20)
+    ]
+    metrics = analyze_container(rows)
+    assert "latency_ms_p50" in metrics
+    assert metrics["latency_ms_p50"].lower95 <= metrics["latency_ms_p50"].point <= metrics["latency_ms_p50"].upper95
+
+
+def test_container_b_uses_react_path_constant():
+    from benchmark.container_b.runner import B_REASONING_PATH
+
+    assert "react" in B_REASONING_PATH.lower()
+
+
+def test_belief_calibration_returns_dict():
+    from benchmark.belief_calibration import calibrate_from_measurements
+    from benchmark.measure import TaskMeasurement
+
+    rows = [
+        TaskMeasurement(
+            task_id="t1",
+            session_id="s",
+            container="B",
+            message="q",
+            variant="exact_repeat",
+            latency_ms=50,
+            llm_calls=0,
+            tokens_in=0,
+            tokens_out=0,
+            cost_usd=0.0,
+            task_success=True,
+            answer="0.8785",
+            cache_hit=True,
+            cache_score=0.95,
+        )
+    ]
+    cal = calibrate_from_measurements(rows)
+    assert cal.confidence_stop is not None
+
+
 def test_workload_repeat_model_distribution():
     tasks = generate_workload(100, seed=7)
     stats = workload_stats(tasks)
     assert stats["total"] == 100
     assert stats["sessions"] >= 10
-    for variant in REPEAT_MODEL:
+    model = repeat_model_for_band(40)
+    for variant in model:
         assert stats[variant] >= 1
 
 

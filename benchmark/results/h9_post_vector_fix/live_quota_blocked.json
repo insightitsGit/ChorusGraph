@@ -1,0 +1,10 @@
+{
+  "mode": "live_gemini",
+  "attempted": "2026-07-01",
+  "tasks": 30,
+  "seed": 42,
+  "status": "QUOTA_BLOCKED",
+  "error": "429 RESOURCE_EXHAUSTED — generate_requests_per_model_per_day limit 10000 (gemini-2.5-flash)",
+  "valid_paired_tasks": 0,
+  "note": "All 60 container invocations (30 A + 30 B) returned quota errors. Use offline stub rerun or Azure with fresh API key."
+}

@@ -1,0 +1,11 @@
+{
+  "run_at": "2026-07-02T01:47:59.136422+00:00",
+  "environment": "local",
+  "n_tasks_per_band": 1000,
+  "bands": [
+    60
+  ],
+  "seed": 42,
+  "threshold_provenance": "Coarse 0.88 \u2014 H2 shadow harness default, H3 replay default, cache_gate/gate.py default.\nVerify 0.95 (fx_rates) \u2014 gate.py default verify_threshold; no slug-specific CACHEABLE point yet\n  (H3 production replay: all slugs INSUFFICIENT DATA, n << MIN_HITS=300).\nH4 demo 0.82/0.85 \u2014 excluded per docs/BENCHMARK.md anti-rigging checklist.\nFull fx_rates frontier will be produced when benchmark workload runs at scale (H9).",
+  "fairness_doc": "benchmark/FAIRNESS_H9.md"
+}

@@ -1,4 +1,4 @@
-"""Container B task runner — ChorusGraph finance agent + shared measurement."""
+"""Container B — ChorusGraph ReAct/AgentNode path (fair comparison to Container A)."""
 
 from __future__ import annotations
 
@@ -9,8 +9,16 @@ from benchmark.measure import TaskMeasurement, score_task_success
 from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient
 from benchmark.thresholds import measured_thresholds
 from benchmark.workload import WorkloadTask
-from chorusgraph.examples.finance_agent.graph import TENANT_ID, build_finance_graph, initial_state
+from chorusgraph.agents.policy import PlanPolicy
+from chorusgraph.examples.finance_agent.patterns_graph import (
+    TENANT_ID,
+    build_react_graph,
+    pattern_initial_state,
+)
 from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
+
+# H9 fairness: B MUST use LLM ReAct/AgentNode, not regex researcher (BENCHMARK.md checklist).
+B_REASONING_PATH = "react_agent/AgentNode"
 
 
 def _task_success(result: Dict[str, Any]) -> bool:
@@ -23,7 +31,7 @@ def _task_success(result: Dict[str, Any]) -> bool:
 
 
 class ContainerBRunner:
-    """One FinanceRuntime per session so semantic cache repeats are observable."""
+    """ChorusGraph ReAct graph — cache + Cortex + AgentNode, one runtime per session."""
 
     def __init__(self) -> None:
         self._thresholds = measured_thresholds()
@@ -34,8 +42,9 @@ class ContainerBRunner:
         if session_id not in self._sessions:
             gemini = InstrumentedGeminiClient()
             runtime = FinanceRuntime(tenant_id=TENANT_ID, gemini=gemini)
-            compiled, rt = build_finance_graph(
+            compiled, rt = build_react_graph(
                 runtime,
+                policy=PlanPolicy(max_steps=6),
                 coarse_threshold=self._thresholds.coarse,
                 verify_threshold=self._thresholds.verify_for("fx_rates"),
             )
@@ -45,12 +54,12 @@ class ContainerBRunner:
     def run(self, task: WorkloadTask) -> TaskMeasurement:
         compiled, runtime = self._session_graph(task.session_id)
         gemini = runtime.gemini
-        assert isinstance(gemini, InstrumentedGeminiClient)
+        assert gemini is not None and hasattr(gemini, "usage") and hasattr(gemini, "reset_usage")
         gemini.reset_usage()
 
         history = self._histories.get(task.session_id, [])
         started = time.perf_counter()
-        state = initial_state(task.message, conversation_history=history)
+        state = pattern_initial_state(task.message, conversation_history=history)
         try:
             result = compiled.invoke(state)
             latency_ms = int((time.perf_counter() - started) * 1000)
@@ -58,6 +67,11 @@ class ContainerBRunner:
                 self._histories[task.session_id] = list(result["conversation_history"])
             usage = gemini.usage
             grounding = result.get("memory_confidence")
+            agent_trace = result.get("agent_trace") or []
+            has_react = any(
+                isinstance(s, dict) and "react" in str(s.get("kind", "")).lower()
+                for s in agent_trace
+            ) or bool(result.get("tool_calls"))
             return TaskMeasurement(
                 task_id=task.task_id,
                 session_id=task.session_id,
@@ -75,6 +89,7 @@ class ContainerBRunner:
                 cache_score=result.get("cache_score"),
                 grounding_score=float(grounding) if grounding is not None else None,
                 tool_calls=len(result.get("tool_calls") or []),
+                reasoning_path=B_REASONING_PATH if (has_react or result.get("cache_hit")) else "unknown",
             )
         except Exception as exc:
             latency_ms = int((time.perf_counter() - started) * 1000)
@@ -97,4 +112,5 @@ class ContainerBRunner:
                 grounding_score=None,
                 error=str(exc),
                 tool_calls=0,
+                reasoning_path=B_REASONING_PATH,
             )

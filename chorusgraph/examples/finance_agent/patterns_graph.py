@@ -42,12 +42,24 @@ class PatternState(TypedDict, total=False):
     reflection_pass: int
     memory_recall: Optional[str]
     memory_confidence: Optional[float]
+    memory_vector_64: Optional[List[float]]
+    memory_subgraph_hash: Optional[str]
+    memory_evidence: Optional[List[Dict[str, Any]]]
     rule_chain: Annotated[List[str], operator.add]
     prism_sequence: Annotated[List[PrismEnvelope], operator.add]
 
 
-def _add_common_nodes(graph: StateGraph, runtime: FinanceRuntime) -> None:
-    graph.add_node("cache_gate", make_cache_gate_handler(runtime))
+def _add_common_nodes(
+    graph: StateGraph,
+    runtime: FinanceRuntime,
+    *,
+    coarse_threshold: float = 0.82,
+    verify_threshold: float = 0.85,
+) -> None:
+    graph.add_node(
+        "cache_gate",
+        make_cache_gate_handler(runtime, coarse_threshold=coarse_threshold, verify_threshold=verify_threshold),
+    )
     graph.add_node("writer", make_pattern_writer_handler(runtime))
 
 
@@ -56,10 +68,14 @@ def build_react_graph(
     *,
     checkpointer: Optional[BaseCheckpointSaver] = None,
     policy: Optional[PlanPolicy] = None,
+    coarse_threshold: float = 0.82,
+    verify_threshold: float = 0.85,
 ):
     runtime = runtime or FinanceRuntime()
     graph = StateGraph(PatternState)
-    _add_common_nodes(graph, runtime)
+    _add_common_nodes(
+        graph, runtime, coarse_threshold=coarse_threshold, verify_threshold=verify_threshold,
+    )
     graph.add_node("react_agent", make_react_agent_handler(runtime, policy=policy))
     graph.add_node("validator", make_reflection_validator_handler(runtime, policy=PlanPolicy(max_reflection_passes=1)))
 

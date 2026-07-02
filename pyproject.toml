@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chorusgraph"
-version = "0.8.0"
+version = "0.9.0"
 description = "LangGraph adapter with durable Route Ledger and safe cache gate"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -36,6 +36,7 @@ chorusgraph-finance-patterns = "chorusgraph.examples.finance_agent.run_patterns_
 chorusgraph-shadow = "chorusgraph.shadow.harness:main"
 chorusgraph-replay = "chorusgraph.shadow.replay.cli:main"
 chorusgraph-benchmark = "benchmark.run:main"
+chorusgraph-benchmark-volume = "benchmark.run_volume:main"
 
 [tool.setuptools.packages.find]
 where = ["."]

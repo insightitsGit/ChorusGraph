@@ -47,6 +47,9 @@ class FinanceState(TypedDict, total=False):
     memory_confidence: Optional[float]
     memory_freshness: Optional[str]
     memory_cache_hit: Optional[bool]
+    memory_vector_64: Optional[List[float]]
+    memory_subgraph_hash: Optional[str]
+    memory_evidence: Optional[List[Dict[str, Any]]]
     rule_chain: Annotated[List[str], operator.add]
     prism_sequence: Annotated[List[PrismEnvelope], operator.add]
 

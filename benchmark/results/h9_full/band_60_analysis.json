@@ -1,0 +1,49 @@
+{
+  "repeat_band_pct": 60,
+  "n_tasks": 1000,
+  "n_valid_a": 0,
+  "n_valid_b": 0,
+  "n_quota_blocked": 2000,
+  "quota_blocked": true,
+  "seed": 102,
+  "workload_stats": {
+    "total": 1000,
+    "sessions": 200,
+    "exact_repeat": 329,
+    "paraphrase": 301,
+    "novel": 370
+  },
+  "compare_ab": {
+    "n_paired": 0,
+    "n_valid_a": 0,
+    "n_valid_b": 0,
+    "cost_delta_usd_per_task": null,
+    "latency_delta_ms": null,
+    "container_a": {},
+    "container_b": {},
+    "b_cache": {
+      "cache_hit_rate": {
+        "point": 0,
+        "lower95": 0,
+        "upper95": 0,
+        "n": 0,
+        "method": "wilson_95"
+      }
+    },
+    "b_cache_fp_by_slug": {}
+  },
+  "belief_calibration": {
+    "confidence_stop": null,
+    "groundedness_floor": null,
+    "memory_confidence_gate": null,
+    "sample_cache_scores": 0,
+    "sample_grounding_scores": 0,
+    "notes": [
+      "groundedness_floor unavailable \u2014 no Cortex recall in benchmark tasks"
+    ]
+  },
+  "thresholds": {
+    "coarse": 0.88,
+    "verify_fx_rates": 0.95
+  }
+}

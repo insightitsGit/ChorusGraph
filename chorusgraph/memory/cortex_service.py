@@ -5,10 +5,11 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from chorusgraph.examples.finance_agent.gemini_client import resolve_gemini_api_key
 from chorusgraph.memory.async_digest import AsyncDigester
+from chorusgraph.memory.structured_recall import StructuredRecallContext, evidence_from_explain
 
 _SHARED: Dict[str, "CortexMemoryService"] = {}
 
@@ -97,6 +98,52 @@ class CortexMemoryService:
             ctx = self._recall_one(candidate)
             if ctx:
                 return ctx
+        return None
+
+    def recall_structured(
+        self,
+        query: str,
+        *,
+        cache: Any = None,
+        profile_fallback: bool = True,
+    ) -> Optional[StructuredRecallContext]:
+        """
+        Vector + graph-fact recall for internal hops — no rendered prose.
+
+        Uses ONNX embed + 64-d projection (same substrate as cache_gate) and Cortex
+        explain() for provenance facts. Optional byte-identical replay_answer only when
+        Cortex answer cache hits.
+        """
+        vector_64: List[float] = []
+        category_slug = ""
+        if cache is not None:
+            from chorusgraph.transforms.projector import project_text
+
+            _, envelope = project_text(cache, query)
+            vector_64 = [float(x) for x in envelope.vector]
+            category_slug = str(getattr(envelope, "category_slug", "") or "")
+
+        candidates = [query]
+        if profile_fallback:
+            candidates.append(
+                "What are the user's stated preferences, risk tolerance, and investment profile?"
+            )
+
+        for candidate in candidates:
+            mem = self.ensure_memory()
+            explain = mem.explain(candidate)
+            evidence = evidence_from_explain(explain)
+            if not evidence:
+                continue
+
+            return StructuredRecallContext(
+                query_vector_64=vector_64,
+                category_slug=category_slug,
+                evidence=evidence,
+                confidence=float(explain.confidence or 0.0),
+                freshness=explain.freshness,
+                subgraph_hash=str(explain.subgraph_hash or ""),
+            )
         return None
 
     def explain(self, query: str) -> Any:

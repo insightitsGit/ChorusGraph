@@ -56,6 +56,9 @@ class TaskMeasurement:
     grounding_score: Optional[float] = None
     error: Optional[str] = None
     tool_calls: int = 0
+    reasoning_path: Optional[str] = None
+    repeat_band_pct: Optional[int] = None
+    category_slug: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)

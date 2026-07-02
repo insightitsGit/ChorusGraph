@@ -43,12 +43,25 @@ CANONICAL_QUERIES: Dict[str, List[str]] = {
     ],
 }
 
-# Repeat model weights (must sum to 1.0).
+# Default repeat model weights (must sum to 1.0 for non-seed tasks).
 REPEAT_MODEL = {
     "exact_repeat": 0.40,
     "paraphrase": 0.30,
     "novel": 0.30,
 }
+
+REPEAT_BANDS = {
+    20: {"exact_repeat": 0.10, "paraphrase": 0.10, "novel": 0.80},
+    40: {"exact_repeat": 0.40, "paraphrase": 0.30, "novel": 0.30},
+    60: {"exact_repeat": 0.45, "paraphrase": 0.35, "novel": 0.20},
+}
+
+
+def repeat_model_for_band(band_pct: int) -> Dict[str, float]:
+    """Map sensitivity band (20/40/60) to repeat/paraphrase/novel weights."""
+    if band_pct not in REPEAT_BANDS:
+        raise ValueError(f"repeat band must be one of {sorted(REPEAT_BANDS)}; got {band_pct}")
+    return dict(REPEAT_BANDS[band_pct])
 
 REPEAT_MODEL_DOC = """
 Repeat/paraphrase model (defensible finance-chat pattern):
@@ -84,6 +97,7 @@ def generate_workload(
     *,
     seed: int = 42,
     tasks_per_session: int = 5,
+    repeat_band_pct: int = 40,
 ) -> List[WorkloadTask]:
     """
     Generate a volume-controllable finance query set.
@@ -94,6 +108,7 @@ def generate_workload(
     if n_tasks < 1:
         raise ValueError("n_tasks must be >= 1")
 
+    repeat_model = repeat_model_for_band(repeat_band_pct)
     rng = random.Random(seed)
     canonical_ids = list(CANONICAL_QUERIES.keys())
     tasks: List[WorkloadTask] = []
@@ -114,10 +129,10 @@ def generate_workload(
                 message = phrases[0]
             else:
                 roll = rng.random()
-                if roll < REPEAT_MODEL["exact_repeat"]:
+                if roll < repeat_model["exact_repeat"]:
                     variant = "exact_repeat"
                     message = phrases[0]
-                elif roll < REPEAT_MODEL["exact_repeat"] + REPEAT_MODEL["paraphrase"]:
+                elif roll < repeat_model["exact_repeat"] + repeat_model["paraphrase"]:
                     variant = "paraphrase"
                     message = rng.choice(phrases[1:] or phrases)
                 else:
@@ -126,7 +141,7 @@ def generate_workload(
                     message = CANONICAL_QUERIES[other][0]
                     session_canonical = other
 
-            slug = "fx_rates" if session_canonical != "compound_savings" else "fx_rates"
+            slug = "fx_rates"
             tasks.append(
                 WorkloadTask(
                     task_id=f"task-{task_idx:04d}",
