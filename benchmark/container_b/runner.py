@@ -21,12 +21,14 @@ from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
 B_REASONING_PATH = "react_agent/AgentNode"
 
 
-def _task_success(result: Dict[str, Any]) -> bool:
+def _task_success(result: Dict[str, Any], task: WorkloadTask) -> bool:
     return score_task_success(
-        message=result.get("message") or "",
+        message=task.message,
         answer=result.get("response") or "",
         error=result.get("error"),
         validation=result.get("validation"),
+        canonical_id=task.canonical_id,
+        tool_result=result.get("tool_result"),
     )
 
 
@@ -83,7 +85,7 @@ class ContainerBRunner:
                 tokens_in=usage.tokens_in,
                 tokens_out=usage.tokens_out,
                 cost_usd=usage.cost_usd,
-                task_success=_task_success({**result, "message": task.message}),
+                task_success=_task_success({**result, "message": task.message}, task),
                 answer=(result.get("response") or "")[:2000],
                 cache_hit=result.get("cache_hit"),
                 cache_score=result.get("cache_score"),

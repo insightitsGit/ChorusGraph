@@ -9,12 +9,14 @@ from benchmark.measure import TaskMeasurement, score_task_success
 from benchmark.workload import WorkloadTask
 
 
-def _task_success(result: Dict[str, Any]) -> bool:
+def _task_success(result: Dict[str, Any], task: WorkloadTask) -> bool:
     return score_task_success(
-        message=result.get("message") or "",
+        message=task.message,
         answer=result.get("response") or "",
         error=result.get("error"),
         validation=result.get("validation"),
+        canonical_id=task.canonical_id,
+        tool_result=result.get("tool_result"),
     )
 
 
@@ -47,7 +49,7 @@ class ContainerARunner:
             tokens_in=usage.tokens_in if usage else 0,
             tokens_out=usage.tokens_out if usage else 0,
             cost_usd=usage.cost_usd if usage else 0.0,
-            task_success=_task_success({**result, "message": task.message}),
+            task_success=_task_success({**result, "message": task.message}, task),
             answer=(result.get("response") or "")[:2000],
             tool_calls=len(result.get("tool_calls") or []),
             error=result.get("error"),

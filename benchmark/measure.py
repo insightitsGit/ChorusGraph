@@ -16,16 +16,27 @@ def score_task_success(
     answer: str,
     error: Optional[str] = None,
     validation: Optional[Dict[str, Any]] = None,
+    canonical_id: Optional[str] = None,
+    tool_result: Optional[Dict[str, Any]] = None,
 ) -> bool:
     """Fixed rubric applied identically to Container A and B."""
     import re
 
+    from benchmark.rubric import score_by_canonical
+
     if error:
         return False
+    if validation and validation.get("approved") is False:
+        return False
+    if canonical_id:
+        return score_by_canonical(
+            canonical_id=canonical_id,
+            message=message,
+            answer=answer,
+            tool_result=tool_result,
+        )
     text = (answer or "").strip()
     if len(text) < 10:
-        return False
-    if validation and validation.get("approved") is False:
         return False
     lower_msg = message.lower()
     if any(w in lower_msg for w in ("rate", "usd", "eur", "gbp", "jpy", "exchange", "compound", "invest")):

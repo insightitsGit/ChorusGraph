@@ -9,6 +9,7 @@ from chorusgraph.cache_gate import gate
 from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
 from chorusgraph.memory.recall import format_evidence_for_llm
 from chorusgraph.nodes.roles import ResearcherNode, ValidatorNode, WriterNode
+from chorusgraph.transforms.intent import needs_compound_tool, parse_compound_params
 from chorusgraph.transforms.projector import project_text
 from chorusgraph.transforms.templates import try_template_draft
 from chorusgraph.sections.models import CachePolicy, Section
@@ -26,6 +27,14 @@ def _rate_in_text(rate: float, text: str) -> bool:
             return True
     nums = re.findall(r"\d+\.\d+", text)
     return any(abs(float(n) - rate) < 1e-4 for n in nums)
+
+
+def _future_value_in_text(fv: float, text: str, *, tol: float = 1.0) -> bool:
+    for match in re.findall(r"\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+\.\d+", text):
+        val = float(match.replace(",", ""))
+        if abs(val - fv) <= tol:
+            return True
+    return False
 
 
 def _parse_fx_pair(message: str) -> Optional[Tuple[str, str]]:
@@ -116,7 +125,17 @@ def make_researcher_handler(runtime: FinanceRuntime):
             context_msg = f"{last_user} {message}"
             pair = _parse_fx_pair(context_msg)
 
-        if _needs_fx_tool(context_msg) and pair:
+        compound_args = parse_compound_params(message)
+        if compound_args:
+            return {
+                "needs_tool": True,
+                "tool_name": "compound_interest",
+                "tool_args": compound_args,
+                "research_plan": "Compute FV via deterministic compound_interest tool.",
+                "rule_chain": ["researcher=compound_interest"],
+            }
+
+        if _needs_fx_tool(context_msg) and pair and not needs_compound_tool(message):
             from_c, to_c = pair
             return {
                 "needs_tool": True,
@@ -150,13 +169,38 @@ def make_tool_handler(runtime: FinanceRuntime):
             "tool_calls": tool_calls,
             "rule_chain": [f"tool={name} ok={result.ok}"],
         }
-        if result.ok and result.data:
+        if result.ok and result.data and name == "fetch_exchange_rate":
             message = state.get("message") or ""
             pair = f"{args.get('from_currency', '')}/{args.get('to_currency', '')}"
             runtime.seed_tool_cache(message or pair, result.data)
         return update
 
     return tool_node
+
+
+def make_compound_tool_handler(runtime: FinanceRuntime):
+    """Deterministic compound path — CPU tool, no ReAct/LLM."""
+
+    def compound_tool_node(state: Dict[str, Any]) -> Dict[str, Any]:
+        message = state.get("message") or ""
+        params = parse_compound_params(message)
+        if not params:
+            return {
+                "needs_tool": False,
+                "rule_chain": ["compound_tool=parse_failed"],
+            }
+        result = runtime.tool_registry.run("compound_interest", **params)
+        tool_calls = list(state.get("tool_calls") or [])
+        tool_calls.append(result.to_state_dict())
+        return {
+            "tool_result": result.data if result.ok else None,
+            "tool_error": result.error,
+            "tool_calls": tool_calls,
+            "needs_tool": False,
+            "rule_chain": [f"compound_tool ok={result.ok}"],
+        }
+
+    return compound_tool_node
 
 
 def make_writer_handler(runtime: FinanceRuntime):
@@ -235,6 +279,12 @@ def make_validator_handler(runtime: FinanceRuntime):
                 notes.append(f"Draft missing explicit rate {rate}")
                 approved = False
 
+        if tool_result and "future_value" in tool_result:
+            fv = float(tool_result["future_value"])
+            if not _future_value_in_text(fv, draft):
+                notes.append(f"Draft missing future value {fv}")
+                approved = False
+
         if not approved:
             rewritten = try_template_draft(
                 message=state.get("message") or "",
@@ -245,6 +295,11 @@ def make_validator_handler(runtime: FinanceRuntime):
                 if _rate_in_text(float(tool_result.get("rate", 0)), draft):
                     approved = True
                     notes.append("validator=template_rewrite_ok")
+            elif rewritten and tool_result and "future_value" in tool_result:
+                draft = rewritten
+                if _future_value_in_text(float(tool_result.get("future_value", 0)), draft):
+                    approved = True
+                    notes.append("validator=compound_template_rewrite_ok")
             if not approved:
                 gemini = runtime.ensure_gemini()
                 system = role_node.role.system_prompt if role_node.role else ""
@@ -258,6 +313,11 @@ def make_validator_handler(runtime: FinanceRuntime):
                 ):
                     approved = True
                     notes.append("validator=gemini_rewrite_ok")
+                elif tool_result and "future_value" in tool_result and _future_value_in_text(
+                    float(tool_result.get("future_value", 0)), draft
+                ):
+                    approved = True
+                    notes.append("validator=compound_gemini_rewrite_ok")
                 else:
                     notes.append("validator=rewrite_still_missing_rate")
 
@@ -285,6 +345,15 @@ def route_after_cache(state: Dict[str, Any]) -> str:
     if state.get("cache_hit") and state.get("tool_result"):
         return "writer"
     return "researcher"
+
+
+def route_after_cache_pattern(state: Dict[str, Any]) -> str:
+    """B graph: cache hit → writer; compound intent → CPU tool; else ReAct."""
+    if state.get("cache_hit") and state.get("tool_result"):
+        return "writer"
+    if parse_compound_params(state.get("message") or ""):
+        return "compound_tool"
+    return "react_agent"
 
 
 def route_after_research(state: Dict[str, Any]) -> str:

@@ -9,6 +9,7 @@ from chorusgraph.agents.agent_node import AgentNode, agent_result_to_state
 from chorusgraph.agents.policy import PlanPolicy, PlanSolveOpts, ReActOpts, ReflectionOpts
 from chorusgraph.agents.reflection import ValidationVerdict, run_reflection
 from chorusgraph.examples.finance_agent.nodes import (
+    _future_value_in_text,
     _rate_in_text,
     make_cache_gate_handler,
     make_writer_handler,
@@ -74,11 +75,16 @@ def make_reflection_validator_handler(runtime: FinanceRuntime, *, policy: PlanPo
         tool_results = state.get("tool_results") or []
         tool_result = state.get("tool_result") or {}
         all_rates = []
+        all_fvs = []
         for obs in tool_results:
             if isinstance(obs, dict) and "rate" in obs:
                 all_rates.append(float(obs["rate"]))
+            if isinstance(obs, dict) and "future_value" in obs:
+                all_fvs.append(float(obs["future_value"]))
         if tool_result and "rate" in tool_result:
             all_rates.append(float(tool_result["rate"]))
+        if tool_result and "future_value" in tool_result:
+            all_fvs.append(float(tool_result["future_value"]))
 
         initial_draft = draft
         if state.get("reflection_demo_wrong_figure"):
@@ -91,6 +97,10 @@ def make_reflection_validator_handler(runtime: FinanceRuntime, *, policy: PlanPo
                 if not _rate_in_text(rate, text):
                     notes.append(f"Draft missing rate {rate}")
                     approved = False
+            for fv in all_fvs:
+                if not _future_value_in_text(fv, text):
+                    notes.append(f"Draft missing future value {fv}")
+                    approved = False
             if not approved and not notes:
                 notes.append("validator rejected draft")
             return ValidationVerdict(approved=approved, notes=notes)
@@ -102,6 +112,10 @@ def make_reflection_validator_handler(runtime: FinanceRuntime, *, policy: PlanPo
                 tool_results=tool_results,
             )
             if rewritten:
+                if all_rates and all(_rate_in_text(r, rewritten) for r in all_rates):
+                    return rewritten
+                if all_fvs and all(_future_value_in_text(fv, rewritten) for fv in all_fvs):
+                    return rewritten
                 for rate in all_rates:
                     if _rate_in_text(rate, rewritten):
                         return rewritten

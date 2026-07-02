@@ -141,7 +141,7 @@ def generate_workload(
                     message = CANONICAL_QUERIES[other][0]
                     session_canonical = other
 
-            slug = "fx_rates"
+            slug = "compound_savings" if session_canonical == "compound_savings" else "fx_rates"
             tasks.append(
                 WorkloadTask(
                     task_id=f"task-{task_idx:04d}",

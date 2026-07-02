@@ -37,6 +37,34 @@ def template_multi_fx_response(tool_results: List[Any]) -> Optional[str]:
     return "\n".join(lines)
 
 
+def template_compound_response(tool_result: Dict[str, Any]) -> Optional[str]:
+    fv = tool_result.get("future_value")
+    if fv is None:
+        return None
+    principal = float(tool_result.get("principal") or 0)
+    rate = float(tool_result.get("annual_rate_pct") or 0)
+    years = float(tool_result.get("years") or 0)
+    n = int(tool_result.get("compounds_per_year") or 1)
+    if n == 12:
+        freq = "monthly"
+    elif n == 4:
+        freq = "quarterly"
+    elif n == 365:
+        freq = "daily"
+    else:
+        freq = f"{n} times per year"
+    return (
+        f"If you invest ${principal:,.0f} at {rate}% annual interest compounded {freq} "
+        f"for {years:g} years, the future value will be ${float(fv):,.2f}."
+    )
+
+
+def _compound_line(item: Dict[str, Any]) -> Optional[str]:
+    if item.get("future_value") is not None:
+        return template_compound_response(item)
+    return None
+
+
 def format_evidence_block(ctx: "StructuredRecallContext", *, max_facts: int = 8) -> str:
     """Structured memory facts for the rare LLM fallback — not prose recall."""
     lines = []
@@ -77,7 +105,19 @@ def try_template_draft(
     prefix = _memory_prefix(memory_ctx)
 
     if tool_results:
+        compound_lines = [_compound_line(item) for item in tool_results if isinstance(item, dict)]
+        compound_lines = [line for line in compound_lines if line]
+        if compound_lines and len(compound_lines) == len(
+            [i for i in tool_results if isinstance(i, dict) and i.get("future_value") is not None]
+        ):
+            body = compound_lines[0] if len(compound_lines) == 1 else "\n".join(compound_lines)
+            return prefix + body
         body = template_multi_fx_response(tool_results)
+        if body:
+            return prefix + body
+
+    if tool_result and tool_result.get("future_value") is not None:
+        body = template_compound_response(tool_result)
         if body:
             return prefix + body
 

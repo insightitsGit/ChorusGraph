@@ -38,9 +38,19 @@ def test_score_task_success_content_not_tool_calls():
 
     assert score_task_success(
         message="USD/EUR rate?",
-        answer="The rate is 0.8785 today.",
+        answer="The USD to EUR exchange rate is 0.8785 today.",
+        canonical_id="usd_eur",
     )
-    assert not score_task_success(message="USD/EUR rate?", answer="Sorry, no data.")
+    assert not score_task_success(
+        message="USD/EUR rate?",
+        answer="Sorry, no data.",
+        canonical_id="usd_eur",
+    )
+    assert not score_task_success(
+        message="What is the USD to JPY exchange rate today?",
+        answer="EUR rate is 0.8785.",
+        canonical_id="usd_jpy",
+    )
 
 
 def test_analyze_produces_ci():

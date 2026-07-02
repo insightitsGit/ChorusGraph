@@ -10,8 +10,12 @@ from langgraph.graph import END, START, StateGraph
 from prismlang import PrismEnvelope
 
 from chorusgraph.agents.policy import PlanPolicy
-from chorusgraph.examples.finance_agent.pattern_nodes import (
+from chorusgraph.examples.finance_agent.nodes import (
     make_cache_gate_handler,
+    make_compound_tool_handler,
+    route_after_cache_pattern,
+)
+from chorusgraph.examples.finance_agent.pattern_nodes import (
     make_pattern_writer_handler,
     make_plan_solve_handler,
     make_react_agent_handler,
@@ -77,14 +81,16 @@ def build_react_graph(
         graph, runtime, coarse_threshold=coarse_threshold, verify_threshold=verify_threshold,
     )
     graph.add_node("react_agent", make_react_agent_handler(runtime, policy=policy))
+    graph.add_node("compound_tool", make_compound_tool_handler(runtime))
     graph.add_node("validator", make_reflection_validator_handler(runtime, policy=PlanPolicy(max_reflection_passes=1)))
 
     graph.add_edge(START, "cache_gate")
     graph.add_conditional_edges(
         "cache_gate",
-        lambda s: "writer" if s.get("cache_hit") and s.get("tool_result") else "react_agent",
-        {"react_agent": "react_agent", "writer": "writer"},
+        route_after_cache_pattern,
+        {"writer": "writer", "compound_tool": "compound_tool", "react_agent": "react_agent"},
     )
+    graph.add_edge("compound_tool", "writer")
     graph.add_edge("react_agent", "writer")
     graph.add_edge("writer", "validator")
     graph.add_edge("validator", END)
