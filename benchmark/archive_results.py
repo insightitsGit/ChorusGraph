@@ -25,6 +25,11 @@ RUN_CATALOG: Dict[str, Dict[str, str]] = {
         "valid_for_cache_thesis": "yes",
         "notes": "40 tasks band 40; cache ~37.5% after ReAct seed fix; no memory tasks.",
     },
+    "h10_slices_pilot_60": {
+        "label": "H10 slices pilot (all fixes, 60 tasks)",
+        "valid_for_cache_thesis": "yes",
+        "notes": "Canonical post-fix run with slices, multi-phrase seed, cross-session memory, paraphrase forensics.",
+    },
     "h10_final_pilot_40": {
         "label": "H10 final pilot (all fixes)",
         "valid_for_cache_thesis": "yes",

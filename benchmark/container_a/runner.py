@@ -58,4 +58,5 @@ class ContainerARunner:
             error=result.get("error"),
             memory_cortex_group=task.memory_cortex_group,
             cross_session_recall=task.cross_session_recall or None,
+            category_slug=task.category_slug,
         )

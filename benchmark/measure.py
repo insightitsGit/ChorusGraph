@@ -66,6 +66,8 @@ class TaskMeasurement:
     # B-only (None for A)
     cache_hit: Optional[bool] = None
     cache_score: Optional[float] = None
+    cache_coarse_score: Optional[float] = None
+    cache_verify_score: Optional[float] = None
     grounding_score: Optional[float] = None
     error: Optional[str] = None
     tool_calls: int = 0

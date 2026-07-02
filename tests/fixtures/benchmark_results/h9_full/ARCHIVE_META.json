@@ -1,6 +1,6 @@
 {
   "run_name": "h9_full",
-  "archived_at": "2026-07-02T08:38:39.979805+00:00",
+  "archived_at": "2026-07-02T16:26:47.557167+00:00",
   "source_dir": "benchmark/results/h9_full",
   "files_copied": [
     "aggregate_analysis.json",

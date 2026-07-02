@@ -1,6 +1,6 @@
 {
   "run_name": "cache_seed_pilot_40",
-  "archived_at": "2026-07-02T08:38:39.941029+00:00",
+  "archived_at": "2026-07-02T16:26:47.516049+00:00",
   "source_dir": "benchmark/results/cache_seed_pilot_40",
   "files_copied": [
     "aggregate_analysis.json",

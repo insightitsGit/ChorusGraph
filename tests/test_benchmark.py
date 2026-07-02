@@ -319,6 +319,46 @@ def test_belief_calibration_grounding_from_memory_rows():
     assert cal.sample_grounding_scores == 2
 
 
+def test_slice_rows_fx_and_compound_excludes_memory():
+    from benchmark.analyze import slice_rows
+
+    rows = [
+        TaskMeasurement(
+            task_id="t1",
+            session_id="s",
+            container="B",
+            message="q",
+            variant="memory_recall_cross",
+            latency_ms=1,
+            llm_calls=1,
+            tokens_in=1,
+            tokens_out=1,
+            cost_usd=0.0,
+            task_success=True,
+            answer="ok",
+            category_slug="user_profile",
+        ),
+        TaskMeasurement(
+            task_id="t2",
+            session_id="s",
+            container="B",
+            message="fx",
+            variant="novel",
+            latency_ms=1,
+            llm_calls=1,
+            tokens_in=1,
+            tokens_out=1,
+            cost_usd=0.0,
+            task_success=True,
+            answer="ok",
+            category_slug="fx_rates",
+        ),
+    ]
+    fx = slice_rows(rows, "fx_and_compound")
+    assert len(fx) == 1
+    assert fx[0].task_id == "t2"
+
+
 @pytest.mark.skipif(
     not os.environ.get("GEMINI_API_KEY") and not os.environ.get("GOOGLE_API_KEY"),
     reason="GEMINI_API_KEY required for live dry-run",

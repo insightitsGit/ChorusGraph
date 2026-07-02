@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from benchmark.analyze import compare_ab, format_ci_table
+from benchmark.analyze import compare_ab, compare_ab_slices, format_ci_table, format_slice_table, paraphrase_cache_forensics
 from benchmark.belief_calibration import calibrate_from_measurements
 from benchmark.container_a.runner import ContainerARunner
 from benchmark.container_b.runner import ContainerBRunner
@@ -77,6 +77,7 @@ def run_band(
     a_rows = load_measurements(path_a)
     b_rows = load_measurements(path_b)
     comparison = compare_ab(a_rows, b_rows)
+    slices = compare_ab_slices(a_rows, b_rows)
     calibration = calibrate_from_measurements(b_rows)
 
     band_report = {
@@ -85,6 +86,9 @@ def run_band(
         "seed": seed,
         "workload_stats": workload_stats(tasks),
         "compare_ab": comparison,
+        "slices": slices,
+        "slice_table_markdown": format_slice_table(slices),
+        "paraphrase_cache_forensics": paraphrase_cache_forensics(b_rows),
         "belief_calibration": calibration.to_dict(),
         "thresholds": {
             "coarse": measured_thresholds().coarse,
@@ -120,6 +124,9 @@ def run_volume_benchmark(
             "pattern_state_cache_score",
             "cross_session_memory",
             "memory_every_n_sessions=2",
+            "canonical_phrase_cache_seed",
+            "slice_reporting",
+            "paraphrase_forensics",
         ],
     }
     (out_dir / "run_meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")

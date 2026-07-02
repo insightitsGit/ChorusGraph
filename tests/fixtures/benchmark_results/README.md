@@ -13,7 +13,8 @@ python -m benchmark.archive_results --run h10_final_pilot_40 --copy-jsonl
 
 | Run | Use for |
 |-----|---------|
-| `h10_final_pilot_40` | **All fixes** — cache score, cross-session memory, belief calibration |
+| **`h10_slices_pilot_60`** | **Canonical** — slices, multi-phrase cache seed, cross-session memory, paraphrase forensics |
+| `h10_final_pilot_40` | Earlier all-fixes pilot (smaller n) |
 | `cache_seed_pilot_40` | Cache-only validation |
 | `h10_volume` | Volume A/B **invalid for cache** (pre-seed-fix) |
 

@@ -46,14 +46,32 @@ def _band_summary(band: str, band_data: Dict[str, Any]) -> list[str]:
         "",
         f"- Valid paired tasks: {ab.get('n_paired')} (excludes 429 quota errors)",
         f"- Workload stats: `{band_data.get('workload_stats')}`",
-        f"- Task success A: {_fmt_ci(a_acc)}",
-        f"- Task success B: {_fmt_ci(b_acc)}",
+        f"- **Full workload** task success A: {_fmt_ci(a_acc)}",
+        f"- **Full workload** task success B: {_fmt_ci(b_acc)}",
         f"- B cache hit-rate (Wilson 95% CI): {_fmt_ci(cache)}",
         _delta_sentence("Cost", ab.get("cost_delta_usd_per_task"), unit=" USD/task"),
         _delta_sentence("Latency", ab.get("latency_delta_ms"), unit=" ms"),
         f"- fx_rates slug: n_serve={fx.get('n_would_serve')}, FP upper95={fx.get('fp_upper95')}, verdict={fx.get('verdict')}",
         "",
     ]
+    if band_data.get("slice_table_markdown"):
+        lines.extend([
+            "#### Sliced accuracy (do not quote full-workload A alone)",
+            "",
+            band_data["slice_table_markdown"],
+            "",
+        ])
+    pf = band_data.get("paraphrase_cache_forensics") or {}
+    if pf:
+        lines.extend([
+            "#### Paraphrase cache forensics (verify=0.95)",
+            "",
+            f"- FX paraphrase tasks: {pf.get('n_paraphrase_fx')}",
+            f"- Hit / miss: {pf.get('n_hit')} / {pf.get('n_miss')}",
+            f"- Verify score on misses (mean / max): {pf.get('verify_score_miss_mean')} / {pf.get('verify_score_miss_max')}",
+            f"- Coarse score on misses (mean): {pf.get('coarse_score_miss_mean')}",
+            "",
+        ])
     return lines
 
 
@@ -63,6 +81,7 @@ def generate_results_md(aggregate_path: Path, out_path: Path) -> str:
     bands = data.get("bands") or {}
     cal = data.get("belief_calibration_pooled") or {}
     run_label = meta.get("run_label", "H10")
+    fixes = meta.get("fixes_applied") or []
 
     lines = [
         f"# ChorusGraph A/B Benchmark Results ({run_label})",
@@ -71,23 +90,25 @@ def generate_results_md(aggregate_path: Path, out_path: Path) -> str:
         "",
         f"- **Run at:** {meta.get('run_at', 'unknown')}",
         f"- **Environment:** {meta.get('environment', 'local')}",
-        f"- **Code:** post-fix v0.9.1 (compound routing + canonical rubric)",
+        f"- **Code:** {meta.get('code_version', '0.9.2')} — {', '.join(fixes) if fixes else 'post-fix'}",
         f"- **Tasks per band (target):** {meta.get('n_tasks_per_band', 1000)}",
         f"- **Repeat bands:** {', '.join(str(b) for b in meta.get('bands', []))}%",
         "",
-        "> **No overall winner declared.** All metrics include 95% confidence intervals where valid.",
+        "> **No overall winner declared.** Quote **sliced** metrics for fair comparisons.",
+        "> Full-workload A accuracy is depressed by cross-session memory tasks (no Cortex).",
         "",
         "## Fairness (H10 §2.4)",
         "",
+        "- Container A = **competent LangGraph ReAct** baseline (not a strawman).",
         "- Container B uses **LLM ReAct/AgentNode** for FX (not regex researcher).",
         "- **Canonical rubric** scores grounded FX pair + compound FV (`benchmark/rubric.py`).",
-        "- B-only **template writer** and **compound fast path** disclosed in `FAIRNESS_H9.md` §3.",
+        "- B-only **template writer**, **compound fast path**, **cache**, **Cortex** disclosed in `FAIRNESS_H9.md` §3.",
         "",
-        "## Results with confidence intervals",
+        "## Headline results (full workload)",
         "",
         data.get("ci_table_markdown", ""),
         "",
-        "## Per-band detail",
+        "## Per-band detail (with slices)",
         "",
     ]
 
@@ -102,10 +123,11 @@ def generate_results_md(aggregate_path: Path, out_path: Path) -> str:
         f"- `memory_confidence_gate`: {cal.get('memory_confidence_gate')}",
         f"- Notes: {cal.get('notes')}",
         "",
-        "## Cache thesis (H10 open question)",
+        "## Cache thesis",
         "",
-        "Does semantic cache earn its overhead at 40%/60% repeat? See per-band **b_cache_hit_rate**",
-        "and paired cost/latency deltas above. Band 20% (~80% novel) is not cache-exercising by design.",
+        "- **Exact repeat** hit-rate: see per-band `cache_exact_repeat` slice.",
+        "- **Paraphrase** hit-rate at verify=0.95: see forensics; multi-phrase seeding improves paraphrase hits without lowering threshold.",
+        "- Runs before cache-seed fix (`h10_volume`) are **invalid** for cache claims — see `tests/fixtures/benchmark_results/MANIFEST.json`.",
         "",
     ])
 
@@ -117,7 +139,7 @@ def generate_results_md(aggregate_path: Path, out_path: Path) -> str:
 if __name__ == "__main__":
     import sys
 
-    agg = Path(sys.argv[1] if len(sys.argv) > 1 else "benchmark/results/h10_volume/aggregate_analysis.json")
+    agg = Path(sys.argv[1] if len(sys.argv) > 1 else "benchmark/results/h10_final_pilot_40/aggregate_analysis.json")
     out = Path(sys.argv[2] if len(sys.argv) > 2 else "docs/BENCHMARK_RESULTS.md")
     generate_results_md(agg, out)
     print(f"Wrote {out}")

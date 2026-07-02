@@ -1,0 +1,19 @@
+{
+  "run_name": "h10_slices_pilot_60",
+  "archived_at": "2026-07-02T16:26:47.524160+00:00",
+  "source_dir": "benchmark/results/h10_slices_pilot_60",
+  "files_copied": [
+    "aggregate_analysis.json",
+    "band_40_analysis.json",
+    "run_meta.json",
+    "band_40_container_a.jsonl",
+    "band_40_container_b.jsonl"
+  ],
+  "jsonl_line_counts": {
+    "band_40_container_a.jsonl": 60,
+    "band_40_container_b.jsonl": 60
+  },
+  "label": "H10 slices pilot (all fixes, 60 tasks)",
+  "valid_for_cache_thesis": "yes",
+  "notes": "Canonical post-fix run with slices, multi-phrase seed, cross-session memory, paraphrase forensics."
+}

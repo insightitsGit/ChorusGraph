@@ -87,6 +87,8 @@ def make_cache_gate_handler(
         update: Dict[str, Any] = {
             "cache_hit": decision.is_hit,
             "cache_score": decision.verify_score or decision.coarse_score,
+            "cache_coarse_score": decision.coarse_score,
+            "cache_verify_score": decision.verify_score,
             "cache_decision": decision.kind.value,
             "rule_chain": [f"cache_gate={decision.kind.value}"],
         }
@@ -172,7 +174,13 @@ def make_tool_handler(runtime: FinanceRuntime):
         if result.ok and result.data and name == "fetch_exchange_rate":
             message = state.get("message") or ""
             pair = f"{args.get('from_currency', '')}/{args.get('to_currency', '')}"
-            runtime.seed_tool_cache(message or pair, result.data)
+            extra = list(state.get("cache_seed_phrases") or [])
+            seed_fx_cache_from_tool_calls(
+                runtime,
+                message,
+                [{"tool": name, "ok": True, "data": result.data}],
+                extra_queries=extra,
+            )
         return update
 
     return tool_node
@@ -182,15 +190,24 @@ def seed_fx_cache_from_tool_calls(
     runtime: FinanceRuntime,
     message: str,
     tool_calls: List[Dict[str, Any]],
+    *,
+    extra_queries: Optional[List[str]] = None,
 ) -> None:
     """Seed semantic cache after FX tool runs (ReAct path and other AgentNode callers)."""
+    extra_queries = extra_queries or []
     for call in tool_calls:
         if call.get("tool") != "fetch_exchange_rate" or not call.get("ok"):
             continue
         data = call.get("data")
-        if isinstance(data, dict) and data.get("rate") is not None:
-            pair = f"{data.get('from_currency', '')}/{data.get('to_currency', '')}"
-            runtime.seed_tool_cache(message or pair, data)
+        if not isinstance(data, dict) or data.get("rate") is None:
+            continue
+        pair = f"{data.get('from_currency', '')}/{data.get('to_currency', '')}"
+        queries = [message or pair]
+        for phrase in extra_queries:
+            if phrase and phrase not in queries:
+                queries.append(phrase)
+        for query_key in queries:
+            runtime.seed_tool_cache(query_key, data)
 
 
 def make_compound_tool_handler(runtime: FinanceRuntime):

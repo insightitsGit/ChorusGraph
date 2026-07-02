@@ -1,11 +1,11 @@
 {
-  "updated_at": "2026-07-02T08:38:40.035882+00:00",
+  "updated_at": "2026-07-02T16:26:47.607819+00:00",
   "fixtures_root": "tests/fixtures/benchmark_results",
   "source_root": "benchmark/results",
   "runs": [
     {
       "run_name": "cache_seed_pilot_40",
-      "archived_at": "2026-07-02T08:38:39.941029+00:00",
+      "archived_at": "2026-07-02T16:26:47.516049+00:00",
       "source_dir": "benchmark/results/cache_seed_pilot_40",
       "files_copied": [
         "aggregate_analysis.json",
@@ -24,7 +24,7 @@
     },
     {
       "run_name": "h10_final_pilot_40",
-      "archived_at": "2026-07-02T08:38:39.945036+00:00",
+      "archived_at": "2026-07-02T16:26:47.520619+00:00",
       "source_dir": "benchmark/results/h10_final_pilot_40",
       "files_copied": [
         "aggregate_analysis.json",
@@ -42,8 +42,27 @@
       "notes": "40 tasks; cache seed + cache_score + cross-session memory + density=2."
     },
     {
+      "run_name": "h10_slices_pilot_60",
+      "archived_at": "2026-07-02T16:26:47.524160+00:00",
+      "source_dir": "benchmark/results/h10_slices_pilot_60",
+      "files_copied": [
+        "aggregate_analysis.json",
+        "band_40_analysis.json",
+        "run_meta.json",
+        "band_40_container_a.jsonl",
+        "band_40_container_b.jsonl"
+      ],
+      "jsonl_line_counts": {
+        "band_40_container_a.jsonl": 60,
+        "band_40_container_b.jsonl": 60
+      },
+      "label": "H10 slices pilot (all fixes, 60 tasks)",
+      "valid_for_cache_thesis": "yes",
+      "notes": "Canonical post-fix run with slices, multi-phrase seed, cross-session memory, paraphrase forensics."
+    },
+    {
       "run_name": "h10_volume",
-      "archived_at": "2026-07-02T08:38:39.953924+00:00",
+      "archived_at": "2026-07-02T16:26:47.533077+00:00",
       "source_dir": "benchmark/results/h10_volume",
       "files_copied": [
         "aggregate_analysis.json",
@@ -68,7 +87,7 @@
     },
     {
       "run_name": "h9_full",
-      "archived_at": "2026-07-02T08:38:39.979805+00:00",
+      "archived_at": "2026-07-02T16:26:47.557167+00:00",
       "source_dir": "benchmark/results/h9_full",
       "files_copied": [
         "aggregate_analysis.json",
@@ -97,7 +116,7 @@
     },
     {
       "run_name": "h9_pilot",
-      "archived_at": "2026-07-02T08:38:40.025160+00:00",
+      "archived_at": "2026-07-02T16:26:47.599213+00:00",
       "source_dir": "benchmark/results/h9_pilot",
       "files_copied": [
         "aggregate_analysis.json",
@@ -116,7 +135,7 @@
     },
     {
       "run_name": "h9_post_vector_fix",
-      "archived_at": "2026-07-02T08:38:40.029160+00:00",
+      "archived_at": "2026-07-02T16:26:47.602304+00:00",
       "source_dir": "benchmark/results/h9_post_vector_fix",
       "files_copied": [
         "live_ab.json",
@@ -132,7 +151,7 @@
     },
     {
       "run_name": "memory_pilot_40",
-      "archived_at": "2026-07-02T08:38:40.033160+00:00",
+      "archived_at": "2026-07-02T16:26:47.606820+00:00",
       "source_dir": "benchmark/results/memory_pilot_40",
       "files_copied": [
         "aggregate_analysis.json",

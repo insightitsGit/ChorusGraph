@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import os
+from dataclasses import fields
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
 
@@ -30,7 +31,8 @@ def load_measurements(path: Path) -> List[TaskMeasurement]:
             data = json.loads(line)
         except json.JSONDecodeError:
             continue
-        row = TaskMeasurement(**data)
+        allowed = {f.name for f in fields(TaskMeasurement)}
+        row = TaskMeasurement(**{k: v for k, v in data.items() if k in allowed})
         by_key[f"{row.container}:{row.task_id}"] = row
     return list(by_key.values())
 

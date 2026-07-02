@@ -42,7 +42,12 @@ def _react_cache_seed_mapper(
 ) -> Dict[str, Any]:
     if state.get("cache_hit"):
         return {}
-    seed_fx_cache_from_tool_calls(runtime, state.get("message") or "", result.tool_calls)
+    seed_fx_cache_from_tool_calls(
+        runtime,
+        state.get("message") or "",
+        result.tool_calls,
+        extra_queries=list(state.get("cache_seed_phrases") or []),
+    )
     return {}
 
 

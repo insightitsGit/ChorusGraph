@@ -157,6 +157,127 @@ def compare_ab(a_rows: List[TaskMeasurement], b_rows: List[TaskMeasurement], *, 
     }
 
 
+_MEMORY_VARIANTS = frozenset({"memory_seed", "memory_recall", "memory_recall_cross"})
+
+
+def slice_rows(rows: List[TaskMeasurement], slice_name: str) -> List[TaskMeasurement]:
+    if slice_name == "full":
+        return list(rows)
+    if slice_name == "fx_and_compound":
+        return [r for r in rows if r.variant not in _MEMORY_VARIANTS]
+    if slice_name == "fx_only":
+        return [r for r in rows if (r.category_slug or "") == "fx_rates"]
+    if slice_name == "memory_cross_session":
+        return [r for r in rows if r.variant == "memory_recall_cross"]
+    if slice_name == "memory_all":
+        return [r for r in rows if r.variant in _MEMORY_VARIANTS or (r.category_slug or "") == "user_profile"]
+    if slice_name == "cache_exact_repeat":
+        return [r for r in rows if r.variant == "exact_repeat" and (r.category_slug or "") == "fx_rates"]
+    if slice_name == "cache_paraphrase":
+        return [r for r in rows if r.variant == "paraphrase" and (r.category_slug or "") == "fx_rates"]
+    raise ValueError(f"unknown slice: {slice_name}")
+
+
+SLICE_LABELS: Dict[str, str] = {
+    "full": "Full workload (FX + compound + memory)",
+    "fx_and_compound": "FX + compound only (excludes memory tasks)",
+    "fx_only": "FX rate tasks only",
+    "memory_cross_session": "Cross-session memory recall (empty chat history)",
+    "memory_all": "All memory tasks",
+    "cache_exact_repeat": "B cache — FX exact_repeat",
+    "cache_paraphrase": "B cache — FX paraphrase",
+}
+
+
+def compare_ab_slices(
+    a_rows: List[TaskMeasurement],
+    b_rows: List[TaskMeasurement],
+    *,
+    slices: Optional[List[str]] = None,
+) -> Dict[str, Dict[str, object]]:
+    slices = slices or [
+        "full",
+        "fx_and_compound",
+        "fx_only",
+        "memory_cross_session",
+        "memory_all",
+    ]
+    out: Dict[str, Dict[str, object]] = {}
+    for name in slices:
+        a_slice = slice_rows(a_rows, name)
+        b_slice = slice_rows(b_rows, name)
+        report: Dict[str, object] = {
+            "label": SLICE_LABELS.get(name, name),
+            "n_a": len(a_slice),
+            "n_b": len(b_slice),
+            "compare_ab": compare_ab(a_slice, b_slice),
+        }
+        if name in ("cache_exact_repeat", "cache_paraphrase"):
+            report["compare_ab"] = compare_ab([], b_slice)
+            report["b_cache_variant"] = {
+                k: v.__dict__ for k, v in analyze_b_cache(b_slice).items()
+            }
+        out[name] = report
+    return out
+
+
+def paraphrase_cache_forensics(b_rows: List[TaskMeasurement]) -> Dict[str, object]:
+    """Verify/coarse score distribution for FX paraphrase cache decisions."""
+    paraphrase = slice_rows(b_rows, "cache_paraphrase")
+    hits = [r for r in paraphrase if r.cache_hit]
+    misses = [r for r in paraphrase if r.cache_hit is False]
+    verify_miss = [float(r.cache_verify_score) for r in misses if r.cache_verify_score is not None]
+    coarse_miss = [float(r.cache_coarse_score) for r in misses if r.cache_coarse_score is not None]
+    verify_hit = [float(r.cache_verify_score) for r in hits if r.cache_verify_score is not None]
+    return {
+        "n_paraphrase_fx": len(paraphrase),
+        "n_hit": len(hits),
+        "n_miss": len(misses),
+        "hit_rate_point": (len(hits) / len(paraphrase)) if paraphrase else 0.0,
+        "verify_score_miss_mean": statistics.mean(verify_miss) if verify_miss else None,
+        "verify_score_miss_max": max(verify_miss) if verify_miss else None,
+        "coarse_score_miss_mean": statistics.mean(coarse_miss) if coarse_miss else None,
+        "verify_score_hit_mean": statistics.mean(verify_hit) if verify_hit else None,
+        "exact_repeat_cache": compare_ab_slices([], b_rows, slices=["cache_exact_repeat"]).get(
+            "cache_exact_repeat", {}
+        ).get("b_cache_variant"),
+    }
+
+
+def format_slice_table(slices: Dict[str, Dict[str, object]]) -> str:
+    lines = [
+        "| Slice | n (A/B) | A accuracy (95% CI) | B accuracy (95% CI) | B cache hit-rate |",
+        "|-------|---------|---------------------|---------------------|------------------|",
+    ]
+    for name, data in slices.items():
+        if name.startswith("cache_"):
+            b_cache = (data.get("b_cache_variant") or {}).get("cache_hit_rate") or {}
+            n_b = data.get("n_b", 0)
+            lines.append(
+                f"| {SLICE_LABELS.get(name, name)} | —/{n_b} | — | — | "
+                f"{b_cache.get('point', 0):.4f} [{b_cache.get('lower95', 0):.4f}, {b_cache.get('upper95', 0):.4f}] |"
+            )
+            continue
+        ab = data.get("compare_ab") or {}
+        a_acc = (ab.get("container_a") or {}).get("accuracy_rate") or {}
+        b_acc = (ab.get("container_b") or {}).get("accuracy_rate") or {}
+        b_cache = (ab.get("b_cache") or {}).get("cache_hit_rate") or {}
+        n_a = data.get("n_a", 0)
+        n_b = data.get("n_b", 0)
+        cache_cell = (
+            f"{b_cache.get('point', 0):.4f} [{b_cache.get('lower95', 0):.4f}, {b_cache.get('upper95', 0):.4f}]"
+            if n_b and name != "memory_cross_session"
+            else "—"
+        )
+        lines.append(
+            f"| {SLICE_LABELS.get(name, name)} | {n_a}/{n_b} | "
+            f"{a_acc.get('point', 0):.4f} [{a_acc.get('lower95', 0):.4f}, {a_acc.get('upper95', 0):.4f}] | "
+            f"{b_acc.get('point', 0):.4f} [{b_acc.get('lower95', 0):.4f}, {b_acc.get('upper95', 0):.4f}] | "
+            f"{cache_cell} |"
+        )
+    return "\n".join(lines)
+
+
 def format_ci_table(band_results: Dict[int, Dict[str, object]]) -> str:
     lines = ["| Band | Metric | A (95% CI) | B (95% CI) |", "|------|--------|------------|------------|"]
     for band, data in sorted(band_results.items()):

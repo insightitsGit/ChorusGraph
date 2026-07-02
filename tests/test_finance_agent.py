@@ -112,6 +112,32 @@ def test_react_path_seeds_fx_cache_from_tool_calls():
     assert decision.value["rate"] == fx["rate"]
 
 
+def test_react_path_seeds_canonical_phrases():
+    runtime = FinanceRuntime(tenant_id="finance-test-react-seed-phrases")
+    fx = {"from_currency": "USD", "to_currency": "EUR", "rate": 0.8785, "date": "2026-07-01"}
+    seed_fx_cache_from_tool_calls(
+        runtime,
+        "What is the USD to EUR exchange rate today?",
+        [{"tool": "fetch_exchange_rate", "ok": True, "data": fx}],
+        extra_queries=["USD/EUR rate please", "Current dollar to euro FX rate"],
+    )
+    section = Section(
+        section_id="fx",
+        category_slug="fx_rates",
+        content="USD/EUR rate please",
+        cache_policy=CachePolicy.REPLAY_SAFE,
+    )
+    decision = gate(
+        "USD/EUR rate please",
+        section,
+        runtime.cache,
+        runtime.sidecar,
+        coarse_threshold=0.88,
+        verify_threshold=0.95,
+    )
+    assert decision.is_hit
+
+
 @pytest.mark.skipif(not resolve_gemini_api_key(), reason="GEMINI_API_KEY not configured")
 def test_react_graph_propagates_cache_score_on_hit():
     from chorusgraph.examples.finance_agent.patterns_graph import build_react_graph, pattern_initial_state

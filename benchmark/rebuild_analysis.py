@@ -6,14 +6,29 @@ import json
 import sys
 from pathlib import Path
 
-from benchmark.analyze import compare_ab, format_ci_table, valid_rows
+from benchmark.analyze import (
+    compare_ab,
+    compare_ab_slices,
+    format_ci_table,
+    format_slice_table,
+    paraphrase_cache_forensics,
+    valid_rows,
+)
 from benchmark.belief_calibration import calibrate_from_measurements
 from benchmark.jsonl_io import load_measurements
 from benchmark.thresholds import measured_thresholds
 from benchmark.workload import generate_workload, workload_stats
 
 
-def rebuild(out_dir: Path, bands: list[int], n_tasks: int = 1000, seed: int = 42) -> dict:
+def rebuild(
+    out_dir: Path,
+    bands: list[int],
+    n_tasks: int = 1000,
+    seed: int = 42,
+    *,
+    include_memory_tasks: bool = True,
+    memory_every_n_sessions: int = 2,
+) -> dict:
     band_results = {}
     all_b = []
     for band in bands:
@@ -21,11 +36,31 @@ def rebuild(out_dir: Path, bands: list[int], n_tasks: int = 1000, seed: int = 42
         path_b = out_dir / f"band_{band}_container_b.jsonl"
         a_rows = load_measurements(path_a)
         b_rows = load_measurements(path_b)
-        tasks = generate_workload(n_tasks, seed=seed + band, repeat_band_pct=band)
+        tasks = generate_workload(
+            n_tasks,
+            seed=seed + band,
+            repeat_band_pct=band,
+            include_memory_tasks=include_memory_tasks,
+            memory_every_n_sessions=memory_every_n_sessions,
+        )
         n_valid_a = len(valid_rows(a_rows))
         n_valid_b = len(valid_rows(b_rows))
         n_quota = sum(1 for r in a_rows + b_rows if r.error and "429" in (r.error or ""))
         comparison = compare_ab(a_rows, b_rows)
+        slices = compare_ab_slices(
+            a_rows,
+            b_rows,
+            slices=[
+                "full",
+                "fx_and_compound",
+                "fx_only",
+                "memory_cross_session",
+                "memory_all",
+                "cache_exact_repeat",
+                "cache_paraphrase",
+            ],
+        )
+        paraphrase_forensics = paraphrase_cache_forensics(b_rows)
         calibration = calibrate_from_measurements(valid_rows(b_rows))
         band_results[band] = {
             "repeat_band_pct": band,
@@ -37,6 +72,9 @@ def rebuild(out_dir: Path, bands: list[int], n_tasks: int = 1000, seed: int = 42
             "seed": seed + band,
             "workload_stats": workload_stats(tasks),
             "compare_ab": comparison,
+            "slices": slices,
+            "slice_table_markdown": format_slice_table(slices),
+            "paraphrase_cache_forensics": paraphrase_forensics,
             "belief_calibration": calibration.to_dict(),
             "thresholds": {
                 "coarse": measured_thresholds().coarse,
@@ -65,7 +103,23 @@ def rebuild(out_dir: Path, bands: list[int], n_tasks: int = 1000, seed: int = 42
 
 
 if __name__ == "__main__":
-    out = Path(sys.argv[1] if len(sys.argv) > 1 else "benchmark/results/h9_full")
-    bands = [int(b.strip()) for b in (sys.argv[2] if len(sys.argv) > 2 else "20,40,60").split(",")]
-    agg = rebuild(out, bands)
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Rebuild benchmark analysis from JSONL")
+    parser.add_argument("out_dir", nargs="?", default="benchmark/results/h9_full")
+    parser.add_argument("bands", nargs="?", default="20,40,60")
+    parser.add_argument("--tasks", type=int, default=1000)
+    parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--no-memory", action="store_true")
+    args = parser.parse_args()
+
+    out = Path(args.out_dir)
+    bands = [int(b.strip()) for b in args.bands.split(",")]
+    agg = rebuild(
+        out,
+        bands,
+        n_tasks=args.tasks,
+        seed=args.seed,
+        include_memory_tasks=not args.no_memory,
+    )
     print(f"Rebuilt aggregate for bands {bands} -> {out / 'aggregate_analysis.json'}")
