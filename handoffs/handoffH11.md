@@ -4,15 +4,18 @@
 **Reference:** handoffbackH10, `docs/BENCHMARK.md` (fairness), `benchmark/container_a/graph.py`.
 **Return in:** `handoffs/handoffbackH11.md`.
 
-**⚠️ Read this first — the point of H11.** The H10 headline "B 82% vs A 27% accuracy" is **not valid**, because
-**Container A is broken: it never calls the FX tool.** This handoff fixes A into a *competent, fair* baseline
-and reruns — so the comparison is honest. **The goal is a fair baseline, NOT a B win.** Fixing A will very
-likely **shrink B's lead** — that is the *correct* outcome. Report whatever the honest result is.
+**⚠️ Read this first — the point of H11.** The mission is to make **ChorusGraph (B) genuinely the best** — and
+to get there we use *honest* measurement to find and fix B's real weaknesses. Right now we can't even see them,
+because **Container A is broken: it never calls the FX tool**, so the H10 "B 82% vs A 27%" is a mirage. So H11
+is two moves: **(1) fix A into a competent baseline so B's true gaps become visible, then (2) for every place B
+loses, ties, or fails a task — diagnose why and REWIRE/FIX B until it wins on the merits.** A fair A is not the
+enemy of winning — it's the map that shows exactly what to improve in B. A rigged win hides the bugs we need to fix.
 
 ## 0. Operating rules (careful — non-negotiable)
 - No fakes; real Gemini, real tools. Real prior tests stay green.
-- **Do NOT make B look good by keeping A weak.** No hobbling A, no tuning B, no lowering thresholds, no
-  changing the rubric to shift the result. The only change to A is: **make it actually call its tools.**
+- **Win by making B genuinely better, not by making A worse.** Improve B's *real capability* (rewire the code);
+  do NOT hobble A, game the rubric, or lower thresholds to manufacture a win — a fake win hides the weaknesses
+  we're trying to fix. The only change to A is: make it actually call its tools (a fair baseline).
 - **No external accuracy/latency claim until the fixed-A rerun.** The current numbers are off a broken baseline.
 
 ## 1. The evidence (verified from the JSONL)
@@ -49,10 +52,16 @@ Make A **reliably call `fetch_exchange_rate`** on FX questions and ground the an
   equivalent; otherwise leave A as plain ReAct. Do not give A an advantage B lacks either.
 - **Acceptance gate: A shows `tool_calls ≥ 1` on FX tasks, and A's FX answers contain the correct tool rate.**
 
-### 3.3 Honest rerun (fixed A vs existing B)
-Same workload + seed as `h10_slices_pilot_60`. Report the fixed-A vs B comparison **with CIs**. Expect B's
-accuracy lead to shrink (A should now answer FX correctly). **Report it exactly as it lands** — win, shrink,
-tie, or flip on any metric.
+### 3.3 Honest rerun → diagnose → REWIRE B to win on the merits
+Rerun the same workload + seed as `h10_slices_pilot_60`; report fixed-A vs B **with CIs**. This is the
+*diagnostic* run — it shows where B **genuinely** wins and where B still loses, ties, or fails tasks. Then,
+**for every place B doesn't clearly win, and every task B fails, find the root cause and fix B's real
+capability** (not the measurement):
+- B fails where A now succeeds → why (tool routing, missed cache, weak template/recall) → **rewire that path in B.**
+- B ties/loses on cost, latency, or accuracy → find the overhead/gap → **close it in B's code.**
+- Iterate: rerun → re-diagnose → re-fix, until B wins honestly on the slices that matter (FX, memory), or a
+  remaining gap is a genuine hard tradeoff you then document.
+The win must be **earned in B's code, verified against the fair A.** Log each B fix with a before/after number.
 
 ### 3.4 Held-out paraphrase test (validate B's cache is real generalization)
 The H10 67% paraphrase hit-rate may reflect **multi-phrase pre-seeding** (all canonical phrasings seeded after
@@ -76,6 +85,7 @@ changes the result other than making A competent.
 - [ ] Root cause of A-not-calling-tools stated (a/b/c).
 - [ ] A shows `tool_calls ≥ 1` on FX tasks and grounds answers in the tool rate (broken baseline fixed).
 - [ ] Fixed-A vs B rerun reported with CIs; pre-fix A numbers marked invalid.
+- [ ] Every place B loses/ties/fails is diagnosed, and B's capability **rewired** to win on the merits — each fix logged before/after (win earned in B's code, not the measurement).
 - [ ] Held-out paraphrase hit-rate reported (semantic generalization isolated from seeding).
 - [ ] No hobbling A / tuning B / rubric changes to shift the result (state that none were made).
 - [ ] Prior tests green; no fakes.
@@ -91,4 +101,4 @@ Summary · file tree · how to run · fixed-A vs B tables **with CIs** · held-o
 changed in A (and confirmation nothing was done to tilt the result) · honest wins/losses · blockers.
 
 ---
-*Handoff H11 · verify-role architect · fix the broken baseline, then compare honestly · fair beats favorable.*
+*Handoff H11 · fix the broken baseline so B's real gaps show · then rewire B to win on the merits · earned, not rigged.*
