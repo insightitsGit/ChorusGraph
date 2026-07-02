@@ -178,6 +178,21 @@ def make_tool_handler(runtime: FinanceRuntime):
     return tool_node
 
 
+def seed_fx_cache_from_tool_calls(
+    runtime: FinanceRuntime,
+    message: str,
+    tool_calls: List[Dict[str, Any]],
+) -> None:
+    """Seed semantic cache after FX tool runs (ReAct path and other AgentNode callers)."""
+    for call in tool_calls:
+        if call.get("tool") != "fetch_exchange_rate" or not call.get("ok"):
+            continue
+        data = call.get("data")
+        if isinstance(data, dict) and data.get("rate") is not None:
+            pair = f"{data.get('from_currency', '')}/{data.get('to_currency', '')}"
+            runtime.seed_tool_cache(message or pair, data)
+
+
 def make_compound_tool_handler(runtime: FinanceRuntime):
     """Deterministic compound path — CPU tool, no ReAct/LLM."""
 

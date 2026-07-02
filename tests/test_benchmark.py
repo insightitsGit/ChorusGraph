@@ -26,8 +26,8 @@ def test_repeat_bands_sum_to_one():
 
 
 def test_generate_workload_repeat_band_changes_distribution():
-    low = generate_workload(200, seed=1, repeat_band_pct=20)
-    high = generate_workload(200, seed=1, repeat_band_pct=60)
+    low = generate_workload(200, seed=1, repeat_band_pct=20, include_memory_tasks=False)
+    high = generate_workload(200, seed=1, repeat_band_pct=60, include_memory_tasks=False)
     low_stats = workload_stats(low)
     high_stats = workload_stats(high)
     assert low_stats["exact_repeat"] < high_stats["exact_repeat"]
@@ -112,7 +112,7 @@ def test_belief_calibration_returns_dict():
 
 
 def test_workload_repeat_model_distribution():
-    tasks = generate_workload(100, seed=7)
+    tasks = generate_workload(100, seed=7, include_memory_tasks=False)
     stats = workload_stats(tasks)
     assert stats["total"] == 100
     assert stats["sessions"] >= 10
@@ -122,7 +122,7 @@ def test_workload_repeat_model_distribution():
 
 
 def test_workload_sessions_group_repeats():
-    tasks = generate_workload(20, seed=42, tasks_per_session=5)
+    tasks = generate_workload(20, seed=42, tasks_per_session=5, include_memory_tasks=False)
     by_session: dict[str, list] = {}
     for t in tasks:
         by_session.setdefault(t.session_id, []).append(t)
@@ -232,6 +232,91 @@ def test_comparison_report_skeleton():
     assert "b_cache_hit_rate" in summary
     text = report.format_report()
     assert "no conclusions" in text.lower()
+
+
+def test_memory_workload_includes_seed_and_cross_recall():
+    tasks = generate_workload(40, seed=11, tasks_per_session=5, memory_every_n_sessions=2)
+    stats = workload_stats(tasks)
+    assert stats["memory_seed"] >= 1
+    assert stats["memory_recall_cross"] >= 1
+    cross = [t for t in tasks if t.variant == "memory_recall_cross"]
+    assert cross
+    assert all(t.cross_session_recall for t in cross)
+    assert all(t.memory_cortex_group for t in cross)
+    seeds = [t for t in tasks if t.variant == "memory_seed"]
+    assert seeds
+    # Cross-session recall must land in a different session than its seed.
+    for recall in cross:
+        seed_sessions = {
+            t.session_id
+            for t in seeds
+            if t.memory_cortex_group == recall.memory_cortex_group
+        }
+        assert recall.session_id not in seed_sessions
+
+
+def test_pattern_state_declares_cache_score():
+    from chorusgraph.examples.finance_agent.patterns_graph import PatternState
+
+    assert "cache_score" in PatternState.__annotations__
+    assert "cache_decision" in PatternState.__annotations__
+
+
+def test_memory_rubric_scores_recall_terms():
+    from benchmark.rubric import score_by_canonical
+
+    assert score_by_canonical(
+        canonical_id="memory_risk_conservative",
+        message="What risk profile did I tell you?",
+        answer="You described yourself as a conservative investor with low risk tolerance.",
+        variant="memory_recall",
+    )
+    assert not score_by_canonical(
+        canonical_id="memory_risk_conservative",
+        message="What risk profile did I tell you?",
+        answer="I do not have any information about your preferences.",
+        variant="memory_recall",
+    )
+
+
+def test_belief_calibration_grounding_from_memory_rows():
+    from benchmark.belief_calibration import calibrate_from_measurements
+
+    rows = [
+        TaskMeasurement(
+            task_id="m1",
+            session_id="s",
+            container="B",
+            message="recall",
+            variant="memory_recall",
+            latency_ms=100,
+            llm_calls=2,
+            tokens_in=100,
+            tokens_out=50,
+            cost_usd=0.001,
+            task_success=True,
+            answer="conservative profile",
+            grounding_score=0.82,
+        ),
+        TaskMeasurement(
+            task_id="m2",
+            session_id="s",
+            container="B",
+            message="recall",
+            variant="memory_recall",
+            latency_ms=100,
+            llm_calls=2,
+            tokens_in=100,
+            tokens_out=50,
+            cost_usd=0.001,
+            task_success=True,
+            answer="long horizon",
+            grounding_score=0.91,
+        ),
+    ]
+    cal = calibrate_from_measurements(rows)
+    assert cal.groundedness_floor is not None
+    assert cal.sample_grounding_scores == 2
 
 
 @pytest.mark.skipif(

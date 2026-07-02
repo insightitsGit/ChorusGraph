@@ -1,0 +1,25 @@
+{
+  "run_name": "h10_volume",
+  "archived_at": "2026-07-02T08:38:39.953924+00:00",
+  "source_dir": "benchmark/results/h10_volume",
+  "files_copied": [
+    "aggregate_analysis.json",
+    "band_40_analysis.json",
+    "band_60_analysis.json",
+    "run.log",
+    "run_meta.json",
+    "band_40_container_a.jsonl",
+    "band_40_container_b.jsonl",
+    "band_60_container_a.jsonl",
+    "band_60_container_b.jsonl"
+  ],
+  "jsonl_line_counts": {
+    "band_40_container_a.jsonl": 1000,
+    "band_40_container_b.jsonl": 1000,
+    "band_60_container_a.jsonl": 1000,
+    "band_60_container_b.jsonl": 1000
+  },
+  "label": "H10 volume (pre-cache-seed-fix)",
+  "valid_for_cache_thesis": "no",
+  "notes": "1000 tasks x bands 40+60; cache_hit_rate 0% \u2014 ReAct never seeded cache."
+}

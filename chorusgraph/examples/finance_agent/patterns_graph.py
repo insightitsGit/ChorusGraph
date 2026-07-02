@@ -37,6 +37,8 @@ class PatternState(TypedDict, total=False):
     tool_results: List[Any]
     tool_result: Optional[Dict[str, Any]]
     cache_hit: Optional[bool]
+    cache_score: Optional[float]
+    cache_decision: Optional[str]
     draft_response: str
     response: str
     validation: Dict[str, Any]

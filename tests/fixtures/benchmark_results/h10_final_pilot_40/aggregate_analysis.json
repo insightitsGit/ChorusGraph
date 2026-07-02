@@ -1,0 +1,200 @@
+{
+  "meta": {
+    "run_at": "2026-07-02T08:35:38.459869+00:00",
+    "run_label": "H10",
+    "environment": "local",
+    "n_tasks_per_band": 40,
+    "bands": [
+      40
+    ],
+    "seed": 42,
+    "threshold_provenance": "Coarse 0.88 \u2014 H2 shadow harness default, H3 replay default, cache_gate/gate.py default.\nVerify 0.95 (fx_rates) \u2014 gate.py default verify_threshold; no slug-specific CACHEABLE point yet\n  (H3 production replay: all slugs INSUFFICIENT DATA, n << MIN_HITS=300).\nH4 demo 0.82/0.85 \u2014 excluded per docs/BENCHMARK.md anti-rigging checklist.\nFull fx_rates frontier will be produced when benchmark workload runs at scale (H9).",
+    "fairness_doc": "benchmark/FAIRNESS_H9.md",
+    "code_version": "0.9.2",
+    "fixes_applied": [
+      "react_cache_seed",
+      "pattern_state_cache_score",
+      "cross_session_memory",
+      "memory_every_n_sessions=2"
+    ]
+  },
+  "bands": {
+    "40": {
+      "repeat_band_pct": 40,
+      "n_tasks": 40,
+      "seed": 82,
+      "workload_stats": {
+        "total": 40,
+        "sessions": 8,
+        "exact_repeat": 11,
+        "paraphrase": 7,
+        "novel": 14,
+        "memory_seed": 4,
+        "memory_recall": 0,
+        "memory_recall_cross": 4
+      },
+      "compare_ab": {
+        "n_paired": 38,
+        "n_valid_a": 40,
+        "n_valid_b": 38,
+        "cost_delta_usd_per_task": {
+          "point": -3.384078947368421e-05,
+          "lower95": -8.032815789473683e-05,
+          "upper95": 1.358506578947365e-05,
+          "n": 38,
+          "method": "bootstrap_2000"
+        },
+        "latency_delta_ms": {
+          "point": -816.7631578947369,
+          "lower95": -1505.0032894736842,
+          "upper95": -105.27763157894742,
+          "n": 38,
+          "method": "bootstrap_2000"
+        },
+        "container_a": {
+          "latency_ms_p50": {
+            "point": 2365.0,
+            "lower95": 2248.3375,
+            "upper95": 2590.0,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "latency_ms_p95": {
+            "point": 6303.799999999999,
+            "lower95": 3586.5999999999995,
+            "upper95": 6638.0,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "cost_per_task_usd": {
+            "point": 0.00016241625,
+            "lower95": 0.000154966875,
+            "upper95": 0.00016998768750000001,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "accuracy_rate": {
+            "point": 0.3,
+            "lower95": 0.14569981181855063,
+            "upper95": 0.45430018818144935,
+            "n": 40,
+            "method": "wilson_95"
+          },
+          "llm_calls_per_task": {
+            "point": 2.0,
+            "lower95": 2.0,
+            "upper95": 2.0,
+            "n": 40,
+            "method": "bootstrap_2000"
+          }
+        },
+        "container_b": {
+          "latency_ms_p50": {
+            "point": 2440.5,
+            "lower95": 21.0,
+            "upper95": 2837.0,
+            "n": 38,
+            "method": "bootstrap_2000"
+          },
+          "latency_ms_p95": {
+            "point": 6645.55,
+            "lower95": 3436.549999999998,
+            "upper95": 6998.0,
+            "n": 38,
+            "method": "bootstrap_2000"
+          },
+          "cost_per_task_usd": {
+            "point": 0.00013015263157894737,
+            "lower95": 8.6026875e-05,
+            "upper95": 0.00017693447368421052,
+            "n": 38,
+            "method": "bootstrap_2000"
+          },
+          "accuracy_rate": {
+            "point": 0.8947368421052632,
+            "lower95": 0.8311762576860616,
+            "upper95": 0.9582974265244647,
+            "n": 38,
+            "method": "wilson_95"
+          },
+          "llm_calls_per_task": {
+            "point": 1.131578947368421,
+            "lower95": 0.7888157894736842,
+            "upper95": 1.4736842105263157,
+            "n": 38,
+            "method": "bootstrap_2000"
+          }
+        },
+        "b_cache": {
+          "cache_hit_rate": {
+            "point": 0.3157894736842105,
+            "lower95": 0.15702134846232563,
+            "upper95": 0.4745575989060954,
+            "n": 38,
+            "method": "wilson_95"
+          }
+        },
+        "b_cache_fp_by_slug": {
+          "user_profile": {
+            "n_tasks": 6,
+            "n_would_serve": 0,
+            "n_fp": 0,
+            "fp_rate_point": 0.0,
+            "fp_upper95": 1.0,
+            "hit_rate_point": 0.0,
+            "verdict": "INSUFFICIENT DATA",
+            "cacheable": false,
+            "min_hits_required": 300
+          },
+          "fx_rates": {
+            "n_tasks": 31,
+            "n_would_serve": 12,
+            "n_fp": 1,
+            "fp_rate_point": 0.08333333333333333,
+            "fp_upper95": 0.35387991114111694,
+            "hit_rate_point": 0.3870967741935484,
+            "verdict": "INSUFFICIENT DATA",
+            "cacheable": false,
+            "min_hits_required": 300
+          },
+          "compound_savings": {
+            "n_tasks": 1,
+            "n_would_serve": 0,
+            "n_fp": 0,
+            "fp_rate_point": 0.0,
+            "fp_upper95": 1.0,
+            "hit_rate_point": 0.0,
+            "verdict": "INSUFFICIENT DATA",
+            "cacheable": false,
+            "min_hits_required": 300
+          }
+        }
+      },
+      "belief_calibration": {
+        "confidence_stop": 1.0,
+        "groundedness_floor": 0.5,
+        "memory_confidence_gate": 0.5,
+        "sample_cache_scores": 37,
+        "sample_grounding_scores": 20,
+        "notes": [
+          "cache_score separation (mean hit - miss): 0.7256"
+        ]
+      },
+      "thresholds": {
+        "coarse": 0.88,
+        "verify_fx_rates": 0.95
+      }
+    }
+  },
+  "belief_calibration_pooled": {
+    "confidence_stop": 1.0,
+    "groundedness_floor": 0.5,
+    "memory_confidence_gate": 0.5,
+    "sample_cache_scores": 37,
+    "sample_grounding_scores": 20,
+    "notes": [
+      "cache_score separation (mean hit - miss): 0.7256"
+    ]
+  },
+  "ci_table_markdown": "| Band | Metric | A (95% CI) | B (95% CI) |\n|------|--------|------------|------------|\n| 40% | latency_ms_p50 | 2365.0000 [2248.3375, 2590.0] | 2440.5000 [21.0, 2837.0] |\n| 40% | cost_per_task_usd | 0.0002 [0.000154966875, 0.00016998768750000001] | 0.0001 [8.6026875e-05, 0.00017693447368421052] |\n| 40% | accuracy_rate | 0.3000 [0.14569981181855063, 0.45430018818144935] | 0.8947 [0.8311762576860616, 0.9582974265244647] |\n| 40% | b_cache_hit_rate | \u2014 | 0.3158 [0.15702134846232563, 0.4745575989060954] |"
+}

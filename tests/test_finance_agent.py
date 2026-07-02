@@ -10,7 +10,11 @@ from chorusgraph import SqliteLedgerSink, wrap
 from chorusgraph.cache_gate import gate
 from chorusgraph.examples.finance_agent.gemini_client import resolve_gemini_api_key
 from chorusgraph.examples.finance_agent.graph import GRAPH_ID, TENANT_ID, build_finance_graph, initial_state
-from chorusgraph.examples.finance_agent.nodes import make_researcher_handler, make_tool_handler
+from chorusgraph.examples.finance_agent.nodes import (
+    make_researcher_handler,
+    make_tool_handler,
+    seed_fx_cache_from_tool_calls,
+)
 from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
 from chorusgraph.sections.models import CachePolicy, Section
 
@@ -80,6 +84,56 @@ def test_tool_node_executes_and_seeds_cache():
     )
     assert decision.is_hit
     assert decision.value["rate"] == out["tool_result"]["rate"]
+
+
+def test_react_path_seeds_fx_cache_from_tool_calls():
+    runtime = FinanceRuntime(tenant_id="finance-test-react-seed")
+    fx = {"from_currency": "USD", "to_currency": "EUR", "rate": 0.8785, "date": "2026-07-01"}
+    seed_fx_cache_from_tool_calls(
+        runtime,
+        "What is the USD to EUR exchange rate today?",
+        [{"tool": "fetch_exchange_rate", "ok": True, "data": fx}],
+    )
+    section = Section(
+        section_id="fx",
+        category_slug="fx_rates",
+        content="What is the USD to EUR exchange rate today?",
+        cache_policy=CachePolicy.REPLAY_SAFE,
+    )
+    decision = gate(
+        "What is the USD to EUR exchange rate today?",
+        section,
+        runtime.cache,
+        runtime.sidecar,
+        coarse_threshold=0.88,
+        verify_threshold=0.95,
+    )
+    assert decision.is_hit
+    assert decision.value["rate"] == fx["rate"]
+
+
+@pytest.mark.skipif(not resolve_gemini_api_key(), reason="GEMINI_API_KEY not configured")
+def test_react_graph_propagates_cache_score_on_hit():
+    from chorusgraph.examples.finance_agent.patterns_graph import build_react_graph, pattern_initial_state
+    from chorusgraph.cache_gate import seed_cache_entry
+
+    runtime = FinanceRuntime(tenant_id="finance-test-cache-score")
+    compiled, _ = build_react_graph(runtime)
+    fx = {"from_currency": "USD", "to_currency": "EUR", "rate": 0.8785, "date": "2026-07-01"}
+    seed_cache_entry(
+        runtime.cache,
+        runtime.sidecar,
+        query="What is the USD to EUR exchange rate today?",
+        value=fx,
+        category_slug="fx_rates",
+        cache_policy="replay_safe",
+    )
+    result = compiled.invoke(
+        pattern_initial_state("What is the USD to EUR exchange rate today?")
+    )
+    assert result.get("cache_hit") is True
+    assert result.get("cache_score") is not None
+    assert float(result["cache_score"]) > 0.0
 
 
 @pytest.mark.skipif(not resolve_gemini_api_key(), reason="GEMINI_API_KEY not configured")

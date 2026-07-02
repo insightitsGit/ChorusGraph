@@ -10,6 +10,7 @@ from chorusgraph.examples.finance_agent.gemini_client import resolve_gemini_api_
 from chorusgraph.examples.finance_agent.graph import build_finance_graph, turn_input
 from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
 from chorusgraph.memory import get_cortex_service
+from chorusgraph.memory.cortex_service import CortexMemoryService
 from chorusgraph import SqliteLedgerSink, wrap
 from chorusgraph.examples.finance_agent.graph import GRAPH_ID, TENANT_ID
 from prismcortex.models import DigestOutcome
@@ -29,6 +30,40 @@ def test_async_digest_returns_immediately(tmp_path):
     elapsed = time.perf_counter() - started
     assert elapsed < 0.25
     svc.wait_for_digest(timeout=30)
+
+
+def test_recall_for_turn_no_demo_fallback(tmp_path):
+    svc = CortexMemoryService(tenant_id="no-fallback", cache_dir=str(tmp_path / "cortex"))
+    queries: list[str] = []
+
+    def _track(query: str):
+        queries.append(query)
+        return None
+
+    svc._recall_one = _track  # type: ignore[method-assign]
+    assert svc.recall_for_turn("What is the USD/EUR rate?") is None
+    assert queries == ["What is the USD/EUR rate?"]
+
+
+def test_recall_structured_no_demo_fallback_by_default(tmp_path):
+    svc = CortexMemoryService(tenant_id="structured-no-fb", cache_dir=str(tmp_path / "cortex2"))
+    queries: list[str] = []
+
+    class _FakeMem:
+        def explain(self, query: str):
+            queries.append(query)
+
+            class _Explain:
+                evidence = []
+                confidence = 0.0
+                freshness = None
+                subgraph_hash = ""
+
+            return _Explain()
+
+    svc._memory = _FakeMem()
+    assert svc.recall_structured("USD/EUR rate?") is None
+    assert queries == ["USD/EUR rate?"]
 
 
 @pytest.mark.skipif(not resolve_gemini_api_key(), reason="GEMINI_API_KEY not configured")

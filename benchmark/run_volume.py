@@ -107,12 +107,20 @@ def run_volume_benchmark(
     out_dir = _results_dir(out_dir or Path("benchmark/results") / datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S"))
     meta = {
         "run_at": datetime.now(timezone.utc).isoformat(),
+        "run_label": os.environ.get("BENCHMARK_RUN_LABEL", "H10"),
         "environment": os.environ.get("BENCHMARK_ENV", "local"),
         "n_tasks_per_band": n_tasks,
         "bands": bands,
         "seed": seed,
         "threshold_provenance": THRESHOLD_PROVENANCE,
         "fairness_doc": "benchmark/FAIRNESS_H9.md",
+        "code_version": "0.9.2",
+        "fixes_applied": [
+            "react_cache_seed",
+            "pattern_state_cache_score",
+            "cross_session_memory",
+            "memory_every_n_sessions=2",
+        ],
     }
     (out_dir / "run_meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
 

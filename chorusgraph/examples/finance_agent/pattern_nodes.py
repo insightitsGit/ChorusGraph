@@ -8,11 +8,13 @@ from chorusgraph.agents.agent import Agent
 from chorusgraph.agents.agent_node import AgentNode, agent_result_to_state
 from chorusgraph.agents.policy import PlanPolicy, PlanSolveOpts, ReActOpts, ReflectionOpts
 from chorusgraph.agents.reflection import ValidationVerdict, run_reflection
+from chorusgraph.agents.strategies.base import AgentRunResult
 from chorusgraph.examples.finance_agent.nodes import (
     _future_value_in_text,
     _rate_in_text,
     make_cache_gate_handler,
     make_writer_handler,
+    seed_fx_cache_from_tool_calls,
 )
 from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
 from chorusgraph.nodes.roles import ResearcherNode, ValidatorNode
@@ -33,6 +35,17 @@ def _rule_chain_from_trace(trace) -> List[str]:
     return rules
 
 
+def _react_cache_seed_mapper(
+    runtime: FinanceRuntime,
+    state: Dict[str, Any],
+    result: AgentRunResult,
+) -> Dict[str, Any]:
+    if state.get("cache_hit"):
+        return {}
+    seed_fx_cache_from_tool_calls(runtime, state.get("message") or "", result.tool_calls)
+    return {}
+
+
 def make_react_agent_handler(runtime: FinanceRuntime, *, policy: PlanPolicy | None = None):
     """Legacy handler — prefer AgentNode."""
     policy = policy or PlanPolicy(max_steps=6)
@@ -44,7 +57,11 @@ def make_react_agent_handler(runtime: FinanceRuntime, *, policy: PlanPolicy | No
         policy=policy,
         pattern_opts=ReActOpts(max_tool_calls=policy.max_steps),
     )
-    node = AgentNode(agent, node_id="react_agent")
+    node = AgentNode(
+        agent,
+        node_id="react_agent",
+        state_mapper=lambda state, result: _react_cache_seed_mapper(runtime, state, result),
+    )
     return node.handler
 
 

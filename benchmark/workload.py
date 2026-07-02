@@ -6,7 +6,39 @@ import random
 from dataclasses import dataclass
 from typing import Dict, List, Literal, Optional
 
-Variant = Literal["exact_repeat", "paraphrase", "novel"]
+Variant = Literal[
+    "exact_repeat",
+    "paraphrase",
+    "novel",
+    "memory_seed",
+    "memory_recall",
+    "memory_recall_cross",
+]
+
+# Memory-bearing sessions — seed turn stores profile; recall turn exercises Cortex.
+MEMORY_PROFILES: Dict[str, Dict[str, object]] = {
+    "memory_risk_conservative": {
+        "seed": (
+            "I'm a conservative investor with low risk tolerance. "
+            "I prefer stable USD-heavy portfolios and minimal FX speculation."
+        ),
+        "recalls": [
+            "Given my stated risk tolerance, would increasing EUR exposure fit my profile?",
+            "What risk profile did I tell you I prefer?",
+        ],
+        "expected_terms": ["conservative", "low", "usd"],
+    },
+    "memory_horizon_long": {
+        "seed": (
+            "I'm investing for a 20-year horizon and can tolerate short-term market volatility."
+        ),
+        "recalls": [
+            "Based on my investment horizon, is a 3-year savings goal aligned with my plan?",
+            "Remind me what time horizon I mentioned for my investments.",
+        ],
+        "expected_terms": ["20", "horizon", "long"],
+    },
+}
 
 # Canonical FX query intents — each maps to fx_rates slug.
 CANONICAL_QUERIES: Dict[str, List[str]] = {
@@ -70,6 +102,8 @@ Repeat/paraphrase model (defensible finance-chat pattern):
 - 30% novel — first occurrence of a canonical intent in the session or one-off compound query.
 
 Sessions group tasks so repeats/paraphrases occur AFTER a seed query warms tool/cache state.
+Every Nth session (default 2) starts with memory_seed; the **next** session opens with
+memory_recall_cross (Cortex group shared, empty chat history — B-only long-term recall).
 Volume: scale n_tasks; full MIN_HITS=300 per slug needs ~750+ fx_rates tasks at 40% repeat
   across sessions (see estimate_min_tasks_for_slug).
 """.strip()
@@ -83,6 +117,8 @@ class WorkloadTask:
     category_slug: str
     variant: Variant
     canonical_id: Optional[str] = None
+    memory_cortex_group: Optional[str] = None
+    cross_session_recall: bool = False
 
 
 def estimate_min_tasks_for_slug(*, min_hits: int = 300, repeat_rate: float = 0.40) -> int:
@@ -98,6 +134,8 @@ def generate_workload(
     seed: int = 42,
     tasks_per_session: int = 5,
     repeat_band_pct: int = 40,
+    include_memory_tasks: bool = True,
+    memory_every_n_sessions: int = 2,
 ) -> List[WorkloadTask]:
     """
     Generate a volume-controllable finance query set.
@@ -115,18 +153,73 @@ def generate_workload(
     session_idx = 0
     task_idx = 0
 
+    memory_ids = list(MEMORY_PROFILES.keys())
+    pending_cross_recall: Optional[Dict[str, str]] = None
+
     while len(tasks) < n_tasks:
         session_id = f"session-{session_idx:03d}"
         session_canonical = canonical_ids[session_idx % len(canonical_ids)]
         phrases = CANONICAL_QUERIES[session_canonical]
+        memory_session = (
+            include_memory_tasks
+            and memory_every_n_sessions > 0
+            and session_idx % memory_every_n_sessions == 0
+        )
+        memory_profile_id = memory_ids[(session_idx // max(memory_every_n_sessions, 1)) % len(memory_ids)]
+        memory_profile = MEMORY_PROFILES.get(memory_profile_id, {})
+        cortex_group = f"profile-{memory_profile_id}-{(session_idx // max(memory_every_n_sessions, 1)):03d}"
+        fx_pos = 0
+
+        if pending_cross_recall and len(tasks) < n_tasks:
+            recall_msg = pending_cross_recall["message"]
+            tasks.append(
+                WorkloadTask(
+                    task_id=f"task-{task_idx:04d}",
+                    session_id=session_id,
+                    message=recall_msg,
+                    category_slug="user_profile",
+                    variant="memory_recall_cross",
+                    canonical_id=pending_cross_recall["profile_id"],
+                    memory_cortex_group=pending_cross_recall["cortex_group"],
+                    cross_session_recall=True,
+                )
+            )
+            task_idx += 1
+            pending_cross_recall = None
 
         for pos in range(tasks_per_session):
             if len(tasks) >= n_tasks:
                 break
 
-            if pos == 0:
-                variant: Variant = "novel"
+            if memory_session and pos == 0:
+                variant = "memory_seed"
+                message = str(memory_profile.get("seed", ""))
+                slug = "user_profile"
+                canonical = memory_profile_id
+                recalls = list(memory_profile.get("recalls") or [])
+                pending_cross_recall = {
+                    "profile_id": memory_profile_id,
+                    "cortex_group": cortex_group,
+                    "message": recalls[session_idx % len(recalls)] if recalls else "",
+                }
+                tasks.append(
+                    WorkloadTask(
+                        task_id=f"task-{task_idx:04d}",
+                        session_id=session_id,
+                        message=message,
+                        category_slug=slug,
+                        variant=variant,
+                        canonical_id=canonical,
+                        memory_cortex_group=cortex_group,
+                    )
+                )
+                task_idx += 1
+                continue
+
+            if fx_pos == 0:
+                variant = "novel"
                 message = phrases[0]
+                fx_pos += 1
             else:
                 roll = rng.random()
                 if roll < repeat_model["exact_repeat"]:
@@ -140,8 +233,11 @@ def generate_workload(
                     other = rng.choice([c for c in canonical_ids if c != session_canonical])
                     message = CANONICAL_QUERIES[other][0]
                     session_canonical = other
-
+                fx_pos += 1
             slug = "compound_savings" if session_canonical == "compound_savings" else "fx_rates"
+            canonical = session_canonical
+            mem_group = cortex_group if memory_session else None
+
             tasks.append(
                 WorkloadTask(
                     task_id=f"task-{task_idx:04d}",
@@ -149,7 +245,8 @@ def generate_workload(
                     message=message,
                     category_slug=slug,
                     variant=variant,
-                    canonical_id=session_canonical,
+                    canonical_id=canonical,
+                    memory_cortex_group=mem_group,
                 )
             )
             task_idx += 1
@@ -161,6 +258,13 @@ def generate_workload(
 
 def workload_stats(tasks: List[WorkloadTask]) -> Dict[str, int]:
     stats: Dict[str, int] = {"total": len(tasks), "sessions": len({t.session_id for t in tasks})}
-    for variant in ("exact_repeat", "paraphrase", "novel"):
+    for variant in (
+        "exact_repeat",
+        "paraphrase",
+        "novel",
+        "memory_seed",
+        "memory_recall",
+        "memory_recall_cross",
+    ):
         stats[variant] = sum(1 for t in tasks if t.variant == variant)
     return stats

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from benchmark.measure import TaskMeasurement, score_task_success
@@ -19,6 +20,7 @@ from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
 
 # H9 fairness: B MUST use LLM ReAct/AgentNode, not regex researcher (BENCHMARK.md checklist).
 B_REASONING_PATH = "react_agent/AgentNode"
+BENCHMARK_CORTEX_ROOT = Path(".chorusgraph/benchmark_sessions")
 
 
 def _task_success(result: Dict[str, Any], task: WorkloadTask) -> bool:
@@ -29,6 +31,7 @@ def _task_success(result: Dict[str, Any], task: WorkloadTask) -> bool:
         validation=result.get("validation"),
         canonical_id=task.canonical_id,
         tool_result=result.get("tool_result"),
+        variant=task.variant,
     )
 
 
@@ -40,33 +43,49 @@ class ContainerBRunner:
         self._sessions: Dict[str, tuple[Any, FinanceRuntime]] = {}
         self._histories: Dict[str, List[Dict[str, str]]] = {}
 
-    def _session_graph(self, session_id: str):
-        if session_id not in self._sessions:
+    @staticmethod
+    def _cortex_dir(task: WorkloadTask) -> Path:
+        return BENCHMARK_CORTEX_ROOT / (task.memory_cortex_group or task.session_id)
+
+    def _graph_key(self, task: WorkloadTask) -> str:
+        return f"{task.session_id}|{self._cortex_dir(task)}"
+
+    def _session_graph(self, task: WorkloadTask):
+        key = self._graph_key(task)
+        if key not in self._sessions:
             gemini = InstrumentedGeminiClient()
-            runtime = FinanceRuntime(tenant_id=TENANT_ID, gemini=gemini)
+            cortex_dir = self._cortex_dir(task)
+            runtime = FinanceRuntime(tenant_id=TENANT_ID, gemini=gemini, cortex_cache_dir=str(cortex_dir))
             compiled, rt = build_react_graph(
                 runtime,
                 policy=PlanPolicy(max_steps=6),
                 coarse_threshold=self._thresholds.coarse,
                 verify_threshold=self._thresholds.verify_for("fx_rates"),
             )
-            self._sessions[session_id] = (compiled, rt)
-        return self._sessions[session_id]
+            self._sessions[key] = (compiled, rt)
+        return self._sessions[key]
 
     def run(self, task: WorkloadTask) -> TaskMeasurement:
-        compiled, runtime = self._session_graph(task.session_id)
+        compiled, runtime = self._session_graph(task)
         gemini = runtime.gemini
         assert gemini is not None and hasattr(gemini, "usage") and hasattr(gemini, "reset_usage")
         gemini.reset_usage()
 
         history = self._histories.get(task.session_id, [])
+        if task.cross_session_recall:
+            history = []
         started = time.perf_counter()
         state = pattern_initial_state(task.message, conversation_history=history)
         try:
             result = compiled.invoke(state)
             latency_ms = int((time.perf_counter() - started) * 1000)
-            if result.get("conversation_history"):
+            if result.get("conversation_history") and not task.cross_session_recall:
                 self._histories[task.session_id] = list(result["conversation_history"])
+            response = result.get("response") or ""
+            if response.strip() and runtime.cortex is not None:
+                runtime.schedule_turn_digest(task.message, response, turn_id=task.task_id)
+                if task.variant == "memory_seed":
+                    runtime.cortex.wait_for_digest(timeout=120)
             usage = gemini.usage
             grounding = result.get("memory_confidence")
             agent_trace = result.get("agent_trace") or []
@@ -92,6 +111,8 @@ class ContainerBRunner:
                 grounding_score=float(grounding) if grounding is not None else None,
                 tool_calls=len(result.get("tool_calls") or []),
                 reasoning_path=B_REASONING_PATH if (has_react or result.get("cache_hit")) else "unknown",
+                memory_cortex_group=task.memory_cortex_group,
+                cross_session_recall=task.cross_session_recall or None,
             )
         except Exception as exc:
             latency_ms = int((time.perf_counter() - started) * 1000)
@@ -115,4 +136,6 @@ class ContainerBRunner:
                 error=str(exc),
                 tool_calls=0,
                 reasoning_path=B_REASONING_PATH,
+                memory_cortex_group=task.memory_cortex_group,
+                cross_session_recall=task.cross_session_recall or None,
             )

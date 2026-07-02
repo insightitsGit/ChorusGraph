@@ -1,0 +1,19 @@
+{
+  "run_name": "h9_pilot",
+  "archived_at": "2026-07-02T08:38:40.025160+00:00",
+  "source_dir": "benchmark/results/h9_pilot",
+  "files_copied": [
+    "aggregate_analysis.json",
+    "band_40_analysis.json",
+    "run_meta.json",
+    "band_40_container_a.jsonl",
+    "band_40_container_b.jsonl"
+  ],
+  "jsonl_line_counts": {
+    "band_40_container_a.jsonl": 10,
+    "band_40_container_b.jsonl": 10
+  },
+  "label": "H9 pilot band 40",
+  "valid_for_cache_thesis": "no",
+  "notes": "Early pilot before compound/rubric fixes."
+}

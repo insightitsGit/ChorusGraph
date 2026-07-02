@@ -90,22 +90,15 @@ class CortexMemoryService:
         return self._recall_one(query)
 
     def recall_for_turn(self, message: str) -> Optional[RecallContext]:
-        """Budgeted recall — question first, then general profile fallback."""
-        for candidate in (
-            message,
-            "What are the user's stated preferences, risk tolerance, and investment profile?",
-        ):
-            ctx = self._recall_one(candidate)
-            if ctx:
-                return ctx
-        return None
+        """Recall for the user's message only — no demo profile fallback."""
+        return self._recall_one(message)
 
     def recall_structured(
         self,
         query: str,
         *,
         cache: Any = None,
-        profile_fallback: bool = True,
+        profile_fallback: bool = False,
     ) -> Optional[StructuredRecallContext]:
         """
         Vector + graph-fact recall for internal hops — no rendered prose.

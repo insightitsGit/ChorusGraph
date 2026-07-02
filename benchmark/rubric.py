@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, Optional
 
+from benchmark.workload import MEMORY_PROFILES
 from chorusgraph.transforms.intent import parse_compound_params
 
 _FV_TOLERANCE = 1.0  # dollars
@@ -36,16 +37,34 @@ def _score_fx_pair(answer: str, from_c: str, to_c: str, tool_result: Optional[Di
     return True
 
 
+def _score_memory(canonical_id: str, answer: str, *, variant: Optional[str] = None) -> bool:
+    profile = MEMORY_PROFILES.get(canonical_id)
+    if not profile:
+        return False
+    text = (answer or "").strip()
+    if len(text) < 10:
+        return False
+    if variant == "memory_seed":
+        return True
+    lower = text.lower()
+    terms = [str(t).lower() for t in profile.get("expected_terms", [])]
+    return any(term in lower for term in terms)
+
+
 def score_by_canonical(
     *,
     canonical_id: str,
     message: str,
     answer: str,
     tool_result: Optional[Dict[str, Any]] = None,
+    variant: Optional[str] = None,
 ) -> bool:
     text = (answer or "").strip()
     if len(text) < 10:
         return False
+
+    if canonical_id.startswith("memory_"):
+        return _score_memory(canonical_id, text, variant=variant)
 
     if canonical_id == "compound_savings":
         params = parse_compound_params(message)

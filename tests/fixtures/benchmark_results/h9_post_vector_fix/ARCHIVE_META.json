@@ -1,0 +1,16 @@
+{
+  "run_name": "h9_post_vector_fix",
+  "archived_at": "2026-07-02T08:38:40.029160+00:00",
+  "source_dir": "benchmark/results/h9_post_vector_fix",
+  "files_copied": [
+    "live_ab.json",
+    "live_ab_30tasks.json",
+    "live_ab_5tasks.json",
+    "live_quota_blocked.json",
+    "offline_ab.json"
+  ],
+  "jsonl_line_counts": {},
+  "label": "H9 post vector fix live runs",
+  "valid_for_cache_thesis": "partial",
+  "notes": "30-task live A/B JSON snapshots."
+}

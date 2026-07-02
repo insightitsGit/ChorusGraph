@@ -1,0 +1,19 @@
+{
+  "run_name": "cache_seed_pilot_40",
+  "archived_at": "2026-07-02T08:38:39.941029+00:00",
+  "source_dir": "benchmark/results/cache_seed_pilot_40",
+  "files_copied": [
+    "aggregate_analysis.json",
+    "band_40_analysis.json",
+    "run_meta.json",
+    "band_40_container_a.jsonl",
+    "band_40_container_b.jsonl"
+  ],
+  "jsonl_line_counts": {
+    "band_40_container_a.jsonl": 40,
+    "band_40_container_b.jsonl": 40
+  },
+  "label": "Cache seed fix pilot",
+  "valid_for_cache_thesis": "yes",
+  "notes": "40 tasks band 40; cache ~37.5% after ReAct seed fix; no memory tasks."
+}

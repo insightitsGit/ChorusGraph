@@ -1,0 +1,19 @@
+{
+  "run_name": "h10_final_pilot_40",
+  "archived_at": "2026-07-02T08:38:39.945036+00:00",
+  "source_dir": "benchmark/results/h10_final_pilot_40",
+  "files_copied": [
+    "aggregate_analysis.json",
+    "band_40_analysis.json",
+    "run_meta.json",
+    "band_40_container_a.jsonl",
+    "band_40_container_b.jsonl"
+  ],
+  "jsonl_line_counts": {
+    "band_40_container_a.jsonl": 40,
+    "band_40_container_b.jsonl": 40
+  },
+  "label": "H10 final pilot (all fixes)",
+  "valid_for_cache_thesis": "yes",
+  "notes": "40 tasks; cache seed + cache_score + cross-session memory + density=2."
+}

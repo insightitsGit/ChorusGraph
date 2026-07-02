@@ -1,0 +1,159 @@
+{
+  "updated_at": "2026-07-02T08:38:40.035882+00:00",
+  "fixtures_root": "tests/fixtures/benchmark_results",
+  "source_root": "benchmark/results",
+  "runs": [
+    {
+      "run_name": "cache_seed_pilot_40",
+      "archived_at": "2026-07-02T08:38:39.941029+00:00",
+      "source_dir": "benchmark/results/cache_seed_pilot_40",
+      "files_copied": [
+        "aggregate_analysis.json",
+        "band_40_analysis.json",
+        "run_meta.json",
+        "band_40_container_a.jsonl",
+        "band_40_container_b.jsonl"
+      ],
+      "jsonl_line_counts": {
+        "band_40_container_a.jsonl": 40,
+        "band_40_container_b.jsonl": 40
+      },
+      "label": "Cache seed fix pilot",
+      "valid_for_cache_thesis": "yes",
+      "notes": "40 tasks band 40; cache ~37.5% after ReAct seed fix; no memory tasks."
+    },
+    {
+      "run_name": "h10_final_pilot_40",
+      "archived_at": "2026-07-02T08:38:39.945036+00:00",
+      "source_dir": "benchmark/results/h10_final_pilot_40",
+      "files_copied": [
+        "aggregate_analysis.json",
+        "band_40_analysis.json",
+        "run_meta.json",
+        "band_40_container_a.jsonl",
+        "band_40_container_b.jsonl"
+      ],
+      "jsonl_line_counts": {
+        "band_40_container_a.jsonl": 40,
+        "band_40_container_b.jsonl": 40
+      },
+      "label": "H10 final pilot (all fixes)",
+      "valid_for_cache_thesis": "yes",
+      "notes": "40 tasks; cache seed + cache_score + cross-session memory + density=2."
+    },
+    {
+      "run_name": "h10_volume",
+      "archived_at": "2026-07-02T08:38:39.953924+00:00",
+      "source_dir": "benchmark/results/h10_volume",
+      "files_copied": [
+        "aggregate_analysis.json",
+        "band_40_analysis.json",
+        "band_60_analysis.json",
+        "run.log",
+        "run_meta.json",
+        "band_40_container_a.jsonl",
+        "band_40_container_b.jsonl",
+        "band_60_container_a.jsonl",
+        "band_60_container_b.jsonl"
+      ],
+      "jsonl_line_counts": {
+        "band_40_container_a.jsonl": 1000,
+        "band_40_container_b.jsonl": 1000,
+        "band_60_container_a.jsonl": 1000,
+        "band_60_container_b.jsonl": 1000
+      },
+      "label": "H10 volume (pre-cache-seed-fix)",
+      "valid_for_cache_thesis": "no",
+      "notes": "1000 tasks x bands 40+60; cache_hit_rate 0% \u2014 ReAct never seeded cache."
+    },
+    {
+      "run_name": "h9_full",
+      "archived_at": "2026-07-02T08:38:39.979805+00:00",
+      "source_dir": "benchmark/results/h9_full",
+      "files_copied": [
+        "aggregate_analysis.json",
+        "band_20_analysis.json",
+        "band_40_analysis.json",
+        "band_60_analysis.json",
+        "run_meta.json",
+        "band_20_container_a.jsonl",
+        "band_20_container_b.jsonl",
+        "band_40_container_a.jsonl",
+        "band_40_container_b.jsonl",
+        "band_60_container_a.jsonl",
+        "band_60_container_b.jsonl"
+      ],
+      "jsonl_line_counts": {
+        "band_20_container_a.jsonl": 1000,
+        "band_20_container_b.jsonl": 1000,
+        "band_40_container_a.jsonl": 1000,
+        "band_40_container_b.jsonl": 1000,
+        "band_60_container_a.jsonl": 1000,
+        "band_60_container_b.jsonl": 1000
+      },
+      "label": "H9 full bands 20/40/60",
+      "valid_for_cache_thesis": "no",
+      "notes": "Pre-fix volume run; band 20 mostly novel."
+    },
+    {
+      "run_name": "h9_pilot",
+      "archived_at": "2026-07-02T08:38:40.025160+00:00",
+      "source_dir": "benchmark/results/h9_pilot",
+      "files_copied": [
+        "aggregate_analysis.json",
+        "band_40_analysis.json",
+        "run_meta.json",
+        "band_40_container_a.jsonl",
+        "band_40_container_b.jsonl"
+      ],
+      "jsonl_line_counts": {
+        "band_40_container_a.jsonl": 10,
+        "band_40_container_b.jsonl": 10
+      },
+      "label": "H9 pilot band 40",
+      "valid_for_cache_thesis": "no",
+      "notes": "Early pilot before compound/rubric fixes."
+    },
+    {
+      "run_name": "h9_post_vector_fix",
+      "archived_at": "2026-07-02T08:38:40.029160+00:00",
+      "source_dir": "benchmark/results/h9_post_vector_fix",
+      "files_copied": [
+        "live_ab.json",
+        "live_ab_30tasks.json",
+        "live_ab_5tasks.json",
+        "live_quota_blocked.json",
+        "offline_ab.json"
+      ],
+      "jsonl_line_counts": {},
+      "label": "H9 post vector fix live runs",
+      "valid_for_cache_thesis": "partial",
+      "notes": "30-task live A/B JSON snapshots."
+    },
+    {
+      "run_name": "memory_pilot_40",
+      "archived_at": "2026-07-02T08:38:40.033160+00:00",
+      "source_dir": "benchmark/results/memory_pilot_40",
+      "files_copied": [
+        "aggregate_analysis.json",
+        "band_40_analysis.json",
+        "run_meta.json",
+        "band_40_container_a.jsonl",
+        "band_40_container_b.jsonl"
+      ],
+      "jsonl_line_counts": {
+        "band_40_container_a.jsonl": 40,
+        "band_40_container_b.jsonl": 40
+      },
+      "label": "Memory + cache pilot (in-session recall)",
+      "valid_for_cache_thesis": "yes",
+      "notes": "40 tasks; same-session memory recall; belief calibration partial."
+    }
+  ],
+  "code_milestones": {
+    "cache_seed_react_fix": "ReAct path seeds semantic cache after fetch_exchange_rate",
+    "cache_score_pattern_state": "PatternState includes cache_score for LangGraph propagation",
+    "cross_session_memory": "memory_seed session N, memory_recall_cross session N+1",
+    "memory_density_default": "memory_every_n_sessions=2"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "run_name": "h9_full",
+  "archived_at": "2026-07-02T08:38:39.979805+00:00",
+  "source_dir": "benchmark/results/h9_full",
+  "files_copied": [
+    "aggregate_analysis.json",
+    "band_20_analysis.json",
+    "band_40_analysis.json",
+    "band_60_analysis.json",
+    "run_meta.json",
+    "band_20_container_a.jsonl",
+    "band_20_container_b.jsonl",
+    "band_40_container_a.jsonl",
+    "band_40_container_b.jsonl",
+    "band_60_container_a.jsonl",
+    "band_60_container_b.jsonl"
+  ],
+  "jsonl_line_counts": {
+    "band_20_container_a.jsonl": 1000,
+    "band_20_container_b.jsonl": 1000,
+    "band_40_container_a.jsonl": 1000,
+    "band_40_container_b.jsonl": 1000,
+    "band_60_container_a.jsonl": 1000,
+    "band_60_container_b.jsonl": 1000
+  },
+  "label": "H9 full bands 20/40/60",
+  "valid_for_cache_thesis": "no",
+  "notes": "Pre-fix volume run; band 20 mostly novel."
+}

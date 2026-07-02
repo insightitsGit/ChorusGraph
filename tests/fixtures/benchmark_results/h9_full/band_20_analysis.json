@@ -1,0 +1,145 @@
+{
+  "repeat_band_pct": 20,
+  "n_tasks": 1000,
+  "n_valid_a": 599,
+  "n_valid_b": 598,
+  "n_quota_blocked": 803,
+  "quota_blocked": false,
+  "seed": 62,
+  "workload_stats": {
+    "total": 1000,
+    "sessions": 200,
+    "exact_repeat": 89,
+    "paraphrase": 78,
+    "novel": 833
+  },
+  "compare_ab": {
+    "n_paired": 598,
+    "n_valid_a": 599,
+    "n_valid_b": 598,
+    "cost_delta_usd_per_task": {
+      "point": 0.00017116580267558526,
+      "lower95": 0.00016232322115384613,
+      "upper95": 0.0001798116973244147,
+      "n": 598,
+      "method": "bootstrap_2000"
+    },
+    "latency_delta_ms": {
+      "point": 3283.9799331103677,
+      "lower95": 3016.594356187291,
+      "upper95": 3546.5951505016715,
+      "n": 598,
+      "method": "bootstrap_2000"
+    },
+    "container_a": {
+      "latency_ms_p50": {
+        "point": 2858.0,
+        "lower95": 2729.0,
+        "upper95": 3031.0,
+        "n": 599,
+        "method": "bootstrap_2000"
+      },
+      "latency_ms_p95": {
+        "point": 8117.800000000001,
+        "lower95": 7269.1,
+        "upper95": 9977.847500000013,
+        "n": 599,
+        "method": "bootstrap_2000"
+      },
+      "cost_per_task_usd": {
+        "point": 0.00023357153589315525,
+        "lower95": 0.0002288686665275459,
+        "upper95": 0.00023879109766277126,
+        "n": 599,
+        "method": "bootstrap_2000"
+      },
+      "accuracy_rate": {
+        "point": 0.9115191986644408,
+        "lower95": 0.8913202156531734,
+        "upper95": 0.9317181816757081,
+        "n": 599,
+        "method": "wilson_95"
+      },
+      "llm_calls_per_task": {
+        "point": 2.360601001669449,
+        "lower95": 2.317195325542571,
+        "upper95": 2.4090150250417364,
+        "n": 599,
+        "method": "bootstrap_2000"
+      }
+    },
+    "container_b": {
+      "latency_ms_p50": {
+        "point": 5383.5,
+        "lower95": 5229.0,
+        "upper95": 5498.0,
+        "n": 598,
+        "method": "bootstrap_2000"
+      },
+      "latency_ms_p95": {
+        "point": 14074.8,
+        "lower95": 13441.5,
+        "upper95": 15068.649999999994,
+        "n": 598,
+        "method": "bootstrap_2000"
+      },
+      "cost_per_task_usd": {
+        "point": 0.00040473561872909696,
+        "lower95": 0.00039634459239130433,
+        "upper95": 0.00041350183946488295,
+        "n": 598,
+        "method": "bootstrap_2000"
+      },
+      "accuracy_rate": {
+        "point": 0.9046822742474916,
+        "lower95": 0.8836627790667511,
+        "upper95": 0.9257017694282321,
+        "n": 598,
+        "method": "wilson_95"
+      },
+      "llm_calls_per_task": {
+        "point": 4.182274247491639,
+        "lower95": 4.147157190635451,
+        "upper95": 4.217391304347826,
+        "n": 598,
+        "method": "bootstrap_2000"
+      }
+    },
+    "b_cache": {
+      "cache_hit_rate": {
+        "point": 0.0,
+        "lower95": 0.0,
+        "upper95": 0.006382841800598862,
+        "n": 598,
+        "method": "wilson_95"
+      }
+    },
+    "b_cache_fp_by_slug": {
+      "fx_rates": {
+        "n_tasks": 598,
+        "n_would_serve": 0,
+        "n_fp": 0,
+        "fp_rate_point": 0.0,
+        "fp_upper95": 1.0,
+        "hit_rate_point": 0.0,
+        "verdict": "INSUFFICIENT DATA",
+        "cacheable": false,
+        "min_hits_required": 300
+      }
+    }
+  },
+  "belief_calibration": {
+    "confidence_stop": null,
+    "groundedness_floor": null,
+    "memory_confidence_gate": null,
+    "sample_cache_scores": 0,
+    "sample_grounding_scores": 0,
+    "notes": [
+      "groundedness_floor unavailable \u2014 no Cortex recall in benchmark tasks"
+    ]
+  },
+  "thresholds": {
+    "coarse": 0.88,
+    "verify_fx_rates": 0.95
+  }
+}

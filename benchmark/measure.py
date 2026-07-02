@@ -18,6 +18,7 @@ def score_task_success(
     validation: Optional[Dict[str, Any]] = None,
     canonical_id: Optional[str] = None,
     tool_result: Optional[Dict[str, Any]] = None,
+    variant: Optional[str] = None,
 ) -> bool:
     """Fixed rubric applied identically to Container A and B."""
     import re
@@ -34,6 +35,7 @@ def score_task_success(
             message=message,
             answer=answer,
             tool_result=tool_result,
+            variant=variant,
         )
     text = (answer or "").strip()
     if len(text) < 10:
@@ -70,6 +72,8 @@ class TaskMeasurement:
     reasoning_path: Optional[str] = None
     repeat_band_pct: Optional[int] = None
     category_slug: Optional[str] = None
+    memory_cortex_group: Optional[str] = None
+    cross_session_recall: Optional[bool] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)

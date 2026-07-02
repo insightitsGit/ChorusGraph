@@ -17,6 +17,7 @@ def _task_success(result: Dict[str, Any], task: WorkloadTask) -> bool:
         validation=result.get("validation"),
         canonical_id=task.canonical_id,
         tool_result=result.get("tool_result"),
+        variant=task.variant,
     )
 
 
@@ -27,6 +28,8 @@ class ContainerARunner:
 
     def run(self, task: WorkloadTask) -> TaskMeasurement:
         history = self._histories.get(task.session_id, [])
+        if task.cross_session_recall:
+            history = []
         result = run_task(
             task.message,
             compiled=self.compiled,
@@ -34,7 +37,7 @@ class ContainerARunner:
             thread_id=task.session_id,
             conversation_history=history,
         )
-        if result.get("conversation_history"):
+        if result.get("conversation_history") and not task.cross_session_recall:
             self._histories[task.session_id] = list(result["conversation_history"])
 
         usage = result.get("_llm_usage")
@@ -53,4 +56,6 @@ class ContainerARunner:
             answer=(result.get("response") or "")[:2000],
             tool_calls=len(result.get("tool_calls") or []),
             error=result.get("error"),
+            memory_cortex_group=task.memory_cortex_group,
+            cross_session_recall=task.cross_session_recall or None,
         )

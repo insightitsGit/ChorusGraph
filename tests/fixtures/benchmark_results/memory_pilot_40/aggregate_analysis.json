@@ -1,0 +1,189 @@
+{
+  "meta": {
+    "run_at": "2026-07-02T08:25:38.477055+00:00",
+    "run_label": "H10",
+    "environment": "local",
+    "n_tasks_per_band": 40,
+    "bands": [
+      40
+    ],
+    "seed": 42,
+    "threshold_provenance": "Coarse 0.88 \u2014 H2 shadow harness default, H3 replay default, cache_gate/gate.py default.\nVerify 0.95 (fx_rates) \u2014 gate.py default verify_threshold; no slug-specific CACHEABLE point yet\n  (H3 production replay: all slugs INSUFFICIENT DATA, n << MIN_HITS=300).\nH4 demo 0.82/0.85 \u2014 excluded per docs/BENCHMARK.md anti-rigging checklist.\nFull fx_rates frontier will be produced when benchmark workload runs at scale (H9).",
+    "fairness_doc": "benchmark/FAIRNESS_H9.md",
+    "code_version": "0.9.1"
+  },
+  "bands": {
+    "40": {
+      "repeat_band_pct": 40,
+      "n_tasks": 40,
+      "seed": 82,
+      "workload_stats": {
+        "total": 40,
+        "sessions": 8,
+        "exact_repeat": 15,
+        "paraphrase": 8,
+        "novel": 13,
+        "memory_seed": 2,
+        "memory_recall": 2
+      },
+      "compare_ab": {
+        "n_paired": 40,
+        "n_valid_a": 40,
+        "n_valid_b": 40,
+        "cost_delta_usd_per_task": {
+          "point": -7.267499999999999e-05,
+          "lower95": -0.00011455209374999999,
+          "upper95": -2.8012499999999996e-05,
+          "n": 40,
+          "method": "bootstrap_2000"
+        },
+        "latency_delta_ms": {
+          "point": -1590.425,
+          "lower95": -2277.1037499999998,
+          "upper95": -859.6881250000009,
+          "n": 40,
+          "method": "bootstrap_2000"
+        },
+        "container_a": {
+          "latency_ms_p50": {
+            "point": 2901.0,
+            "lower95": 2631.0,
+            "upper95": 3266.0,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "latency_ms_p95": {
+            "point": 6283.199999999999,
+            "lower95": 3889.3424999999947,
+            "upper95": 7831.0,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "cost_per_task_usd": {
+            "point": 0.000202695,
+            "lower95": 0.00018922378125,
+            "upper95": 0.0002171821875,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "accuracy_rate": {
+            "point": 0.75,
+            "lower95": 0.6418711863909631,
+            "upper95": 0.8581288136090369,
+            "n": 40,
+            "method": "wilson_95"
+          },
+          "llm_calls_per_task": {
+            "point": 2.15,
+            "lower95": 2.05,
+            "upper95": 2.275,
+            "n": 40,
+            "method": "bootstrap_2000"
+          }
+        },
+        "container_b": {
+          "latency_ms_p50": {
+            "point": 2402.5,
+            "lower95": 14.0,
+            "upper95": 2643.0,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "latency_ms_p95": {
+            "point": 4638.799999999997,
+            "lower95": 3113.2,
+            "upper95": 7035.0,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "cost_per_task_usd": {
+            "point": 0.00013002,
+            "lower95": 9.051140624999999e-05,
+            "upper95": 0.00017333474999999993,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "accuracy_rate": {
+            "point": 0.95,
+            "lower95": 0.9138206673861483,
+            "upper95": 0.9861793326138516,
+            "n": 40,
+            "method": "wilson_95"
+          },
+          "llm_calls_per_task": {
+            "point": 1.125,
+            "lower95": 0.8,
+            "upper95": 1.475,
+            "n": 40,
+            "method": "bootstrap_2000"
+          }
+        },
+        "b_cache": {
+          "cache_hit_rate": {
+            "point": 0.375,
+            "lower95": 0.22032439137301107,
+            "upper95": 0.5296756086269889,
+            "n": 40,
+            "method": "wilson_95"
+          }
+        },
+        "b_cache_fp_by_slug": {
+          "user_profile": {
+            "n_tasks": 4,
+            "n_would_serve": 0,
+            "n_fp": 0,
+            "fp_rate_point": 0.0,
+            "fp_upper95": 1.0,
+            "hit_rate_point": 0.0,
+            "verdict": "INSUFFICIENT DATA",
+            "cacheable": false,
+            "min_hits_required": 300
+          },
+          "fx_rates": {
+            "n_tasks": 34,
+            "n_would_serve": 15,
+            "n_fp": 1,
+            "fp_rate_point": 0.06666666666666667,
+            "fp_upper95": 0.29816529873780023,
+            "hit_rate_point": 0.4411764705882353,
+            "verdict": "INSUFFICIENT DATA",
+            "cacheable": false,
+            "min_hits_required": 300
+          },
+          "compound_savings": {
+            "n_tasks": 2,
+            "n_would_serve": 0,
+            "n_fp": 0,
+            "fp_rate_point": 0.0,
+            "fp_upper95": 1.0,
+            "hit_rate_point": 0.0,
+            "verdict": "INSUFFICIENT DATA",
+            "cacheable": false,
+            "min_hits_required": 300
+          }
+        }
+      },
+      "belief_calibration": {
+        "confidence_stop": null,
+        "groundedness_floor": 0.5,
+        "memory_confidence_gate": 0.5,
+        "sample_cache_scores": 0,
+        "sample_grounding_scores": 20,
+        "notes": []
+      },
+      "thresholds": {
+        "coarse": 0.88,
+        "verify_fx_rates": 0.95
+      }
+    }
+  },
+  "belief_calibration_pooled": {
+    "confidence_stop": null,
+    "groundedness_floor": 0.5,
+    "memory_confidence_gate": 0.5,
+    "sample_cache_scores": 0,
+    "sample_grounding_scores": 20,
+    "notes": []
+  },
+  "ci_table_markdown": "| Band | Metric | A (95% CI) | B (95% CI) |\n|------|--------|------------|------------|\n| 40% | latency_ms_p50 | 2901.0000 [2631.0, 3266.0] | 2402.5000 [14.0, 2643.0] |\n| 40% | cost_per_task_usd | 0.0002 [0.00018922378125, 0.0002171821875] | 0.0001 [9.051140624999999e-05, 0.00017333474999999993] |\n| 40% | accuracy_rate | 0.7500 [0.6418711863909631, 0.8581288136090369] | 0.9500 [0.9138206673861483, 0.9861793326138516] |\n| 40% | b_cache_hit_rate | \u2014 | 0.3750 [0.22032439137301107, 0.5296756086269889] |"
+}
