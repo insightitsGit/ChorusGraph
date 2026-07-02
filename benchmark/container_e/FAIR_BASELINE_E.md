@@ -29,8 +29,9 @@ researcher → tool → writer → validator
 | Model | `InstrumentedGeminiClient` | Same |
 | Cache | None | Semantic cache_gate (like B) |
 | Cortex | None | Yes (memory tasks, like B) |
-| Handoffs | Growing text `context` | Envelope + compact `hop_input` |
-| Extra hops | None | vector_ingress, cache_gate |
+| Handoffs | Growing text `context` | Envelope + resolve + compact `hop_input` |
+| Extra hops | None | vector_ingress, cache_gate (conditional) |
+| Reference | — | [`docs/FINANCE_MULTIAGENT_CHORUS.md`](../../docs/FINANCE_MULTIAGENT_CHORUS.md) |
 
 ## Parity with Container A
 

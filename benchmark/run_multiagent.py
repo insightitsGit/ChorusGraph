@@ -23,10 +23,11 @@ def run_multiagent_benchmark(
     n_cases: int = 18,
     *,
     seed: int = 42,
+    repeat_band_pct: int = 40,
     containers: Optional[List[str]] = None,
 ) -> Dict[str, List[MultiAgentMeasurement]]:
     containers = containers or ["C", "D"]
-    cases = generate_healthcare_workload(n_cases, seed=seed)
+    cases = generate_healthcare_workload(n_cases, seed=seed, repeat_band_pct=repeat_band_pct)
     results: Dict[str, List[MultiAgentMeasurement]] = {"C": [], "D": []}
     runner_c = ContainerCRunner() if "C" in containers else None
     runner_d = ContainerDRunner() if "D" in containers else None
@@ -108,6 +109,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(description="Healthcare multi-agent C vs D harness (H13)")
     parser.add_argument("--cases", type=int, default=18, help="Cases across depth sweep (default 18)")
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--band", type=int, default=40, choices=[20, 40, 60])
     parser.add_argument("--container", choices=["C", "D", "both"], default="both")
     parser.add_argument("--output-dir", type=Path, default=Path("benchmark/results/h13_multiagent_dryrun"))
     args = parser.parse_args(argv)
@@ -121,7 +123,7 @@ def main(argv: Optional[List[str]] = None) -> None:
 
     containers = ["C", "D"] if args.container == "both" else [args.container]
     print(f"Running multi-agent dry-run: {args.cases} cases, containers={containers}")
-    results = run_multiagent_benchmark(args.cases, seed=args.seed, containers=containers)
+    results = run_multiagent_benchmark(args.cases, seed=args.seed, repeat_band_pct=args.band, containers=containers)
     print(format_report(results))
 
     out_dir = args.output_dir

@@ -15,6 +15,7 @@ from typing import Dict, List, Optional
 
 from benchmark.container_e.runner import ContainerERunner
 from benchmark.container_f.runner import ContainerFRunner
+from benchmark.container_f.trace import clear_trace, trace_path
 from benchmark.measure import TaskMeasurement
 from benchmark.workload import WorkloadTask, generate_workload, workload_stats
 
@@ -27,6 +28,8 @@ def run_finance_multiagent(
     containers: Optional[List[str]] = None,
 ) -> Dict[str, List[TaskMeasurement]]:
     containers = containers or ["E", "F"]
+    if "F" in containers:
+        clear_trace()
     tasks = generate_workload(
         n_tasks,
         seed=seed,
@@ -173,6 +176,8 @@ def main(argv: Optional[List[str]] = None) -> None:
         write_jsonl(out_dir / f"container_{container.lower()}.jsonl", rows)
     print(format_report(results, repeat_band_pct=args.band))
     print(f"\nWrote results to {out_dir}")
+    if "F" in containers and trace_path().exists():
+        print(f"Container F trace: {trace_path()}")
 
 
 if __name__ == "__main__":

@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, List, Optional
 
+from benchmark.container_f.trace import trace_event
+
 
 def compact_json(data: Any) -> str:
     return json.dumps(data, ensure_ascii=False, separators=(",", ":"))
@@ -26,10 +28,27 @@ def envelope_handoff(
     hop: str,
     envelope_id: Optional[str],
     hop_input: Optional[Dict[str, Any]] = None,
+    runtime: Any = None,
+    task_id: str = "",
+    session_id: str = "",
 ) -> str:
     payload: Dict[str, Any] = {"hop": hop, "previous_envelope_id": envelope_id}
+    resolved: Dict[str, Any] = {}
+    if runtime is not None and envelope_id:
+        resolved = resolve_envelope_artifact(runtime, envelope_id)
+        if resolved:
+            payload["previous_artifact"] = resolved
     if hop_input:
         payload["hop_input"] = hop_input
+    trace_event(
+        "envelope_handoff",
+        task_id=task_id,
+        session_id=session_id,
+        hop=hop,
+        envelope_id=envelope_id,
+        resolved=bool(resolved),
+        resolved_keys=sorted(resolved.keys()) if resolved else [],
+    )
     return compact_json(payload)
 
 

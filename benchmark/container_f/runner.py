@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from benchmark.container_f.nodes import BENCHMARK_CORTEX_ROOT, TENANT_ID, build_finance_graph_f
+from benchmark.container_f.trace import clear_trace, trace_event, trace_path
 from benchmark.measure import TaskMeasurement, score_task_success
 from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient
 from benchmark.workload import CANONICAL_QUERIES, WorkloadTask
@@ -56,7 +57,7 @@ class ContainerFRunner:
         gemini = runtime.gemini
         assert gemini is not None and hasattr(gemini, "reset_usage")
         gemini.reset_usage()
-        runtime.session_tool_cache.clear()
+        # F4: do not clear session_tool_cache — preserves seeded FX + envelope artifacts.
 
         history = self._histories.get(task.session_id, [])
         if task.cross_session_recall:
@@ -65,6 +66,14 @@ class ContainerFRunner:
                 runtime.cortex.wait_for_digest(timeout=120)
 
         started = time.perf_counter()
+        trace_event(
+            "task_start",
+            task_id=task.task_id,
+            session_id=task.session_id,
+            variant=task.variant,
+            canonical_id=task.canonical_id,
+            message=task.message[:120],
+        )
         try:
             result = compiled.invoke(
                 {
@@ -94,6 +103,30 @@ class ContainerFRunner:
             tokens_in = sum(h.tokens_in for h in hop_metrics)
             tokens_out = sum(h.tokens_out for h in hop_metrics)
             embed_count = len(result.get("prism_sequence") or [])
+
+            trace_event(
+                "task_end",
+                task_id=task.task_id,
+                session_id=task.session_id,
+                variant=task.variant,
+                latency_ms=latency_ms,
+                cache_hit=result.get("cache_hit"),
+                cache_score=result.get("cache_score"),
+                llm_calls=llm_calls,
+                tokens_in=tokens_in,
+                task_success=score_task_success(
+                    message=task.message,
+                    answer=response,
+                    error=result.get("error"),
+                    validation=result.get("validation"),
+                    canonical_id=task.canonical_id,
+                    tool_result=result.get("tool_result"),
+                    variant=task.variant,
+                ),
+                hops=[h.hop for h in hop_metrics],
+                embed_count=embed_count,
+                trace_path=str(trace_path()),
+            )
 
             return TaskMeasurement(
                 task_id=task.task_id,

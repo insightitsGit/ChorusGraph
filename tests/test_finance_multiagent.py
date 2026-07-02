@@ -5,7 +5,9 @@ from __future__ import annotations
 from unittest.mock import patch
 
 from benchmark.container_e.runner import ContainerERunner, build_finance_graph_e
+from benchmark.container_f.nodes import build_finance_graph_f, route_after_cache_f
 from benchmark.container_f.runner import ContainerFRunner
+from benchmark.container_f.trace import clear_trace, trace_path
 from benchmark.finance_multiagent_shared import heuristic_tool_plan
 from benchmark.workload import WorkloadTask, generate_workload
 
@@ -100,3 +102,43 @@ def test_workload_generates_tasks_for_multiagent():
     tasks = generate_workload(12, seed=42, repeat_band_pct=40)
     assert len(tasks) == 12
     assert any(t.variant == "exact_repeat" for t in tasks)
+
+
+def test_route_after_cache_f_skips_to_writer():
+    assert route_after_cache_f({"cache_hit": True, "tool_result": {"rate": 0.9}}) == "writer"
+    assert route_after_cache_f({"cache_hit": False}) == "researcher"
+
+
+def test_container_f_graph_cache_hit_path_offline():
+    clear_trace()
+    task = WorkloadTask(
+        task_id="f-test-cache",
+        session_id="session-f-001",
+        message="What is the USD to EUR exchange rate today?",
+        category_slug="fx_rates",
+        variant="exact_repeat",
+        canonical_id="usd_eur",
+    )
+    stub = _StubFinanceGemini()
+    graph, _, runtime = build_finance_graph_f(gemini=stub)
+    runtime.seed_tool_cache(task.message, {"from_currency": "USD", "to_currency": "EUR", "rate": 0.87727})
+
+    result = graph.invoke(
+        {
+            "task": task,
+            "message": task.message,
+            "conversation_history": [],
+            "tool_calls": [],
+            "tool_results": [],
+            "hop_metrics": [],
+            "vector_hops": [],
+            "prism_sequence": [],
+            "cache_seed_phrases": [],
+        }
+    )
+    hops = [h.hop for h in result.get("hop_metrics") or []]
+    assert "researcher" not in hops
+    assert "tool" not in hops
+    assert hops == ["vector_ingress", "cache_gate", "writer", "validator"]
+    assert result.get("cache_hit") is True
+    assert trace_path().exists()

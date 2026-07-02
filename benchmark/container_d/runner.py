@@ -15,10 +15,14 @@ from benchmark.container_d.runtime import make_healthcare_envelope_runtime
 from benchmark.healthcare_workload import PIPELINE_AGENTS, HealthcareCase
 from benchmark.multiagent_measure import MultiAgentMeasurement, score_healthcare_answer, totals_from_hops
 from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient
+from chorusgraph.examples.finance_agent.nodes import make_vector_ingress_handler
 from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
 
 
 class HealthcareVectorState(HealthcareState, total=False):
+    message: str
+    raw_embedding_384: List[float]
+    query_vector_64: List[float]
     prism_sequence: Annotated[List[PrismEnvelope], operator.add]
     vector_hops: Annotated[List[Dict[str, Any]], operator.add]
 
@@ -33,12 +37,28 @@ def build_healthcare_graph_d(
     gemini = gemini or InstrumentedGeminiClient()
     nodes = make_d_nodes(gemini, runtime)
     agents = PIPELINE_AGENTS[depth]
+    ingress = make_vector_ingress_handler(runtime)
 
     graph = StateGraph(HealthcareVectorState)
+
+    def vector_ingress_node(state: HealthcareVectorState) -> Dict[str, Any]:
+        started = time.perf_counter()
+        case = state["case"]
+        update = ingress({"message": case.presentation})
+        gemini.reset_usage()
+        return {
+            **update,
+            "message": case.presentation,
+            "vector_hops": [{"hop": "vector_ingress", "dim_64": len(update.get("query_vector_64") or [])}],
+            **_record_hop(state, "vector_ingress", started, gemini),
+        }
+
+    graph.add_node("vector_ingress", vector_ingress_node)
     for name in agents:
         graph.add_node(name, nodes[name])
 
-    graph.add_edge(START, agents[0])
+    graph.add_edge(START, "vector_ingress")
+    graph.add_edge("vector_ingress", agents[0])
     for i in range(len(agents) - 1):
         graph.add_edge(agents[i], agents[i + 1])
     graph.add_edge(agents[-1], END)
@@ -46,7 +66,7 @@ def build_healthcare_graph_d(
 
 
 class ContainerDRunner:
-    """ChorusGraph healthcare multi-agent — PrismLang vector envelope per hop."""
+    """ChorusGraph healthcare multi-agent — embed once + Prism envelope per hop."""
 
     def __init__(self) -> None:
         self._graphs: Dict[int, Any] = {}

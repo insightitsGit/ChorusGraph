@@ -39,11 +39,14 @@ Healthcare C/D remains useful for clinical safety/abstain — but **finance E/F 
 researcher → tool → writer → validator
 ```
 
-Container F prepends:
+Container F prepends Chorus ingress + cache gate, then **branches on hit**:
 
 ```
-vector_ingress → cache_gate → researcher → tool → writer → validator
+vector_ingress → cache_gate ─┬─ hit  → writer → validator
+                             └─ miss → researcher → tool → writer → validator
 ```
+
+**Reference implementation:** [`docs/FINANCE_MULTIAGENT_CHORUS.md`](../docs/FINANCE_MULTIAGENT_CHORUS.md)
 
 ### Container E — LangGraph baseline
 
@@ -54,12 +57,13 @@ vector_ingress → cache_gate → researcher → tool → writer → validator
 
 ### Container F — ChorusGraph
 
-- **Files:** `benchmark/container_f/nodes.py`, `artifacts.py`, `runner.py`
-- **Handoffs:** `envelope_handoff(hop, envelope_id, hop_input)` — compact JSON per hop
-- **Envelope store:** `session_tool_cache["env:{id}"]` — artifacts keyed by envelope_id
-- **Cache gate:** Same as B — on hit, skip tool LLM path; template writer
+- **Files:** `benchmark/container_f/nodes.py`, `artifacts.py`, `cache_helpers.py`, `trace.py`, `runner.py`
+- **Handoffs:** `envelope_handoff(hop, envelope_id, hop_input, runtime)` — resolves `previous_artifact`
+- **Envelope store:** `session_tool_cache["env:{id}"]` — **not cleared per task**
+- **Cache gate:** On hit, **route to writer** (skip researcher + tool); template writer; ~11 ms repeats
 - **Cortex:** Memory seed/recall like B
-- **Cache seed:** After FX tool, seeds canonical paraphrases like B
+- **Cache seed:** After FX tool + canonical paraphrases like B
+- **Trace:** `CHORUS_F_TRACE=1` → `benchmark/results/f_trace/container_f_trace.jsonl`
 
 ---
 
@@ -128,7 +132,12 @@ benchmark/
   container_f/
     nodes.py
     artifacts.py
+    cache_helpers.py
+    trace.py
     runner.py
+    README.md
+docs/
+  FINANCE_MULTIAGENT_CHORUS.md   # ← reference: correct Chorus multi-agent wiring
   measure.py                     # ContainerId extended: A,B,E,F + hop_metrics
 tests/
   test_finance_multiagent.py
@@ -146,7 +155,7 @@ handoffs/
 | Cache | None in C or D | **F has cache_gate like B** |
 | Workload | 8 clinical cases | **300+ FX tasks, repeat bands** |
 | Thesis test | Inconclusive | **Designed for cache + token flattening** |
-| Envelope read | Was broken; partially fixed | **Store on write; compact hop_input on read** |
+| Envelope read | Was broken; partially fixed | **Fixed F1–F6 Jul 2026** — see FINANCE_MULTIAGENT_CHORUS.md |
 
 **Recommendation:** Pause healthcare C/D thesis claims. Prove Chorus on **finance E vs F** first. Revisit healthcare once envelope + cache pattern is validated in-domain.
 
@@ -156,20 +165,39 @@ handoffs/
 
 - [x] E built — LangGraph 4-hop finance pipeline
 - [x] F built — envelope + cache_gate + Cortex
+- [x] F wired correctly (F1–F6): routing, embed-once, envelope read, session cache, multi-tool hit
 - [x] Same workload/scoring as A/B
 - [x] Harness `run_finance_multiagent.py`
-- [x] Offline tests
-- [ ] Live run ≥60 tasks band 40% with results
-- [ ] Compare E vs F repeat latency to B cache hits
+- [x] Offline tests (incl. cache-hit path skips researcher/tool)
+- [x] Live run 12 tasks band 40% — `benchmark/results/h14_finance_ef_rerun/`
+- [x] F repeat latency ~11 ms (comparable to B ~8 ms)
+- [x] Documented in `docs/FINANCE_MULTIAGENT_CHORUS.md`
+- [ ] Live run ≥60 tasks band 40% for CI-grade stats
 - [ ] Document in `docs/BENCHMARK_RESULTS.md`
 
 ---
 
-## 9. Known limitations
+## 9. H14 fix summary (what changed in F)
+
+| Fix | Before | After |
+|-----|--------|-------|
+| F1 Routing | Always 6 hops | Cache hit → 4 hops (skip researcher/tool) |
+| F2 Embed | Re-embed every hop | Reuse `raw_embedding_384` from ingress |
+| F3 Envelope read | Write-only | `resolve_envelope_artifact` in handoffs |
+| F4 Session cache | Cleared every task | Persists for seeds + envelopes |
+| F5 Multi-FX | One `tool_result` on hit | `tool_results[]` from session cache |
+| F6 Writer | Envelope JSON on hit | Plain tool payload like B |
+| Trace | None | JSONL hop events |
+
+Full patterns: [`docs/FINANCE_MULTIAGENT_CHORUS.md`](../docs/FINANCE_MULTIAGENT_CHORUS.md).
+
+---
+
+## 10. Known limitations
 
 1. **Researcher uses LLM + heuristic fallback** — compare queries may need both tools; heuristic handles `compare_usd_eur_gbp`.
-2. **F envelope read** — downstream hops use compact `hop_input`, not full artifact hydration from envelope_id (improvement path documented in H13 handoffback).
-3. **Memory tasks** — F uses Cortex; E uses conversation history only (E will fail cross-session recall vs F — expected, same as A vs B).
+2. **Healthcare D** — has not yet received the F wiring pattern (cache_gate + routing).
+3. **Memory tasks** — F uses Cortex; E uses conversation history only (expected, same as A vs B).
 4. **CHORUS transport** — not exercised (single-process only).
 
 ---

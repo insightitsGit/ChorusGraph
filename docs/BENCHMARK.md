@@ -68,5 +68,14 @@ Report deltas with confidence intervals, not point estimates. State the workload
 wins on cost but loses on latency (or vice-versa), say so plainly — a mixed, honest result is more
 useful and more credible than a clean one nobody believes.
 
+## Containers C–F and product Q&A
+This spec covers **A vs B** fairness. Multi-agent rigs (C/D healthcare, E/F finance) and Chorus
+**integration patterns** are documented in:
+
+- [`FINANCE_MULTIAGENT_CHORUS.md`](FINANCE_MULTIAGENT_CHORUS.md) — **correct Container F wiring** (reference)
+- [`PRODUCT_QA_BENCHMARK.md`](PRODUCT_QA_BENCHMARK.md) — buyer Q&A, container status
+
+Distinguish **library behavior** (proven in B + F) from **benchmark wiring mistakes** (pre-fix F, healthcare D).
+
 ---
 *Methodology only · the benchmark is built in H8, run/analyzed in H9.*
