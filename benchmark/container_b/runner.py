@@ -35,17 +35,21 @@ def _task_success(result: Dict[str, Any], task: WorkloadTask) -> bool:
     )
 
 
-def _cache_seed_phrases(task: WorkloadTask) -> List[str]:
+def _cache_seed_phrases(task: WorkloadTask, *, seed_all_canonical: bool) -> List[str]:
     cid = task.canonical_id
     if not cid or cid.startswith("memory_"):
         return []
-    return list(CANONICAL_QUERIES.get(cid, []))
+    phrases = list(CANONICAL_QUERIES.get(cid, []))
+    if not seed_all_canonical:
+        return []
+    return phrases
 
 
 class ContainerBRunner:
     """ChorusGraph ReAct graph — cache + Cortex + AgentNode, one runtime per session."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, seed_all_canonical_phrases: bool = True) -> None:
+        self._seed_all_canonical_phrases = seed_all_canonical_phrases
         self._thresholds = measured_thresholds()
         self._sessions: Dict[str, tuple[Any, FinanceRuntime]] = {}
         self._histories: Dict[str, List[Dict[str, str]]] = {}
@@ -89,7 +93,10 @@ class ContainerBRunner:
             task.message,
             conversation_history=history,
             canonical_id=task.canonical_id,
-            cache_seed_phrases=_cache_seed_phrases(task),
+            cache_seed_phrases=_cache_seed_phrases(
+                task,
+                seed_all_canonical=self._seed_all_canonical_phrases,
+            ),
         )
         try:
             result = compiled.invoke(state)

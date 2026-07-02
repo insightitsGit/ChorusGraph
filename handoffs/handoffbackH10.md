@@ -3,7 +3,7 @@
 **Date:** 2026-07-02 (updated with Director sign-off)  
 **Director:** Amin  
 **Status:** **Director MVP close — fixes validated.** Pilot benchmark complete; architect literal volume spec partially met (optional follow-up only).  
-**Director verdict:** **Overall fixes worked.** FX path is **good and effective** on ChorusGraph (B). Safe for pilots and consultant handoff.  
+**Director verdict:** **Overall fixes worked** on ChorusGraph (B). **Container A numbers from this run are INVALID** — see `handoffs/handoffbackH11.md` (broken baseline fixed in H11).  
 **Canonical results run:** `benchmark/results/h10_slices_pilot_60` (60 tasks, band 40%, post-fix code).  
 **Public doc:** [`docs/BENCHMARK_RESULTS.md`](../docs/BENCHMARK_RESULTS.md)  
 **Archived fixtures:** `tests/fixtures/benchmark_results/MANIFEST.json`

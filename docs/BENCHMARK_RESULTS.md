@@ -2,9 +2,9 @@
 
 **Methodology:** [`BENCHMARK.md`](BENCHMARK.md) · **Fairness:** [`benchmark/FAIRNESS_H9.md`](../benchmark/FAIRNESS_H9.md)
 
-- **Run at:** 2026-07-02T16:22:19.603156+00:00
+- **Run at:** 2026-07-02T17:05:15.935964+00:00
 - **Environment:** local
-- **Code:** 0.9.2 — react_cache_seed, pattern_state_cache_score, cross_session_memory, memory_every_n_sessions=2, canonical_phrase_cache_seed, slice_reporting, paraphrase_forensics
+- **Code:** 0.9.3 — react_cache_seed, pattern_state_cache_score, cross_session_memory, memory_every_n_sessions=2, canonical_phrase_cache_seed, slice_reporting, paraphrase_forensics, container_a_fresh_turn_state, container_a_no_memory_saver, container_a_react_loop
 - **Tasks per band (target):** 60
 - **Repeat bands:** 40%
 
@@ -22,9 +22,9 @@
 
 | Band | Metric | A (95% CI) | B (95% CI) |
 |------|--------|------------|------------|
-| 40% | latency_ms_p50 | 2291.0000 [2226.0, 2587.0] | 523.0000 [16.0, 2629.0] |
-| 40% | cost_per_task_usd | 0.0002 [0.000154311875, 0.0001661276875] | 0.0001 [7.51152801724138e-05, 0.00014377525862068957] |
-| 40% | accuracy_rate | 0.3500 [0.22362618841754867, 0.4763738115824513] | 0.8276 [0.7516153404224915, 0.903557073370612] |
+| 40% | latency_ms_p50 | 4498.5000 [4193.925, 6770.0] | 575.0000 [16.5, 2648.0] |
+| 40% | cost_per_task_usd | 0.0004 [0.00035028459051724136, 0.0004237840086206896] | 0.0001 [7.51148922413793e-05, 0.0001459491594827586] |
+| 40% | accuracy_rate | 0.7931 [0.7087217362466297, 0.8774851603050945] | 0.8448 [0.7735000919439735, 0.9161550804698196] |
 | 40% | b_cache_hit_rate | — | 0.4138 [0.28557028860510836, 0.5420159182914434] |
 
 ## Per-band detail (with slices)
@@ -33,22 +33,24 @@
 
 - Valid paired tasks: 58 (excludes 429 quota errors)
 - Workload stats: `{'total': 60, 'sessions': 11, 'exact_repeat': 17, 'paraphrase': 10, 'novel': 22, 'memory_seed': 6, 'memory_recall': 0, 'memory_recall_cross': 5}`
-- **Full workload** task success A: 0.3500 [0.2236, 0.4764]
-- **Full workload** task success B: 0.8276 [0.7516, 0.9036]
+- **Full workload** task success A: 0.7931 [0.7087, 0.8775]
+- **Full workload** task success B: 0.8448 [0.7735, 0.9162]
 - B cache hit-rate (Wilson 95% CI): 0.4138 [0.2856, 0.5420]
-- **Cost:** B lower — paired delta -0.0001 USD/task [-0.0001, -0.0000] (B−A, 95% bootstrap CI)
-- **Latency:** B lower — paired delta -967.3793 ms [-1421.6871, -494.3440] (B−A, 95% bootstrap CI)
-- fx_rates slug: n_serve=22, FP upper95=0.4343995317522171, verdict=INSUFFICIENT DATA
+- **Cost:** B lower — paired delta -0.0003 USD/task [-0.0003, -0.0002] (B−A, 95% bootstrap CI)
+- **Latency:** B lower — paired delta -4629.4828 ms [-5395.0254, -3938.5116] (B−A, 95% bootstrap CI)
+- fx_rates slug: n_serve=22, FP upper95=0.38516607437126543, verdict=INSUFFICIENT DATA
 
 #### Sliced accuracy (do not quote full-workload A alone)
 
 | Slice | n (A/B) | A accuracy (95% CI) | B accuracy (95% CI) | B cache hit-rate |
 |-------|---------|---------------------|---------------------|------------------|
-| Full workload (FX + compound + memory) | 60/60 | 0.3500 [0.2236, 0.4764] | 0.8276 [0.7516, 0.9036] | 0.4138 [0.2856, 0.5420] |
-| FX + compound only (excludes memory tasks) | 49/49 | 0.2653 [0.1280, 0.4026] | 0.7959 [0.7067, 0.8852] | 0.4898 [0.3543, 0.6253] |
-| FX rate tasks only | 45/45 | 0.2667 [0.1229, 0.4104] | 0.8222 [0.7374, 0.9071] | 0.4889 [0.3478, 0.6300] |
-| Cross-session memory recall (empty chat history) | 5/5 | 0.4000 [0.0307, 0.7693] | 1.0000 [1.0000, 1.0000] | — |
-| All memory tasks | 11/11 | 0.7273 [0.5520, 0.9025] | 1.0000 [1.0000, 1.0000] | 0.0000 [0.0000, 0.2991] |
+| Full workload (FX + compound + memory) | 60/60 | 0.7931 [0.7087, 0.8775] | 0.8448 [0.7735, 0.9162] | 0.4138 [0.2856, 0.5420] |
+| FX + compound only (excludes memory tasks) | 49/49 | 0.8163 [0.7324, 0.9002] | 0.8163 [0.7324, 0.9002] | 0.4898 [0.3543, 0.6253] |
+| FX rate tasks only | 45/45 | 0.8444 [0.7663, 0.9225] | 0.8444 [0.7663, 0.9225] | 0.4889 [0.3478, 0.6300] |
+| Cross-session memory recall (empty chat history) | 5/5 | 0.0000 [0.0000, 0.5615] | 1.0000 [1.0000, 1.0000] | — |
+| All memory tasks | 11/11 | 0.6667 [0.4539, 0.8794] | 1.0000 [1.0000, 1.0000] | 0.0000 [0.0000, 0.2991] |
+| B cache — FX exact_repeat | —/16 | — | — | 1.0000 [1.0000, 1.0000] |
+| B cache — FX paraphrase | —/9 | — | — | 0.6667 [0.4539, 0.8794] |
 
 #### Paraphrase cache forensics (verify=0.95)
 

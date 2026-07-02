@@ -12,7 +12,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from benchmark.analyze import compare_ab, compare_ab_slices, format_ci_table, format_slice_table, paraphrase_cache_forensics
+from benchmark.analyze import (
+    compare_ab,
+    compare_ab_slices,
+    format_ci_table,
+    format_slice_table,
+    held_out_paraphrase_forensics,
+    paraphrase_cache_forensics,
+)
 from benchmark.belief_calibration import calibrate_from_measurements
 from benchmark.container_a.runner import ContainerARunner
 from benchmark.container_b.runner import ContainerBRunner
@@ -34,6 +41,7 @@ def run_band(
     seed: int,
     out_dir: Path,
     resume: bool = True,
+    seed_all_canonical_phrases: bool = True,
 ) -> Dict[str, object]:
     tasks = generate_workload(n_tasks, seed=seed, repeat_band_pct=band_pct)
     path_a = out_dir / f"band_{band_pct}_container_a.jsonl"
@@ -41,7 +49,7 @@ def run_band(
 
     done = completed_task_ids([path_a, path_b]) if resume else set()
     runner_a = ContainerARunner()
-    runner_b = ContainerBRunner()
+    runner_b = ContainerBRunner(seed_all_canonical_phrases=seed_all_canonical_phrases)
 
     started = time.perf_counter()
     for i, task in enumerate(tasks):
@@ -89,6 +97,10 @@ def run_band(
         "slices": slices,
         "slice_table_markdown": format_slice_table(slices),
         "paraphrase_cache_forensics": paraphrase_cache_forensics(b_rows),
+        "held_out_paraphrase_forensics": held_out_paraphrase_forensics(
+            b_rows,
+            seed_all_canonical_phrases=seed_all_canonical_phrases,
+        ),
         "belief_calibration": calibration.to_dict(),
         "thresholds": {
             "coarse": measured_thresholds().coarse,
@@ -107,18 +119,20 @@ def run_volume_benchmark(
     seed: int = 42,
     out_dir: Optional[Path] = None,
     resume: bool = True,
+    seed_all_canonical_phrases: bool = True,
+    run_label: str = "H10",
 ) -> Dict[str, object]:
     out_dir = _results_dir(out_dir or Path("benchmark/results") / datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S"))
     meta = {
         "run_at": datetime.now(timezone.utc).isoformat(),
-        "run_label": os.environ.get("BENCHMARK_RUN_LABEL", "H10"),
+        "run_label": os.environ.get("BENCHMARK_RUN_LABEL", run_label),
         "environment": os.environ.get("BENCHMARK_ENV", "local"),
         "n_tasks_per_band": n_tasks,
         "bands": bands,
         "seed": seed,
         "threshold_provenance": THRESHOLD_PROVENANCE,
         "fairness_doc": "benchmark/FAIRNESS_H9.md",
-        "code_version": "0.9.2",
+        "code_version": "0.9.3",
         "fixes_applied": [
             "react_cache_seed",
             "pattern_state_cache_score",
@@ -127,7 +141,11 @@ def run_volume_benchmark(
             "canonical_phrase_cache_seed",
             "slice_reporting",
             "paraphrase_forensics",
+            "container_a_fresh_turn_state",
+            "container_a_no_memory_saver",
+            "container_a_react_loop",
         ],
+        "cache_seed_all_canonical_phrases": seed_all_canonical_phrases,
     }
     (out_dir / "run_meta.json").write_text(json.dumps(meta, indent=2), encoding="utf-8")
 
@@ -142,6 +160,7 @@ def run_volume_benchmark(
             seed=seed + band,
             out_dir=out_dir,
             resume=resume,
+            seed_all_canonical_phrases=seed_all_canonical_phrases,
         )
         all_b.extend(load_measurements(out_dir / f"band_{band}_container_b.jsonl"))
 
@@ -163,6 +182,13 @@ def main(argv: Optional[List[str]] = None) -> None:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--output-dir", type=Path, default=None)
     parser.add_argument("--no-resume", action="store_true")
+    parser.add_argument(
+        "--cache-seed-mode",
+        choices=("all", "novel-only"),
+        default="all",
+        help="B cache seeding: all canonical phrases vs novel seed phrase only (held-out paraphrase test)",
+    )
+    parser.add_argument("--run-label", default="H10", help="Label stored in run_meta.json")
     args = parser.parse_args(argv)
 
     if not os.environ.get("GEMINI_API_KEY") and not os.environ.get("GOOGLE_API_KEY"):
@@ -186,6 +212,8 @@ def main(argv: Optional[List[str]] = None) -> None:
         seed=args.seed,
         out_dir=args.output_dir,
         resume=not args.no_resume,
+        seed_all_canonical_phrases=args.cache_seed_mode == "all",
+        run_label=args.run_label,
     )
     print(f"\nDone. Results: {result['output_dir']}")
     print("\nCI table preview:\n")

@@ -45,15 +45,30 @@ Container B includes deterministic fast paths that Container A (pure LangGraph R
 
 **What a skeptic should compare:** LangGraph + your own templates/routing (engineering effort) vs buying ChorusGraph’s integrated path.
 
-## 4. Residual asymmetries (unchanged, intentional)
+## 4. Container A baseline integrity (H11)
+
+| Check | Status |
+|-------|--------|
+| Container A calls `fetch_exchange_rate` on FX tasks | ✅ Fixed H11 — was **0% tool_calls** due to MemorySaver state leak + premature `react_done` |
+| Per-task isolated ReAct state (`fresh_turn_state`) | ✅ No checkpointer on A graph; runner owns `conversation_history` |
+| Pre-H11 A/B accuracy claims | ⚠️ **INVALID** — `h10_slices_pilot_60` Container A numbers used a broken baseline |
+| Canonical post-H11 run | ✅ `benchmark/results/h11_fixed_a_60` (60 tasks, band 40%, seed 42) |
+
+**Root cause:** LangGraph `MemorySaver` + `thread_id=session_id` leaked `react_done`, `tool_result`, and `scratchpad` across tasks. Combined with `route_after_react` falling through to `writer` when the model emitted `finish=true` without a tool action.
+
+**Fairness note:** Container A blocks finish-without-tool on FX/compound queries. Container B does not enable `require_tool_before_finish` by default but achieves tool calls via fresh per-invoke state and compound/cache fast paths.
+
+## 5. Residual asymmetries (unchanged, intentional)
 
 - B graph depth: `cache_gate` → (`compound_tool` \| `react_agent`) → `writer` → `validator`
 - A graph depth: `react` → `tool` → `writer` → `validator`
 - Cache hit benefit appears only when workload repeat rate exercises semantic cache (bands 40%/60%).
 
-## 5. Sign-off
+## 6. Sign-off
 
-Fairness checklist green for **H10 volume run** (post-fix v0.9.1: compound routing + canonical rubric).
+Fairness checklist green for **H11 volume run** (fixed Container A baseline + canonical rubric).
+
+Pre-H11 pilot runs (`h10_slices_pilot_60` Container A accuracy) are **invalid for A/B comparison** — use `h11_fixed_a_60`.
 
 ---
 *H9/H10 · architect requirement · disclose asymmetry · canonical rubric · no silent wins.*

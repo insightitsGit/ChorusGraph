@@ -1,0 +1,26 @@
+{
+  "run_at": "2026-07-02T17:05:15.935964+00:00",
+  "run_label": "H10",
+  "environment": "local",
+  "n_tasks_per_band": 60,
+  "bands": [
+    40
+  ],
+  "seed": 42,
+  "threshold_provenance": "Coarse 0.88 \u2014 H2 shadow harness default, H3 replay default, cache_gate/gate.py default.\nVerify 0.95 (fx_rates) \u2014 gate.py default verify_threshold; no slug-specific CACHEABLE point yet\n  (H3 production replay: all slugs INSUFFICIENT DATA, n << MIN_HITS=300).\nH4 demo 0.82/0.85 \u2014 excluded per docs/BENCHMARK.md anti-rigging checklist.\nFull fx_rates frontier will be produced when benchmark workload runs at scale (H9).",
+  "fairness_doc": "benchmark/FAIRNESS_H9.md",
+  "code_version": "0.9.3",
+  "fixes_applied": [
+    "react_cache_seed",
+    "pattern_state_cache_score",
+    "cross_session_memory",
+    "memory_every_n_sessions=2",
+    "canonical_phrase_cache_seed",
+    "slice_reporting",
+    "paraphrase_forensics",
+    "container_a_fresh_turn_state",
+    "container_a_no_memory_saver",
+    "container_a_react_loop"
+  ],
+  "cache_seed_all_canonical_phrases": true
+}

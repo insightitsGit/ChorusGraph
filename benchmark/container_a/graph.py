@@ -2,24 +2,22 @@
 
 from __future__ import annotations
 
-import json
 import operator
 import re
 import time
 from typing import Annotated, Any, Dict, List, Optional, TypedDict
 
-from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 
 from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient
 from benchmark.shared.prompts import REACT_SYSTEM, VALIDATOR_SYSTEM, WRITER_SYSTEM
 from chorusgraph.agents.react_utils import parse_react_json, tool_catalog
+from chorusgraph.examples.finance_agent.nodes import _needs_fx_tool
 from chorusgraph.nodes.tool import ToolRegistry, default_finance_registry
+from chorusgraph.transforms.intent import needs_compound_tool
 
 TENANT_ID = "benchmark-finance-a"
 MAX_REACT_STEPS = 6
-
-_CURRENCY_RE = re.compile(r"\b([A-Z]{3})\b")
 
 
 def _rate_in_text(rate: float, text: str) -> bool:
@@ -31,6 +29,10 @@ def _rate_in_text(rate: float, text: str) -> bool:
             return True
     nums = re.findall(r"\d+\.\d+", text)
     return any(abs(float(n) - rate) < 1e-4 for n in nums)
+
+
+def _message_needs_tool(message: str) -> bool:
+    return _needs_fx_tool(message) or needs_compound_tool(message)
 
 
 class AgentState(TypedDict, total=False):
@@ -49,6 +51,29 @@ class AgentState(TypedDict, total=False):
     rule_chain: Annotated[List[str], operator.add]
 
 
+def fresh_turn_state(
+    message: str,
+    *,
+    conversation_history: Optional[List[Dict[str, str]]] = None,
+) -> Dict[str, Any]:
+    """Isolated per-task state — conversation history is the only cross-turn carryover."""
+    return {
+        "message": message,
+        "conversation_history": list(conversation_history or []),
+        "scratchpad": "",
+        "react_step": 0,
+        "react_done": False,
+        "pending_action": None,
+        "tool_calls": [],
+        "tool_results": [],
+        "tool_result": None,
+        "draft_response": "",
+        "response": "",
+        "validation": {},
+        "rule_chain": [],
+    }
+
+
 def build_langgraph_agent(
     *,
     registry: Optional[ToolRegistry] = None,
@@ -64,18 +89,26 @@ def build_langgraph_agent(
         if step >= MAX_REACT_STEPS:
             return {"react_done": True, "rule_chain": ["react=max_steps"]}
 
+        message = state.get("message") or ""
         scratchpad = state.get("scratchpad") or ""
-        user = f"Question: {state.get('message') or ''}\n\nScratchpad:\n{scratchpad or '(empty)'}"
+        tool_calls_so_far = list(state.get("tool_calls") or [])
+        needs_tool = _message_needs_tool(message)
+
+        user = f"Question: {message}\n\nScratchpad:\n{scratchpad or '(empty)'}"
         raw = gemini.generate_json(react_system, user)
         parsed = parse_react_json(raw)
-        thought = parsed.get("thought") or ""
         action = parsed.get("action")
         finish = bool(parsed.get("finish"))
         has_action = bool(action and (action.get("tool") or action.get("name")))
 
+        # Block finish-without-tool on FX/compound (model often tries to answer from parametric knowledge).
+        if needs_tool and not tool_calls_so_far and finish and not has_action:
+            finish = False
+
         update: Dict[str, Any] = {
             "react_step": step + 1,
             "pending_action": action if has_action else None,
+            "react_done": False,
             "rule_chain": [f"react/thought step={step + 1}"],
         }
         if finish and not has_action:
@@ -83,8 +116,6 @@ def build_langgraph_agent(
         elif finish and has_action and step + 1 < MAX_REACT_STEPS:
             update["react_done"] = False
         elif finish:
-            update["react_done"] = True
-        if not has_action and not finish and scratchpad:
             update["react_done"] = True
         return update
 
@@ -103,6 +134,7 @@ def build_langgraph_agent(
         return {
             "scratchpad": scratchpad,
             "pending_action": None,
+            "react_done": False,
             "tool_calls": tool_calls,
             "tool_results": tool_results,
             "tool_result": result.data if result.ok else None,
@@ -157,11 +189,14 @@ def build_langgraph_agent(
         }
 
     def route_after_react(state: AgentState) -> str:
-        if state.get("react_done"):
-            return "writer"
         if state.get("pending_action"):
             return "tool"
-        return "writer"
+        if state.get("react_done"):
+            return "writer"
+        step = int(state.get("react_step") or 0)
+        if step >= MAX_REACT_STEPS:
+            return "writer"
+        return "react"
 
     def route_after_tool(state: AgentState) -> str:
         if int(state.get("react_step") or 0) >= MAX_REACT_STEPS:
@@ -175,14 +210,18 @@ def build_langgraph_agent(
     graph.add_node("validator", validator_node)
 
     graph.add_edge(START, "react")
-    graph.add_conditional_edges("react", route_after_react, {"tool": "tool", "writer": "writer"})
+    graph.add_conditional_edges(
+        "react",
+        route_after_react,
+        {"tool": "tool", "writer": "writer", "react": "react"},
+    )
     graph.add_conditional_edges("tool", route_after_tool, {"react": "react", "writer": "writer"})
     graph.add_edge("writer", "validator")
     graph.add_edge("validator", END)
 
-    checkpointer = MemorySaver()
-    compiled = graph.compile(checkpointer=checkpointer)
-    return compiled, gemini, checkpointer
+    # No checkpointer — runner owns conversation_history; MemorySaver was leaking react state across tasks.
+    compiled = graph.compile()
+    return compiled, gemini, None
 
 
 def run_task(
@@ -190,24 +229,16 @@ def run_task(
     *,
     compiled,
     gemini: InstrumentedGeminiClient,
-    thread_id: str,
+    thread_id: str = "",
     conversation_history: Optional[List[Dict[str, str]]] = None,
 ) -> Dict[str, Any]:
     """Run one benchmark task through Container A."""
+    del thread_id  # kept for runner API compatibility
     gemini.reset_usage()
     started = time.perf_counter()
-    config = {"configurable": {"thread_id": thread_id}}
-    state: Dict[str, Any] = {
-        "message": message,
-        "conversation_history": conversation_history or [],
-        "scratchpad": "",
-        "react_step": 0,
-        "tool_calls": [],
-        "tool_results": [],
-        "rule_chain": [],
-    }
+    state = fresh_turn_state(message, conversation_history=conversation_history)
     try:
-        result = compiled.invoke(state, config=config)
+        result = compiled.invoke(state)
         latency_ms = int((time.perf_counter() - started) * 1000)
         result["_latency_ms"] = latency_ms
         result["_llm_usage"] = gemini.usage

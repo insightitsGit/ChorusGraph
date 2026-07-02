@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 from benchmark.measure import TaskMeasurement
+from benchmark.workload import CANONICAL_QUERIES
 from chorusgraph.shadow.replay.stats import MIN_HITS, Verdict, classify_verdict, wilson_upper
 
 
@@ -219,6 +220,37 @@ def compare_ab_slices(
             }
         out[name] = report
     return out
+
+
+def held_out_paraphrase_forensics(
+    b_rows: List[TaskMeasurement],
+    *,
+    seed_all_canonical_phrases: bool = True,
+) -> Dict[str, object]:
+    """
+    H11: paraphrase queries disjoint from multi-phrase seed set.
+
+    Meaningful only when B seeds the novel phrase (phrases[0]) but not all canonical variants.
+    """
+    paraphrase = slice_rows(b_rows, "cache_paraphrase")
+    if seed_all_canonical_phrases:
+        return {
+            "n_held_out_paraphrase_fx": 0,
+            "n_hit": 0,
+            "n_miss": 0,
+            "hit_rate_point": None,
+            "note": "Run with --cache-seed-mode novel-only to measure semantic generalization.",
+        }
+    seed_phrases = {phrases[0] for phrases in CANONICAL_QUERIES.values() if phrases}
+    held_out = [r for r in paraphrase if r.message not in seed_phrases]
+    hits = [r for r in held_out if r.cache_hit]
+    return {
+        "n_held_out_paraphrase_fx": len(held_out),
+        "n_hit": len(hits),
+        "n_miss": len(held_out) - len(hits),
+        "hit_rate_point": (len(hits) / len(held_out)) if held_out else 0.0,
+        "note": "B seeded novel phrase only; paraphrase queries are disjoint from seed set.",
+    }
 
 
 def paraphrase_cache_forensics(b_rows: List[TaskMeasurement]) -> Dict[str, object]:
