@@ -28,17 +28,17 @@ git fetch origin
 git checkout "$BRANCH"
 git pull --ff-only origin "$BRANCH"
 
-pip install -e ".[dev,gemini,cortex]" -q
+python3 -m pip install -e ".[dev,gemini,cortex]" -q
 
 echo "Running pytest..."
-python -m pytest tests/ -q --tb=line
+python3 -m pytest tests/ -q --tb=line
 
 if [[ "$RUN_BENCHMARK" == "1" ]]; then
   if [[ -z "${GEMINI_API_KEY:-}" && -z "${GOOGLE_API_KEY:-}" ]]; then
     echo "GEMINI_API_KEY not set — skipping live benchmark"
-    python -m benchmark.run_offline_ab --tasks "$TASKS" --seed "$SEED"
+    python3 -m benchmark.run_offline_ab --tasks "$TASKS" --seed "$SEED"
   else
-    python -m benchmark.run --tasks "$TASKS" --seed "$SEED" \
+    python3 -m benchmark.run --tasks "$TASKS" --seed "$SEED" \
       --output "benchmark/results/azure_$(date -u +%Y%m%d_%H%M%S)/live_ab.json"
   fi
 fi
