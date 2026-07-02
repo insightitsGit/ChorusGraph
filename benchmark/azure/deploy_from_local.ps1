@@ -11,20 +11,27 @@ $Az = "az"
 $Root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $SyncScript = Join-Path $PSScriptRoot "sync_and_test.sh"
 $BenchFlag = if ($RunBenchmark) { "1" } else { "0" }
+$GhToken = ""
+try {
+    $GhToken = (& gh auth token 2>$null).Trim()
+} catch {
+    Write-Warning "gh auth token unavailable — private clone may fail on VM"
+}
 
 $Remote = @"
 #!/bin/bash
 set -euo pipefail
-export REPO_DIR=/opt/ChorusGraph
+export REPO_DIR=/opt/insightits/ChorusGraph
 export BRANCH=$Branch
 export RUN_BENCHMARK=$BenchFlag
 export TASKS=$Tasks
 export SEED=$Seed
+export GITHUB_TOKEN=$GhToken
 $(Get-Content $SyncScript -Raw)
 "@
 
 $Tmp = Join-Path $env:TEMP "chorusgraph_azure_sync.sh"
-Set-Content -Path $Tmp -Value $Remote -Encoding UTF8NoBOM
+Set-Content -Path $Tmp -Value $Remote -Encoding UTF8
 
 Write-Host "Deploying to vm-insightits-prod (branch=$Branch, benchmark=$BenchFlag)..."
 $result = & $Az vm run-command invoke `

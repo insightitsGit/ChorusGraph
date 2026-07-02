@@ -2,20 +2,28 @@
 # Sync ChorusGraph on Azure VM and run tests (or benchmark).
 set -euo pipefail
 
-REPO_DIR="${REPO_DIR:-/opt/ChorusGraph}"
+REPO_DIR="${REPO_DIR:-/opt/insightits/ChorusGraph}"
 BRANCH="${BRANCH:-master}"
 RUN_BENCHMARK="${RUN_BENCHMARK:-0}"
 TASKS="${TASKS:-30}"
 SEED="${SEED:-42}"
+GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 
 if [[ ! -d "$REPO_DIR/.git" ]]; then
   echo "Cloning ChorusGraph into $REPO_DIR"
   sudo mkdir -p "$(dirname "$REPO_DIR")"
-  sudo git clone https://github.com/insightitsGit/ChorusGraph.git "$REPO_DIR"
+  if [[ -n "$GITHUB_TOKEN" ]]; then
+    git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/insightitsGit/ChorusGraph.git" "$REPO_DIR"
+  else
+    git clone https://github.com/insightitsGit/ChorusGraph.git "$REPO_DIR"
+  fi
   sudo chown -R "$(whoami):$(whoami)" "$REPO_DIR"
 fi
 
 cd "$REPO_DIR"
+if [[ -n "$GITHUB_TOKEN" ]]; then
+  git remote set-url origin "https://x-access-token:${GITHUB_TOKEN}@github.com/insightitsGit/ChorusGraph.git"
+fi
 git fetch origin
 git checkout "$BRANCH"
 git pull --ff-only origin "$BRANCH"
