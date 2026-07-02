@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 
@@ -34,6 +34,8 @@ def gate(
     coarse_threshold: float = 0.88,
     verify_threshold: float = 0.95,
     top_k: int = 5,
+    raw_embedding_384: Optional[np.ndarray] = None,
+    projected_vector_64: Optional[np.ndarray] = None,
 ) -> Decision:
     """
     Two-stage cache gate per Handoff 2 §5 / DESIGN §8.1.
@@ -47,10 +49,16 @@ def gate(
     if section.cache_policy == CachePolicy.NO_CACHE:
         return Decision(kind=DecisionKind.MISS)
 
-    # Stage 1 — coarse recall
-    raw = cache._embedder.embed(query)
-    envelope = cache._projector.project(raw)
-    projected = np.asarray(envelope.vector, dtype=np.float32)
+    # Stage 1 — coarse recall (reuse ingress embedding when provided)
+    if raw_embedding_384 is None:
+        raw = cache._embedder.embed(query)
+    else:
+        raw = np.asarray(raw_embedding_384, dtype=np.float32).ravel()
+    if projected_vector_64 is None:
+        envelope = cache._projector.project(raw)
+        projected = np.asarray(envelope.vector, dtype=np.float32)
+    else:
+        projected = np.asarray(projected_vector_64, dtype=np.float32).ravel()
 
     candidates = recall(
         cache,

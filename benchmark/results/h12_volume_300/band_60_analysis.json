@@ -1,0 +1,651 @@
+{
+  "repeat_band_pct": 60,
+  "n_tasks": 300,
+  "n_valid_a": 0,
+  "n_valid_b": 70,
+  "n_quota_blocked": 504,
+  "quota_blocked": true,
+  "seed": 102,
+  "workload_stats": {
+    "total": 300,
+    "sessions": 55,
+    "exact_repeat": 78,
+    "paraphrase": 75,
+    "novel": 92,
+    "memory_seed": 28,
+    "memory_recall": 0,
+    "memory_recall_cross": 27
+  },
+  "compare_ab": {
+    "n_paired": 0,
+    "n_valid_a": 0,
+    "n_valid_b": 70,
+    "cost_delta_usd_per_task": null,
+    "latency_delta_ms": null,
+    "container_a": {},
+    "container_b": {
+      "latency_ms_p50": {
+        "point": 10.0,
+        "lower95": 9.0,
+        "upper95": 11.5,
+        "n": 70,
+        "method": "bootstrap_2000"
+      },
+      "latency_ms_p95": {
+        "point": 1695.349999999995,
+        "lower95": 540.0,
+        "upper95": 2612.0,
+        "n": 70,
+        "method": "bootstrap_2000"
+      },
+      "cost_per_task_usd": {
+        "point": 1.3454999999999999e-05,
+        "lower95": 3.3321428571428574e-06,
+        "upper95": 2.6910589285714282e-05,
+        "n": 70,
+        "method": "bootstrap_2000"
+      },
+      "accuracy_rate": {
+        "point": 0.9571428571428572,
+        "lower95": 0.9289672552898258,
+        "upper95": 0.9853184589958885,
+        "n": 70,
+        "method": "wilson_95"
+      },
+      "llm_calls_per_task": {
+        "point": 0.11428571428571428,
+        "lower95": 0.02857142857142857,
+        "upper95": 0.22857142857142856,
+        "n": 70,
+        "method": "bootstrap_2000"
+      }
+    },
+    "b_cache": {
+      "cache_hit_rate": {
+        "point": 0.1,
+        "lower95": 0.007670851514326005,
+        "upper95": 0.192329148485674,
+        "n": 70,
+        "method": "wilson_95"
+      }
+    },
+    "b_cache_fp_by_slug": {
+      "user_profile": {
+        "n_tasks": 14,
+        "n_would_serve": 0,
+        "n_fp": 0,
+        "fp_rate_point": 0.0,
+        "fp_upper95": 1.0,
+        "hit_rate_point": 0.0,
+        "verdict": "INSUFFICIENT DATA",
+        "cacheable": false,
+        "min_hits_required": 300
+      },
+      "fx_rates": {
+        "n_tasks": 16,
+        "n_would_serve": 7,
+        "n_fp": 1,
+        "fp_rate_point": 0.14285714285714285,
+        "fp_upper95": 0.5131278292743189,
+        "hit_rate_point": 0.4375,
+        "verdict": "INSUFFICIENT DATA",
+        "cacheable": false,
+        "min_hits_required": 300
+      },
+      "compound_savings": {
+        "n_tasks": 40,
+        "n_would_serve": 0,
+        "n_fp": 0,
+        "fp_rate_point": 0.0,
+        "fp_upper95": 1.0,
+        "hit_rate_point": 0.0,
+        "verdict": "INSUFFICIENT DATA",
+        "cacheable": false,
+        "min_hits_required": 300
+      }
+    }
+  },
+  "slices": {
+    "full": {
+      "label": "Full workload (FX + compound + memory)",
+      "n_a": 300,
+      "n_b": 300,
+      "compare_ab": {
+        "n_paired": 0,
+        "n_valid_a": 0,
+        "n_valid_b": 70,
+        "cost_delta_usd_per_task": null,
+        "latency_delta_ms": null,
+        "container_a": {},
+        "container_b": {
+          "latency_ms_p50": {
+            "point": 10.0,
+            "lower95": 9.0,
+            "upper95": 11.5,
+            "n": 70,
+            "method": "bootstrap_2000"
+          },
+          "latency_ms_p95": {
+            "point": 1695.349999999995,
+            "lower95": 540.0,
+            "upper95": 2612.0,
+            "n": 70,
+            "method": "bootstrap_2000"
+          },
+          "cost_per_task_usd": {
+            "point": 1.3454999999999999e-05,
+            "lower95": 3.3321428571428574e-06,
+            "upper95": 2.6910589285714282e-05,
+            "n": 70,
+            "method": "bootstrap_2000"
+          },
+          "accuracy_rate": {
+            "point": 0.9571428571428572,
+            "lower95": 0.9289672552898258,
+            "upper95": 0.9853184589958885,
+            "n": 70,
+            "method": "wilson_95"
+          },
+          "llm_calls_per_task": {
+            "point": 0.11428571428571428,
+            "lower95": 0.02857142857142857,
+            "upper95": 0.22857142857142856,
+            "n": 70,
+            "method": "bootstrap_2000"
+          }
+        },
+        "b_cache": {
+          "cache_hit_rate": {
+            "point": 0.1,
+            "lower95": 0.007670851514326005,
+            "upper95": 0.192329148485674,
+            "n": 70,
+            "method": "wilson_95"
+          }
+        },
+        "b_cache_fp_by_slug": {
+          "user_profile": {
+            "n_tasks": 14,
+            "n_would_serve": 0,
+            "n_fp": 0,
+            "fp_rate_point": 0.0,
+            "fp_upper95": 1.0,
+            "hit_rate_point": 0.0,
+            "verdict": "INSUFFICIENT DATA",
+            "cacheable": false,
+            "min_hits_required": 300
+          },
+          "fx_rates": {
+            "n_tasks": 16,
+            "n_would_serve": 7,
+            "n_fp": 1,
+            "fp_rate_point": 0.14285714285714285,
+            "fp_upper95": 0.5131278292743189,
+            "hit_rate_point": 0.4375,
+            "verdict": "INSUFFICIENT DATA",
+            "cacheable": false,
+            "min_hits_required": 300
+          },
+          "compound_savings": {
+            "n_tasks": 40,
+            "n_would_serve": 0,
+            "n_fp": 0,
+            "fp_rate_point": 0.0,
+            "fp_upper95": 1.0,
+            "hit_rate_point": 0.0,
+            "verdict": "INSUFFICIENT DATA",
+            "cacheable": false,
+            "min_hits_required": 300
+          }
+        }
+      }
+    },
+    "fx_and_compound": {
+      "label": "FX + compound only (excludes memory tasks)",
+      "n_a": 245,
+      "n_b": 245,
+      "compare_ab": {
+        "n_paired": 0,
+        "n_valid_a": 0,
+        "n_valid_b": 56,
+        "cost_delta_usd_per_task": null,
+        "latency_delta_ms": null,
+        "container_a": {},
+        "container_b": {
+          "latency_ms_p50": {
+            "point": 9.5,
+            "lower95": 9.0,
+            "upper95": 10.0,
+            "n": 56,
+            "method": "bootstrap_2000"
+          },
+          "latency_ms_p95": {
+            "point": 2508.75,
+            "lower95": 527.0,
+            "upper95": 3130.0,
+            "n": 56,
+            "method": "bootstrap_2000"
+          },
+          "cost_per_task_usd": {
+            "point": 1.681875e-05,
+            "lower95": 4.165178571428571e-06,
+            "upper95": 3.3865178571428574e-05,
+            "n": 56,
+            "method": "bootstrap_2000"
+          },
+          "accuracy_rate": {
+            "point": 0.9464285714285714,
+            "lower95": 0.9112429242392519,
+            "upper95": 0.9816142186178909,
+            "n": 56,
+            "method": "wilson_95"
+          },
+          "llm_calls_per_task": {
+            "point": 0.14285714285714285,
+            "lower95": 0.03571428571428571,
+            "upper95": 0.2857142857142857,
+            "n": 56,
+            "method": "bootstrap_2000"
+          }
+        },
+        "b_cache": {
+          "cache_hit_rate": {
+            "point": 0.125,
+            "lower95": 0.013745234418098634,
+            "upper95": 0.23625476558190137,
+            "n": 56,
+            "method": "wilson_95"
+          }
+        },
+        "b_cache_fp_by_slug": {
+          "fx_rates": {
+            "n_tasks": 16,
+            "n_would_serve": 7,
+            "n_fp": 1,
+            "fp_rate_point": 0.14285714285714285,
+            "fp_upper95": 0.5131278292743189,
+            "hit_rate_point": 0.4375,
+            "verdict": "INSUFFICIENT DATA",
+            "cacheable": false,
+            "min_hits_required": 300
+          },
+          "compound_savings": {
+            "n_tasks": 40,
+            "n_would_serve": 0,
+            "n_fp": 0,
+            "fp_rate_point": 0.0,
+            "fp_upper95": 1.0,
+            "hit_rate_point": 0.0,
+            "verdict": "INSUFFICIENT DATA",
+            "cacheable": false,
+            "min_hits_required": 300
+          }
+        }
+      }
+    },
+    "fx_only": {
+      "label": "FX rate tasks only",
+      "n_a": 202,
+      "n_b": 202,
+      "compare_ab": {
+        "n_paired": 0,
+        "n_valid_a": 0,
+        "n_valid_b": 16,
+        "cost_delta_usd_per_task": null,
+        "latency_delta_ms": null,
+        "container_a": {},
+        "container_b": {
+          "latency_ms_p50": {
+            "point": 8.0,
+            "lower95": 7.0,
+            "upper95": 1257.0,
+            "n": 16,
+            "method": "bootstrap_2000"
+          },
+          "latency_ms_p95": {
+            "point": 2741.5,
+            "lower95": 638.25,
+            "upper95": 3130.0,
+            "n": 16,
+            "method": "bootstrap_2000"
+          },
+          "cost_per_task_usd": {
+            "point": 5.8865624999999996e-05,
+            "lower95": 1.4578125e-05,
+            "upper95": 0.00011728382812499998,
+            "n": 16,
+            "method": "bootstrap_2000"
+          },
+          "accuracy_rate": {
+            "point": 0.8125,
+            "lower95": 0.6909159907142814,
+            "upper95": 0.9340840092857186,
+            "n": 16,
+            "method": "wilson_95"
+          },
+          "llm_calls_per_task": {
+            "point": 0.5,
+            "lower95": 0.125,
+            "upper95": 1.0,
+            "n": 16,
+            "method": "bootstrap_2000"
+          }
+        },
+        "b_cache": {
+          "cache_hit_rate": {
+            "point": 0.4375,
+            "lower95": 0.20678556398811898,
+            "upper95": 0.668214436011881,
+            "n": 16,
+            "method": "wilson_95"
+          }
+        },
+        "b_cache_fp_by_slug": {
+          "fx_rates": {
+            "n_tasks": 16,
+            "n_would_serve": 7,
+            "n_fp": 1,
+            "fp_rate_point": 0.14285714285714285,
+            "fp_upper95": 0.5131278292743189,
+            "hit_rate_point": 0.4375,
+            "verdict": "INSUFFICIENT DATA",
+            "cacheable": false,
+            "min_hits_required": 300
+          }
+        }
+      }
+    },
+    "memory_cross_session": {
+      "label": "Cross-session memory recall (empty chat history)",
+      "n_a": 27,
+      "n_b": 27,
+      "compare_ab": {
+        "n_paired": 0,
+        "n_valid_a": 0,
+        "n_valid_b": 0,
+        "cost_delta_usd_per_task": null,
+        "latency_delta_ms": null,
+        "container_a": {},
+        "container_b": {},
+        "b_cache": {
+          "cache_hit_rate": {
+            "point": 0,
+            "lower95": 0,
+            "upper95": 0,
+            "n": 0,
+            "method": "wilson_95"
+          }
+        },
+        "b_cache_fp_by_slug": {}
+      }
+    },
+    "memory_all": {
+      "label": "All memory tasks",
+      "n_a": 55,
+      "n_b": 55,
+      "compare_ab": {
+        "n_paired": 0,
+        "n_valid_a": 0,
+        "n_valid_b": 14,
+        "cost_delta_usd_per_task": null,
+        "latency_delta_ms": null,
+        "container_a": {},
+        "container_b": {
+          "latency_ms_p50": {
+            "point": 518.0,
+            "lower95": 507.0,
+            "upper95": 533.0,
+            "n": 14,
+            "method": "bootstrap_2000"
+          },
+          "latency_ms_p95": {
+            "point": 615.3499999999999,
+            "lower95": 531.7,
+            "upper95": 707.0,
+            "n": 14,
+            "method": "bootstrap_2000"
+          },
+          "cost_per_task_usd": {
+            "point": 0.0,
+            "lower95": 0.0,
+            "upper95": 0.0,
+            "n": 14,
+            "method": "bootstrap_2000"
+          },
+          "accuracy_rate": {
+            "point": 1.0,
+            "lower95": 1.0,
+            "upper95": 1.0,
+            "n": 14,
+            "method": "wilson_95"
+          },
+          "llm_calls_per_task": {
+            "point": 0.0,
+            "lower95": 0.0,
+            "upper95": 0.0,
+            "n": 14,
+            "method": "bootstrap_2000"
+          }
+        },
+        "b_cache": {
+          "cache_hit_rate": {
+            "point": 0.0,
+            "lower95": 0.0,
+            "upper95": 0.2153108027376358,
+            "n": 14,
+            "method": "wilson_95"
+          }
+        },
+        "b_cache_fp_by_slug": {
+          "user_profile": {
+            "n_tasks": 14,
+            "n_would_serve": 0,
+            "n_fp": 0,
+            "fp_rate_point": 0.0,
+            "fp_upper95": 1.0,
+            "hit_rate_point": 0.0,
+            "verdict": "INSUFFICIENT DATA",
+            "cacheable": false,
+            "min_hits_required": 300
+          }
+        }
+      }
+    },
+    "cache_exact_repeat": {
+      "label": "B cache \u2014 FX exact_repeat",
+      "n_a": 62,
+      "n_b": 62,
+      "compare_ab": {
+        "n_paired": 0,
+        "n_valid_a": 0,
+        "n_valid_b": 4,
+        "cost_delta_usd_per_task": null,
+        "latency_delta_ms": null,
+        "container_a": {},
+        "container_b": {
+          "latency_ms_p50": {
+            "point": 9.0,
+            "lower95": 7.0,
+            "upper95": 10.0,
+            "n": 4,
+            "method": "bootstrap_2000"
+          },
+          "latency_ms_p95": {
+            "point": 10.0,
+            "lower95": 8.0,
+            "upper95": 10.0,
+            "n": 4,
+            "method": "bootstrap_2000"
+          },
+          "cost_per_task_usd": {
+            "point": 0.0,
+            "lower95": 0.0,
+            "upper95": 0.0,
+            "n": 4,
+            "method": "bootstrap_2000"
+          },
+          "accuracy_rate": {
+            "point": 0.75,
+            "lower95": 0.5455872608097005,
+            "upper95": 0.9544127391902995,
+            "n": 4,
+            "method": "wilson_95"
+          },
+          "llm_calls_per_task": {
+            "point": 0.0,
+            "lower95": 0.0,
+            "upper95": 0.0,
+            "n": 4,
+            "method": "bootstrap_2000"
+          }
+        },
+        "b_cache": {
+          "cache_hit_rate": {
+            "point": 0.5,
+            "lower95": 0.15003898915214942,
+            "upper95": 0.8499610108478506,
+            "n": 4,
+            "method": "wilson_95"
+          }
+        },
+        "b_cache_fp_by_slug": {
+          "fx_rates": {
+            "n_tasks": 4,
+            "n_would_serve": 2,
+            "n_fp": 0,
+            "fp_rate_point": 0.0,
+            "fp_upper95": 0.6576197724933469,
+            "hit_rate_point": 0.5,
+            "verdict": "INSUFFICIENT DATA",
+            "cacheable": false,
+            "min_hits_required": 300
+          }
+        }
+      },
+      "b_cache_variant": {
+        "cache_hit_rate": {
+          "point": 0.03225806451612903,
+          "lower95": 0.0,
+          "upper95": 0.11020469594985441,
+          "n": 62,
+          "method": "wilson_95"
+        }
+      }
+    },
+    "cache_paraphrase": {
+      "label": "B cache \u2014 FX paraphrase",
+      "n_a": 59,
+      "n_b": 59,
+      "compare_ab": {
+        "n_paired": 0,
+        "n_valid_a": 0,
+        "n_valid_b": 9,
+        "cost_delta_usd_per_task": null,
+        "latency_delta_ms": null,
+        "container_a": {},
+        "container_b": {
+          "latency_ms_p50": {
+            "point": 8.0,
+            "lower95": 7.0,
+            "upper95": 9.0,
+            "n": 9,
+            "method": "bootstrap_2000"
+          },
+          "latency_ms_p95": {
+            "point": 1570.799999999999,
+            "lower95": 8.0,
+            "upper95": 2612.0,
+            "n": 9,
+            "method": "bootstrap_2000"
+          },
+          "cost_per_task_usd": {
+            "point": 2.6099999999999997e-05,
+            "lower95": 0.0,
+            "upper95": 7.829999999999999e-05,
+            "n": 9,
+            "method": "bootstrap_2000"
+          },
+          "accuracy_rate": {
+            "point": 0.7777777777777778,
+            "lower95": 0.6187806626734023,
+            "upper95": 0.9367748928821533,
+            "n": 9,
+            "method": "wilson_95"
+          },
+          "llm_calls_per_task": {
+            "point": 0.2222222222222222,
+            "lower95": 0.0,
+            "upper95": 0.6666666666666666,
+            "n": 9,
+            "method": "bootstrap_2000"
+          }
+        },
+        "b_cache": {
+          "cache_hit_rate": {
+            "point": 0.5555555555555556,
+            "lower95": 0.29988963220877574,
+            "upper95": 0.8112214789023354,
+            "n": 9,
+            "method": "wilson_95"
+          }
+        },
+        "b_cache_fp_by_slug": {
+          "fx_rates": {
+            "n_tasks": 9,
+            "n_would_serve": 5,
+            "n_fp": 1,
+            "fp_rate_point": 0.2,
+            "fp_upper95": 0.6244653702374747,
+            "hit_rate_point": 0.5555555555555556,
+            "verdict": "INSUFFICIENT DATA",
+            "cacheable": false,
+            "min_hits_required": 300
+          }
+        }
+      },
+      "b_cache_variant": {
+        "cache_hit_rate": {
+          "point": 0.0847457627118644,
+          "lower95": 0.0,
+          "upper95": 0.18351795267410276,
+          "n": 59,
+          "method": "wilson_95"
+        }
+      }
+    }
+  },
+  "slice_table_markdown": "| Slice | n (A/B) | A accuracy (95% CI) | B accuracy (95% CI) | B cache hit-rate |\n|-------|---------|---------------------|---------------------|------------------|\n| Full workload (FX + compound + memory) | 300/300 | 0.0000 [0.0000, 0.0000] | 0.9571 [0.9290, 0.9853] | 0.1000 [0.0077, 0.1923] |\n| FX + compound only (excludes memory tasks) | 245/245 | 0.0000 [0.0000, 0.0000] | 0.9464 [0.9112, 0.9816] | 0.1250 [0.0137, 0.2363] |\n| FX rate tasks only | 202/202 | 0.0000 [0.0000, 0.0000] | 0.8125 [0.6909, 0.9341] | 0.4375 [0.2068, 0.6682] |\n| Cross-session memory recall (empty chat history) | 27/27 | 0.0000 [0.0000, 0.0000] | 0.0000 [0.0000, 0.0000] | \u2014 |\n| All memory tasks | 55/55 | 0.0000 [0.0000, 0.0000] | 1.0000 [1.0000, 1.0000] | 0.0000 [0.0000, 0.2153] |\n| B cache \u2014 FX exact_repeat | \u2014/62 | \u2014 | \u2014 | 0.0323 [0.0000, 0.1102] |\n| B cache \u2014 FX paraphrase | \u2014/59 | \u2014 | \u2014 | 0.0847 [0.0000, 0.1835] |",
+  "paraphrase_cache_forensics": {
+    "n_paraphrase_fx": 59,
+    "n_hit": 5,
+    "n_miss": 4,
+    "hit_rate_point": 0.0847457627118644,
+    "verify_score_miss_mean": 0.0,
+    "verify_score_miss_max": 0.0,
+    "coarse_score_miss_mean": 0.0,
+    "verify_score_hit_mean": 1.0000000238418578,
+    "exact_repeat_cache": {
+      "cache_hit_rate": {
+        "point": 0.03225806451612903,
+        "lower95": 0.0,
+        "upper95": 0.11020469594985441,
+        "n": 62,
+        "method": "wilson_95"
+      }
+    }
+  },
+  "belief_calibration": {
+    "confidence_stop": 1.0,
+    "groundedness_floor": 0.516,
+    "memory_confidence_gate": 0.516,
+    "sample_cache_scores": 69,
+    "sample_grounding_scores": 7,
+    "notes": [
+      "cache_score separation (mean hit - miss): 0.9885"
+    ]
+  },
+  "thresholds": {
+    "coarse": 0.88,
+    "verify_fx_rates": 0.95
+  }
+}

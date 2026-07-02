@@ -19,6 +19,7 @@ class StructuredRecallContext:
     subgraph_hash: str
     cache_hit: bool = False
     replay_answer: Optional[str] = None
+    query_vector_128: Optional[List[float]] = None
 
     @property
     def fact_text(self) -> str:
@@ -26,7 +27,7 @@ class StructuredRecallContext:
 
     def to_memory_state(self) -> Dict[str, Any]:
         """Partial state update — vectors and facts, not LLM prose."""
-        return {
+        state: Dict[str, Any] = {
             "memory_recall": self.fact_text or self.replay_answer,
             "memory_confidence": self.confidence,
             "memory_freshness": self.freshness.isoformat() if self.freshness else None,
@@ -35,6 +36,9 @@ class StructuredRecallContext:
             "memory_subgraph_hash": self.subgraph_hash,
             "memory_evidence": list(self.evidence),
         }
+        if self.query_vector_128 is not None:
+            state["memory_vector_128"] = list(self.query_vector_128)
+        return state
 
 
 def evidence_from_explain(explain: Any) -> List[Dict[str, Any]]:

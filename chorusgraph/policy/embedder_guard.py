@@ -9,7 +9,7 @@ import numpy as np
 
 from prism.cache.embedder import Embedder, HashEmbedder
 
-from chorusgraph.embedders import PrismlangOnnxEmbedder
+from chorusgraph.embedders import CountingEmbedder, PrismlangOnnxEmbedder
 
 CANARY_A = "What is your return policy for online orders?"
 CANARY_B = "Tell me about the return policy for items bought online."
@@ -70,4 +70,5 @@ def build_guarded_cache(
     if embedder is None:
         embedder = PrismlangOnnxEmbedder()
     assert_semantic_embedder(embedder)
-    return PrismCache.build(tenant_id=tenant_id, embedder=embedder)
+    counting = CountingEmbedder(embedder)
+    return PrismCache.build(tenant_id=tenant_id, embedder=counting)

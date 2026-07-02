@@ -1,0 +1,148 @@
+{
+  "run_at": "2026-07-02T18:17:21.059549+00:00",
+  "run_label": "H13_multiagent_dryrun",
+  "n_cases": 12,
+  "seed": 42,
+  "containers": [
+    "C",
+    "D"
+  ],
+  "aggregate": {
+    "C": {
+      "2": {
+        "n": 4,
+        "avg_latency_ms": 5583.5,
+        "avg_tokens_in": 53,
+        "avg_tokens_out": 66.2,
+        "avg_cost_usd": 4.8e-05,
+        "avg_tool_calls": 0,
+        "task_success_rate": 0.25,
+        "abstain_rate": 0.0,
+        "avg_hop_latency_ms": {
+          "intake": 2379.5,
+          "writer": 3202.2
+        },
+        "avg_hop_tokens_in": {
+          "intake": 54.0,
+          "writer": 53.0
+        }
+      },
+      "4": {
+        "n": 4,
+        "avg_latency_ms": 10909.2,
+        "avg_tokens_in": 371.8,
+        "avg_tokens_out": 70.8,
+        "avg_cost_usd": 9.8e-05,
+        "avg_tool_calls": 1,
+        "task_success_rate": 0.5,
+        "abstain_rate": 0.0,
+        "avg_hop_latency_ms": {
+          "intake": 1808.2,
+          "retrieve": 2791.0,
+          "analyze": 3406.8,
+          "writer": 2899.0
+        },
+        "avg_hop_tokens_in": {
+          "intake": 62.0,
+          "retrieve": 249.2,
+          "analyze": 316.2,
+          "writer": 371.8
+        }
+      },
+      "6": {
+        "n": 4,
+        "avg_latency_ms": 14112.5,
+        "avg_tokens_in": 55.5,
+        "avg_tokens_out": 29.5,
+        "avg_cost_usd": 2.6e-05,
+        "avg_tool_calls": 1.5,
+        "task_success_rate": 0.5,
+        "abstain_rate": 0.75,
+        "avg_hop_latency_ms": {
+          "intake": 1609.5,
+          "retrieve": 2303.2,
+          "analyze": 4623.2,
+          "drug_check": 904.0,
+          "safety": 3633.5,
+          "writer": 1034.0
+        },
+        "avg_hop_tokens_in": {
+          "intake": 54.2,
+          "retrieve": 203.8,
+          "analyze": 269.2,
+          "drug_check": 55.0,
+          "safety": 179.8,
+          "writer": 55.5
+        }
+      }
+    },
+    "D": {
+      "2": {
+        "n": 4,
+        "avg_latency_ms": 5657.5,
+        "avg_tokens_in": 53,
+        "avg_tokens_out": 83.5,
+        "avg_cost_usd": 5.8e-05,
+        "avg_tool_calls": 0,
+        "task_success_rate": 0.25,
+        "abstain_rate": 0.0,
+        "avg_hop_latency_ms": {
+          "intake": 2537.0,
+          "writer": 3113.8
+        },
+        "avg_hop_tokens_in": {
+          "intake": 54.0,
+          "writer": 53.0
+        }
+      },
+      "4": {
+        "n": 4,
+        "avg_latency_ms": 13474.2,
+        "avg_tokens_in": 326.8,
+        "avg_tokens_out": 80.2,
+        "avg_cost_usd": 9.7e-05,
+        "avg_tool_calls": 1,
+        "task_success_rate": 0.25,
+        "abstain_rate": 0.0,
+        "avg_hop_latency_ms": {
+          "intake": 2424.0,
+          "retrieve": 3362.5,
+          "analyze": 4793.0,
+          "writer": 2883.2
+        },
+        "avg_hop_tokens_in": {
+          "intake": 62.0,
+          "retrieve": 259.8,
+          "analyze": 334.8,
+          "writer": 326.8
+        }
+      },
+      "6": {
+        "n": 4,
+        "avg_latency_ms": 14870.2,
+        "avg_tokens_in": 194.5,
+        "avg_tokens_out": 72.2,
+        "avg_cost_usd": 7.3e-05,
+        "avg_tool_calls": 1.5,
+        "task_success_rate": 0.5,
+        "abstain_rate": 0.5,
+        "avg_hop_latency_ms": {
+          "intake": 1755.2,
+          "retrieve": 3085.2,
+          "analyze": 3611.0,
+          "drug_check": 904.5,
+          "safety": 4179.5,
+          "writer": 1324.8
+        },
+        "avg_hop_tokens_in": {
+          "intake": 54.2,
+          "retrieve": 204.2,
+          "analyze": 282.8,
+          "drug_check": 55.0,
+          "safety": 224.8,
+          "writer": 194.5
+        }
+      }
+    }
+  }
+}

@@ -7,6 +7,27 @@ import numpy as np
 from prism.cache.embedder import Embedder
 
 
+class CountingEmbedder(Embedder):
+    """Wraps an embedder and counts embed() calls (per-turn via reset_turn_calls)."""
+
+    def __init__(self, inner: Embedder) -> None:
+        self._inner = inner
+        self.total_calls = 0
+        self.turn_calls = 0
+
+    @property
+    def output_dim(self) -> int:
+        return self._inner.output_dim
+
+    def reset_turn_calls(self) -> None:
+        self.turn_calls = 0
+
+    def embed(self, text: str) -> np.ndarray:
+        self.total_calls += 1
+        self.turn_calls += 1
+        return self._inner.embed(text)
+
+
 class PrismlangOnnxEmbedder(Embedder):
     """
     Real all-MiniLM-L6-v2 embeddings via prismlang's ONNX encoder.

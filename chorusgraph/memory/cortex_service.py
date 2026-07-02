@@ -55,6 +55,9 @@ class CortexMemoryService:
     def ensure_memory(self) -> Any:
         if self._memory is None:
             resolve_gemini_api_key()  # fail loud before constructing Gemini-backed Cortex
+            from chorusgraph.memory.cortex_compat import apply_cortex_compat_patches
+
+            apply_cortex_compat_patches()
             from prismcortex.adapters.prism import prism_memory
 
             self._memory = prism_memory(
@@ -99,22 +102,33 @@ class CortexMemoryService:
         *,
         cache: Any = None,
         profile_fallback: bool = False,
+        raw_384: Any = None,
+        vector_64: Optional[List[float]] = None,
     ) -> Optional[StructuredRecallContext]:
         """
         Vector + graph-fact recall for internal hops — no rendered prose.
 
-        Uses ONNX embed + 64-d projection (same substrate as cache_gate) and Cortex
-        explain() for provenance facts. Optional byte-identical replay_answer only when
-        Cortex answer cache hits.
+        Cortex uses native **128-d** projection from shared raw_384 (H13).
+        vector_64 (cache substrate) is stored for audit only when provided.
         """
-        vector_64: List[float] = []
+        vector_128_list: List[float] = []
+        vector_64_list: List[float] = list(vector_64 or [])
         category_slug = ""
-        if cache is not None:
-            from chorusgraph.transforms.projector import project_text
 
-            _, envelope = project_text(cache, query)
-            vector_64 = [float(x) for x in envelope.vector]
-            category_slug = str(getattr(envelope, "category_slug", "") or "")
+        if raw_384 is not None:
+            from chorusgraph.transforms.cortex_projector import project_cortex_from_raw
+
+            slug, vec128, _ = project_cortex_from_raw(self.tenant_id, query, raw_384, k=self.k)
+            vector_128_list = [float(x) for x in vec128]
+            category_slug = slug
+        elif cache is not None:
+            from chorusgraph.transforms.cortex_projector import project_cortex_text
+
+            slug, vec128, _ = project_cortex_text(self.tenant_id, query, k=self.k)
+            vector_128_list = [float(x) for x in vec128]
+            category_slug = slug
+        elif vector_64:
+            vector_64_list = [float(x) for x in vector_64]
 
         candidates = [query]
         if profile_fallback:
@@ -130,7 +144,8 @@ class CortexMemoryService:
                 continue
 
             return StructuredRecallContext(
-                query_vector_64=vector_64,
+                query_vector_64=vector_64_list,
+                query_vector_128=vector_128_list or None,
                 category_slug=category_slug,
                 evidence=evidence,
                 confidence=float(explain.confidence or 0.0),

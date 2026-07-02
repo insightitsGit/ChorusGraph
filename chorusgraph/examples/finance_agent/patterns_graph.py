@@ -13,6 +13,7 @@ from chorusgraph.agents.policy import PlanPolicy
 from chorusgraph.examples.finance_agent.nodes import (
     make_cache_gate_handler,
     make_compound_tool_handler,
+    make_vector_ingress_handler,
     route_after_cache_pattern,
 )
 from chorusgraph.examples.finance_agent.pattern_nodes import (
@@ -31,6 +32,8 @@ class PatternState(TypedDict, total=False):
     tenant_id: str
     turn_id: str
     message: str
+    raw_embedding_384: Optional[List[float]]
+    query_vector_64: Optional[List[float]]
     execution_pattern: str
     conversation_history: List[Dict[str, str]]
     tool_calls: List[Dict[str, Any]]
@@ -66,12 +69,13 @@ def _add_common_nodes(
     coarse_threshold: float = 0.82,
     verify_threshold: float = 0.85,
 ) -> None:
+    graph.add_node("vector_ingress", make_vector_ingress_handler(runtime))
     graph.add_node(
         "cache_gate",
         make_cache_gate_handler(runtime, coarse_threshold=coarse_threshold, verify_threshold=verify_threshold),
     )
     graph.add_node("writer", make_pattern_writer_handler(runtime))
-
+    graph.add_edge("vector_ingress", "cache_gate")
 
 def build_react_graph(
     runtime: Optional[FinanceRuntime] = None,
@@ -90,7 +94,7 @@ def build_react_graph(
     graph.add_node("compound_tool", make_compound_tool_handler(runtime))
     graph.add_node("validator", make_reflection_validator_handler(runtime, policy=PlanPolicy(max_reflection_passes=1)))
 
-    graph.add_edge(START, "cache_gate")
+    graph.add_edge(START, "vector_ingress")
     graph.add_conditional_edges(
         "cache_gate",
         route_after_cache_pattern,
@@ -115,7 +119,7 @@ def build_reflection_graph(
     graph.add_node("plan_solve", make_plan_solve_handler(runtime, policy=PlanPolicy(max_steps=2)))
     graph.add_node("validator", make_reflection_validator_handler(runtime, policy=policy))
 
-    graph.add_edge(START, "cache_gate")
+    graph.add_edge(START, "vector_ingress")
     graph.add_edge("cache_gate", "plan_solve")
     graph.add_edge("plan_solve", "writer")
     graph.add_edge("writer", "validator")
@@ -135,7 +139,7 @@ def build_plan_solve_graph(
     graph.add_node("plan_solve", make_plan_solve_handler(runtime, policy=policy))
     graph.add_node("validator", make_reflection_validator_handler(runtime, policy=PlanPolicy(max_reflection_passes=1)))
 
-    graph.add_edge(START, "cache_gate")
+    graph.add_edge(START, "vector_ingress")
     graph.add_edge("cache_gate", "plan_solve")
     graph.add_edge("plan_solve", "writer")
     graph.add_edge("writer", "validator")

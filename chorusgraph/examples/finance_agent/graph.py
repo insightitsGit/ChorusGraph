@@ -14,6 +14,7 @@ from chorusgraph.examples.finance_agent.nodes import (
     make_researcher_handler,
     make_tool_handler,
     make_validator_handler,
+    make_vector_ingress_handler,
     make_writer_handler,
     route_after_cache,
     route_after_research,
@@ -28,6 +29,8 @@ class FinanceState(TypedDict, total=False):
     tenant_id: str
     turn_id: str
     message: str
+    raw_embedding_384: Optional[List[float]]
+    query_vector_64: Optional[List[float]]
     conversation_history: List[Dict[str, str]]
     needs_tool: bool
     tool_name: str
@@ -64,6 +67,7 @@ def build_finance_graph(
     runtime = runtime or FinanceRuntime()
     graph = StateGraph(FinanceState)
 
+    graph.add_node("vector_ingress", make_vector_ingress_handler(runtime))
     graph.add_node("cache_gate", make_cache_gate_handler(
         runtime, coarse_threshold=coarse_threshold, verify_threshold=verify_threshold,
     ))
@@ -72,7 +76,8 @@ def build_finance_graph(
     graph.add_node("writer", make_writer_handler(runtime))
     graph.add_node("validator", make_validator_handler(runtime))
 
-    graph.add_edge(START, "cache_gate")
+    graph.add_edge(START, "vector_ingress")
+    graph.add_edge("vector_ingress", "cache_gate")
     graph.add_conditional_edges(
         "cache_gate",
         route_after_cache,

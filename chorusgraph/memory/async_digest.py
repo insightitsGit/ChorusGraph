@@ -31,21 +31,35 @@ class AsyncDigester:
         from prismcortex.models import DigestOutcome
 
         mem = self._memory_factory()
-        result = mem.digest(text, source_id=source_id, agent_id=agent_id)
+        try:
+            result = mem.digest(text, source_id=source_id, agent_id=agent_id)
+        except Exception as exc:
+            logger.warning("cortex digest failed for %s: %s", source_id, exc)
+            return "failed"
         logger.debug("cortex digest outcome=%s reason=%s", result.outcome, result.reason)
         if result.outcome == DigestOutcome.STAGED:
-            mem.sleep()
+            try:
+                mem.sleep()
+            except Exception as exc:
+                logger.warning("cortex sleep failed after digest %s: %s", source_id, exc)
         return result.outcome.value
 
     def _run_sleep(self) -> int:
         mem = self._memory_factory()
-        return mem.sleep()
+        try:
+            return mem.sleep()
+        except Exception as exc:
+            logger.warning("cortex sleep failed: %s", exc)
+            return 0
 
     def wait_idle(self, timeout: float = 120.0) -> None:
         pending = list(self._futures)
         self._futures.clear()
         for future in pending:
-            future.result(timeout=timeout)
+            try:
+                future.result(timeout=timeout)
+            except Exception as exc:
+                logger.warning("cortex background task failed: %s", exc)
 
     def shutdown(self) -> None:
         self._executor.shutdown(wait=False)

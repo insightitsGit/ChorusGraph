@@ -310,6 +310,15 @@ def format_slice_table(slices: Dict[str, Dict[str, object]]) -> str:
     return "\n".join(lines)
 
 
+def _fmt_ci(metric: dict, *, default: float = 0.0) -> str:
+    point = metric.get("point", default)
+    lo = metric.get("lower95", default)
+    hi = metric.get("upper95", default)
+    if not isinstance(point, (int, float)):
+        return "—"
+    return f"{float(point):.4f} [{float(lo):.4f}, {float(hi):.4f}]"
+
+
 def format_ci_table(band_results: Dict[int, Dict[str, object]]) -> str:
     lines = ["| Band | Metric | A (95% CI) | B (95% CI) |", "|------|--------|------------|------------|"]
     for band, data in sorted(band_results.items()):
@@ -318,13 +327,10 @@ def format_ci_table(band_results: Dict[int, Dict[str, object]]) -> str:
             a_m = (ab.get("container_a") or {}).get(metric) or {}
             b_m = (ab.get("container_b") or {}).get(metric) or {}
             lines.append(
-                f"| {band}% | {metric} | "
-                f"{a_m.get('point', '—'):.4f} [{a_m.get('lower95', '—')}, {a_m.get('upper95', '—')}] | "
-                f"{b_m.get('point', '—'):.4f} [{b_m.get('lower95', '—')}, {b_m.get('upper95', '—')}] |"
+                f"| {band}% | {metric} | {_fmt_ci(a_m)} | {_fmt_ci(b_m)} |"
             )
         cache = (ab.get("b_cache") or {}).get("cache_hit_rate") or {}
         lines.append(
-            f"| {band}% | b_cache_hit_rate | — | "
-            f"{cache.get('point', 0):.4f} [{cache.get('lower95', 0)}, {cache.get('upper95', 0)}] |"
+            f"| {band}% | b_cache_hit_rate | — | {_fmt_ci(cache)} |"
         )
     return "\n".join(lines)

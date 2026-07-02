@@ -1,0 +1,330 @@
+{
+  "run_at": "2026-07-02T20:49:28.516164+00:00",
+  "run_label": "H14_finance_multiagent",
+  "n_tasks": 12,
+  "seed": 42,
+  "repeat_band_pct": 40,
+  "containers": [
+    "E",
+    "F"
+  ],
+  "workload_stats": {
+    "total": 12,
+    "sessions": 3,
+    "exact_repeat": 3,
+    "paraphrase": 2,
+    "novel": 4,
+    "memory_seed": 2,
+    "memory_recall": 0,
+    "memory_recall_cross": 1
+  },
+  "aggregate": {
+    "E": {
+      "n": 12,
+      "avg_latency_ms": 4148.7,
+      "avg_tokens_in": 574.3,
+      "avg_tokens_out": 123.9,
+      "avg_cost_usd": 0.00016,
+      "avg_llm_calls": 2.25,
+      "task_success_rate": 0.5,
+      "cache_hit_rate": 0.0,
+      "avg_embed_count": 0,
+      "avg_hop_latency_ms": {
+        "researcher": 1017.4,
+        "tool": 249.8,
+        "writer": 1897.2,
+        "validator": 981.0
+      },
+      "avg_hop_tokens_in": {
+        "researcher": 286.1,
+        "tool": 0.0,
+        "writer": 251.4,
+        "validator": 36.8
+      }
+    },
+    "F": {
+      "n": 12,
+      "avg_latency_ms": 1085.7,
+      "avg_tokens_in": 137.8,
+      "avg_tokens_out": 42.8,
+      "avg_cost_usd": 4.6e-05,
+      "avg_llm_calls": 0.67,
+      "task_success_rate": 0.583,
+      "cache_hit_rate": 0.417,
+      "avg_embed_count": 4,
+      "avg_hop_latency_ms": {
+        "vector_ingress": 3.7,
+        "cache_gate": 0.0,
+        "researcher": 700.1,
+        "tool": 125.8,
+        "writer": 248.3,
+        "validator": 2.6
+      },
+      "avg_hop_tokens_in": {
+        "vector_ingress": 0.0,
+        "cache_gate": 0.0,
+        "researcher": 117.7,
+        "tool": 0.0,
+        "writer": 20.2,
+        "validator": 0.0
+      }
+    }
+  },
+  "by_variant": {
+    "E": {
+      "exact_repeat": {
+        "n": 3,
+        "avg_latency_ms": 2478,
+        "avg_tokens_in": 691,
+        "avg_tokens_out": 104,
+        "avg_cost_usd": 0.000166,
+        "avg_llm_calls": 2,
+        "task_success_rate": 0.0,
+        "cache_hit_rate": 0.0,
+        "avg_embed_count": 0,
+        "avg_hop_latency_ms": {
+          "researcher": 953.7,
+          "tool": 295.7,
+          "writer": 1226.0,
+          "validator": 0.0
+        },
+        "avg_hop_tokens_in": {
+          "researcher": 364.3,
+          "tool": 0.0,
+          "writer": 326.7,
+          "validator": 0.0
+        }
+      },
+      "memory_recall_cross": {
+        "n": 1,
+        "avg_latency_ms": 7899,
+        "avg_tokens_in": 494,
+        "avg_tokens_out": 158,
+        "avg_cost_usd": 0.000169,
+        "avg_llm_calls": 3,
+        "task_success_rate": 1.0,
+        "cache_hit_rate": 0.0,
+        "avg_embed_count": 0,
+        "avg_hop_latency_ms": {
+          "researcher": 1570.0,
+          "tool": 295.0,
+          "writer": 1171.0,
+          "validator": 4860.0
+        },
+        "avg_hop_tokens_in": {
+          "researcher": 188.0,
+          "tool": 0.0,
+          "writer": 163.0,
+          "validator": 143.0
+        }
+      },
+      "memory_seed": {
+        "n": 2,
+        "avg_latency_ms": 9980.5,
+        "avg_tokens_in": 531.5,
+        "avg_tokens_out": 155,
+        "avg_cost_usd": 0.000173,
+        "avg_llm_calls": 3,
+        "task_success_rate": 0.5,
+        "cache_hit_rate": 0.0,
+        "avg_embed_count": 0,
+        "avg_hop_latency_ms": {
+          "researcher": 949.0,
+          "tool": 178.5,
+          "writer": 5392.0,
+          "validator": 3456.0
+        },
+        "avg_hop_tokens_in": {
+          "researcher": 196.0,
+          "tool": 0.0,
+          "writer": 186.0,
+          "validator": 149.5
+        }
+      },
+      "novel": {
+        "n": 4,
+        "avg_latency_ms": 2442,
+        "avg_tokens_in": 506.8,
+        "avg_tokens_out": 123,
+        "avg_cost_usd": 0.00015,
+        "avg_llm_calls": 2,
+        "task_success_rate": 0.75,
+        "cache_hit_rate": 0.0,
+        "avg_embed_count": 0,
+        "avg_hop_latency_ms": {
+          "researcher": 1040.2,
+          "tool": 229.5,
+          "writer": 1169.0,
+          "validator": 0.0
+        },
+        "avg_hop_tokens_in": {
+          "researcher": 276.2,
+          "tool": 0.0,
+          "writer": 230.5,
+          "validator": 0.0
+        }
+      },
+      "paraphrase": {
+        "n": 2,
+        "avg_latency_ms": 2361,
+        "avg_tokens_in": 617.5,
+        "avg_tokens_out": 107.5,
+        "avg_cost_usd": 0.000157,
+        "avg_llm_calls": 2,
+        "task_success_rate": 0.5,
+        "cache_hit_rate": 0.0,
+        "avg_embed_count": 0,
+        "avg_hop_latency_ms": {
+          "researcher": 859.5,
+          "tool": 270.0,
+          "writer": 1228.5,
+          "validator": 0.0
+        },
+        "avg_hop_tokens_in": {
+          "researcher": 327.5,
+          "tool": 0.0,
+          "writer": 290.0,
+          "validator": 0.0
+        }
+      }
+    },
+    "F": {
+      "exact_repeat": {
+        "n": 3,
+        "avg_latency_ms": 37.7,
+        "avg_tokens_in": 0,
+        "avg_tokens_out": 0,
+        "avg_cost_usd": 0.0,
+        "avg_llm_calls": 0,
+        "task_success_rate": 0.0,
+        "cache_hit_rate": 1.0,
+        "avg_embed_count": 4,
+        "avg_hop_latency_ms": {
+          "vector_ingress": 2.7,
+          "cache_gate": 0.0,
+          "researcher": 3.3,
+          "tool": 12.0,
+          "writer": 11.7,
+          "validator": 2.7
+        },
+        "avg_hop_tokens_in": {
+          "vector_ingress": 0.0,
+          "cache_gate": 0.0,
+          "researcher": 0.0,
+          "tool": 0.0,
+          "writer": 0.0,
+          "validator": 0.0
+        }
+      },
+      "memory_recall_cross": {
+        "n": 1,
+        "avg_latency_ms": 1936,
+        "avg_tokens_in": 199,
+        "avg_tokens_out": 45,
+        "avg_cost_usd": 5.7e-05,
+        "avg_llm_calls": 1,
+        "task_success_rate": 1.0,
+        "cache_hit_rate": 0.0,
+        "avg_embed_count": 4,
+        "avg_hop_latency_ms": {
+          "vector_ingress": 3.0,
+          "cache_gate": 0.0,
+          "researcher": 1638.0,
+          "tool": 270.0,
+          "writer": 17.0,
+          "validator": 3.0
+        },
+        "avg_hop_tokens_in": {
+          "vector_ingress": 0.0,
+          "cache_gate": 0.0,
+          "researcher": 199.0,
+          "tool": 0.0,
+          "writer": 0.0,
+          "validator": 0.0
+        }
+      },
+      "memory_seed": {
+        "n": 2,
+        "avg_latency_ms": 1696,
+        "avg_tokens_in": 207,
+        "avg_tokens_out": 43.5,
+        "avg_cost_usd": 5.7e-05,
+        "avg_llm_calls": 1,
+        "task_success_rate": 1.0,
+        "cache_hit_rate": 0.0,
+        "avg_embed_count": 4,
+        "avg_hop_latency_ms": {
+          "vector_ingress": 8.0,
+          "cache_gate": 0.0,
+          "researcher": 983.0,
+          "tool": 152.5,
+          "writer": 544.5,
+          "validator": 2.5
+        },
+        "avg_hop_tokens_in": {
+          "vector_ingress": 0.0,
+          "cache_gate": 0.0,
+          "researcher": 207.0,
+          "tool": 0.0,
+          "writer": 0.0,
+          "validator": 0.0
+        }
+      },
+      "novel": {
+        "n": 4,
+        "avg_latency_ms": 1878.5,
+        "avg_tokens_in": 260.2,
+        "avg_tokens_out": 95.5,
+        "avg_cost_usd": 9.6e-05,
+        "avg_llm_calls": 1.25,
+        "task_success_rate": 0.75,
+        "cache_hit_rate": 0.0,
+        "avg_embed_count": 4,
+        "avg_hop_latency_ms": {
+          "vector_ingress": 3.0,
+          "cache_gate": 0.0,
+          "researcher": 1195.0,
+          "tool": 218.8,
+          "writer": 455.0,
+          "validator": 2.5
+        },
+        "avg_hop_tokens_in": {
+          "vector_ingress": 0.0,
+          "cache_gate": 0.0,
+          "researcher": 199.8,
+          "tool": 0.0,
+          "writer": 60.5,
+          "validator": 0.0
+        }
+      },
+      "paraphrase": {
+        "n": 2,
+        "avg_latency_ms": 36.5,
+        "avg_tokens_in": 0,
+        "avg_tokens_out": 0,
+        "avg_cost_usd": 0.0,
+        "avg_llm_calls": 0,
+        "task_success_rate": 0.5,
+        "cache_hit_rate": 1.0,
+        "avg_embed_count": 4,
+        "avg_hop_latency_ms": {
+          "vector_ingress": 2.5,
+          "cache_gate": 0.0,
+          "researcher": 3.5,
+          "tool": 12.0,
+          "writer": 9.5,
+          "validator": 2.5
+        },
+        "avg_hop_tokens_in": {
+          "vector_ingress": 0.0,
+          "cache_gate": 0.0,
+          "researcher": 0.0,
+          "tool": 0.0,
+          "writer": 0.0,
+          "validator": 0.0
+        }
+      }
+    }
+  },
+  "comparison_note": "E = LangGraph multi-agent (growing context). F = ChorusGraph multi-agent (envelope handoffs + cache_gate + Cortex). Compare to A/B single-agent on same workload via run_volume.py."
+}

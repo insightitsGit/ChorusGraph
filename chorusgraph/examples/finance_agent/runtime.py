@@ -22,11 +22,12 @@ class FinanceRuntime:
     cortex: Optional[CortexMemoryService] = None
     cortex_cache_dir: str = ".chorusgraph/cortex"
     session_tool_cache: Dict[str, Any] = field(default_factory=dict)
+    enable_cortex: bool = True
 
     def __post_init__(self) -> None:
         if self.cache is None:
             self.cache = build_guarded_cache(self.tenant_id)
-        if self.cortex is None:
+        if self.enable_cortex and self.cortex is None:
             self.cortex = get_cortex_service(
                 tenant_id=self.tenant_id,
                 cache_dir=self.cortex_cache_dir,

@@ -1,0 +1,160 @@
+{
+  "run_at": "2026-07-02T20:27:35.911390+00:00",
+  "run_label": "H13_multiagent_dryrun",
+  "n_cases": 12,
+  "seed": 42,
+  "containers": [
+    "C",
+    "D"
+  ],
+  "aggregate": {
+    "C": {
+      "2": {
+        "n": 4,
+        "avg_latency_ms": 5354.2,
+        "avg_total_tokens_in": 107,
+        "avg_tokens_in": 107,
+        "avg_tokens_out": 119,
+        "avg_cost_usd": 8.7e-05,
+        "avg_tool_calls": 0,
+        "task_success_rate": 0.5,
+        "abstain_rate": 0.0,
+        "avg_embed_count": 0,
+        "avg_hop_latency_ms": {
+          "intake": 2038.0,
+          "writer": 3314.5
+        },
+        "avg_hop_tokens_in": {
+          "intake": 54.0,
+          "writer": 53.0
+        }
+      },
+      "4": {
+        "n": 4,
+        "avg_latency_ms": 12497,
+        "avg_total_tokens_in": 997.5,
+        "avg_tokens_in": 997.5,
+        "avg_tokens_out": 383.8,
+        "avg_cost_usd": 0.00038,
+        "avg_tool_calls": 1,
+        "task_success_rate": 0.75,
+        "abstain_rate": 0.0,
+        "avg_embed_count": 0,
+        "avg_hop_latency_ms": {
+          "intake": 3008.5,
+          "retrieve": 2671.2,
+          "analyze": 3528.2,
+          "writer": 3284.5
+        },
+        "avg_hop_tokens_in": {
+          "intake": 62.0,
+          "retrieve": 248.5,
+          "analyze": 314.8,
+          "writer": 372.2
+        }
+      },
+      "6": {
+        "n": 4,
+        "avg_latency_ms": 13239.8,
+        "avg_total_tokens_in": 837.2,
+        "avg_tokens_in": 837.2,
+        "avg_tokens_out": 304.5,
+        "avg_cost_usd": 0.000308,
+        "avg_tool_calls": 1.5,
+        "task_success_rate": 0.5,
+        "abstain_rate": 0.75,
+        "avg_embed_count": 0,
+        "avg_hop_latency_ms": {
+          "intake": 1733.0,
+          "retrieve": 2610.2,
+          "analyze": 3369.5,
+          "drug_check": 823.0,
+          "safety": 3906.5,
+          "writer": 792.2
+        },
+        "avg_hop_tokens_in": {
+          "intake": 54.2,
+          "retrieve": 207.5,
+          "analyze": 273.8,
+          "drug_check": 55.0,
+          "safety": 191.8,
+          "writer": 55.0
+        }
+      }
+    },
+    "D": {
+      "2": {
+        "n": 4,
+        "avg_latency_ms": 6775,
+        "avg_total_tokens_in": 241.5,
+        "avg_tokens_in": 241.5,
+        "avg_tokens_out": 140.5,
+        "avg_cost_usd": 0.000121,
+        "avg_tool_calls": 0,
+        "task_success_rate": 0.5,
+        "abstain_rate": 0.0,
+        "avg_embed_count": 1,
+        "avg_hop_latency_ms": {
+          "intake": 2611.8,
+          "writer": 4161.8
+        },
+        "avg_hop_tokens_in": {
+          "intake": 55.0,
+          "writer": 186.5
+        }
+      },
+      "4": {
+        "n": 4,
+        "avg_latency_ms": 14172.2,
+        "avg_total_tokens_in": 754.8,
+        "avg_tokens_in": 754.8,
+        "avg_tokens_out": 361.2,
+        "avg_cost_usd": 0.00033,
+        "avg_tool_calls": 1,
+        "task_success_rate": 0.5,
+        "abstain_rate": 0.0,
+        "avg_embed_count": 3,
+        "avg_hop_latency_ms": {
+          "intake": 2832.8,
+          "retrieve": 3354.2,
+          "analyze": 4880.2,
+          "writer": 3101.5
+        },
+        "avg_hop_tokens_in": {
+          "intake": 63.0,
+          "retrieve": 283.8,
+          "analyze": 214.2,
+          "writer": 193.8
+        }
+      },
+      "6": {
+        "n": 4,
+        "avg_latency_ms": 17422.2,
+        "avg_total_tokens_in": 1132.5,
+        "avg_tokens_in": 1132.5,
+        "avg_tokens_out": 393.8,
+        "avg_cost_usd": 0.000406,
+        "avg_tool_calls": 1.75,
+        "task_success_rate": 0.5,
+        "abstain_rate": 0.25,
+        "avg_embed_count": 5,
+        "avg_hop_latency_ms": {
+          "intake": 2051.0,
+          "retrieve": 3374.0,
+          "analyze": 4541.5,
+          "drug_check": 1346.5,
+          "safety": 4021.5,
+          "writer": 2082.5
+        },
+        "avg_hop_tokens_in": {
+          "intake": 55.2,
+          "retrieve": 274.2,
+          "analyze": 203.5,
+          "drug_check": 127.0,
+          "safety": 305.5,
+          "writer": 167.0
+        }
+      }
+    }
+  }
+}

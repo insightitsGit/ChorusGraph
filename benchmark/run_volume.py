@@ -132,7 +132,7 @@ def run_volume_benchmark(
         "seed": seed,
         "threshold_provenance": THRESHOLD_PROVENANCE,
         "fairness_doc": "benchmark/FAIRNESS_H9.md",
-        "code_version": "0.9.3",
+        "code_version": "0.9.4",
         "fixes_applied": [
             "react_cache_seed",
             "pattern_state_cache_score",
@@ -144,6 +144,8 @@ def run_volume_benchmark(
             "container_a_fresh_turn_state",
             "container_a_no_memory_saver",
             "container_a_react_loop",
+            "vector_ingress_embed_once",
+            "counting_embedder",
         ],
         "cache_seed_all_canonical_phrases": seed_all_canonical_phrases,
     }

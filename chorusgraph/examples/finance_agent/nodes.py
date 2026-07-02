@@ -10,7 +10,12 @@ from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
 from chorusgraph.memory.recall import format_evidence_for_llm
 from chorusgraph.nodes.roles import ResearcherNode, ValidatorNode, WriterNode
 from chorusgraph.transforms.intent import needs_compound_tool, parse_compound_params
-from chorusgraph.transforms.projector import project_text
+from chorusgraph.transforms.projector import (
+    project_from_raw,
+    project_text,
+    raw_from_state,
+    vector_64_from_state,
+)
 from chorusgraph.transforms.templates import try_template_draft
 from chorusgraph.sections.models import CachePolicy, Section
 
@@ -62,6 +67,31 @@ def _needs_fx_tool(message: str) -> bool:
     return any(h in lower for h in _FX_HINTS) or _parse_fx_pair(message) is not None
 
 
+def _reset_embed_turn(runtime: FinanceRuntime) -> None:
+    embedder = getattr(runtime.cache, "_embedder", None)
+    if embedder is not None and hasattr(embedder, "reset_turn_calls"):
+        embedder.reset_turn_calls()
+
+
+def make_vector_ingress_handler(runtime: FinanceRuntime):
+    """Compute ONNX 384-d embed once per turn; share projections downstream."""
+
+    def vector_ingress_node(state: Dict[str, Any]) -> Dict[str, Any]:
+        message = state.get("message") or ""
+        if not message or runtime.cache is None:
+            return {"rule_chain": ["vector_ingress=skip"]}
+
+        _reset_embed_turn(runtime)
+        raw, envelope = project_text(runtime.cache, message)
+        return {
+            "raw_embedding_384": [float(x) for x in raw.ravel()],
+            "query_vector_64": [float(x) for x in envelope.vector],
+            "rule_chain": ["vector_ingress=embed_once"],
+        }
+
+    return vector_ingress_node
+
+
 def make_cache_gate_handler(
     runtime: FinanceRuntime,
     *,
@@ -83,6 +113,8 @@ def make_cache_gate_handler(
             runtime.sidecar,
             coarse_threshold=coarse_threshold,
             verify_threshold=verify_threshold,
+            raw_embedding_384=raw_from_state(state),
+            projected_vector_64=vector_64_from_state(state),
         )
         update: Dict[str, Any] = {
             "cache_hit": decision.is_hit,
@@ -246,12 +278,21 @@ def make_writer_handler(runtime: FinanceRuntime):
         system = role_node.role.system_prompt if role_node.role else ""
 
         prism_update: Dict[str, Any] = {}
+        raw_arr = raw_from_state(state)
         if runtime.cache is not None and message:
-            _, envelope = project_text(runtime.cache, message)
+            if raw_arr is not None:
+                _, envelope = project_from_raw(runtime.cache, raw_arr)
+            else:
+                raw_arr, envelope = project_text(runtime.cache, message)
             prism_update["prism_sequence"] = [envelope]
 
+        vector_64 = state.get("query_vector_64")
         memory_ctx = (
-            runtime.cortex.recall_structured(message, cache=runtime.cache)
+            runtime.cortex.recall_structured(
+                message,
+                cache=runtime.cache,
+                raw_384=raw_arr,
+            )
             if runtime.cortex
             else None
         )
@@ -289,7 +330,7 @@ def make_writer_handler(runtime: FinanceRuntime):
             update.update(memory_ctx.to_memory_state())
             update["rule_chain"] = list(update["rule_chain"]) + [
                 f"memory_confidence={memory_ctx.confidence:.3f}",
-                f"memory_vector_dim={len(memory_ctx.query_vector_64)}",
+                f"memory_vector_dim={len(memory_ctx.query_vector_128 or memory_ctx.query_vector_64)}",
             ]
         return update
 

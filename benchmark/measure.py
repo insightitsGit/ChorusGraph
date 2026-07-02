@@ -7,7 +7,7 @@ import statistics
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Literal, Optional
 
-ContainerId = Literal["A", "B"]
+ContainerId = Literal["A", "B", "E", "F"]
 
 
 def score_task_success(
@@ -76,6 +76,8 @@ class TaskMeasurement:
     category_slug: Optional[str] = None
     memory_cortex_group: Optional[str] = None
     cross_session_recall: Optional[bool] = None
+    hop_metrics: Optional[List[Dict[str, Any]]] = None
+    embed_count: Optional[int] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
