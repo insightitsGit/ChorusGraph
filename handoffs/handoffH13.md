@@ -1,94 +1,111 @@
-# Handoff H13 — Multi-agent benchmark (C vs D, healthcare): the vector-substrate thesis
+# Handoff H13 — Close the MVP (Cortex fix + volume) + Multi-agent C vs D (healthcare)
 
 **From:** Architect (Claude, verify role) · **To:** Senior Engineer (Cursor) · **Director:** Amin
-**Reference:** `docs/BENCHMARK.md` (fairness), the multi-agent design (DESIGN §7.6/§7.7), CHORUS/PrismLang.
+**Reference:** handoffbackH12, `docs/BENCHMARK.md` (fairness), multi-agent design (DESIGN §7.6/§7.7), CHORUS/PrismLang.
 **Return in:** `handoffs/handoffbackH13.md`.
 
-**The point.** A/B was **single-agent** — it never exercised ChorusGraph's biggest differentiator: the
-**vector substrate + fast M2M communication** in *multi-agent* systems. H13 adds **C vs D** in **healthcare**:
-- **C = a competent multi-agent healthcare app on LangGraph** (baseline).
-- **D = the same app on ChorusGraph** (vector hops / PrismLang envelope, role-typed agents, cache, Cortex).
-Same app, same agents, same tools, same model — **only the framework differs.**
+Two parts: **A) finish the outstanding MVP items** (the Cortex 128-d check + the volume run that quota blocked),
+then **B) the multi-agent C-vs-D healthcare benchmark** — the test that proves the vector-substrate thesis A/B never could.
 
-## 0. Operating rules — fairness is even more critical here
-- **Learn from the A disaster.** In A/B, Container A never called its tools and we almost shipped a mirage.
-  In a *multi-agent* baseline the failure surface is bigger (agents that don't hand off, don't call tools,
-  or lose state). **C must be a genuinely competent LangGraph multi-agent build.** A fair-baseline audit is required.
-- **Only the framework differs.** Identical agents/roles, tools, prompts, model, task set, KB.
-- **No rigging.** Win by D's real capability, not by a weak C. Improve D's code to win, never hobble C.
-- No fakes — real Gemini, real tools/KB.
-
-## 1. The healthcare multi-agent app (same graph in C and D)
-A clinical-decision-support pipeline (supervisor + specialists):
-1. **Intake** — parse patient case (symptoms, meds, history).
-2. **Retrieve** — pull relevant clinical guidelines (real KB / pgvector).
-3. **Analyze** — reason over symptoms + guidelines.
-4. **Drug-interaction** — check meds via a real interaction dataset/tool.
-5. **Safety validator** — flag red-flags; **abstain if ungrounded** (grounding gate).
-6. **Writer** — compose the recommendation with citations.
-
-Same node/role structure in both. In **D** these are role-typed agents (§7.7) exchanging the **PrismLang
-vector envelope** between hops; in **C** they pass LangGraph text/JSON state.
-
-## 2. The experiment that proves the thesis (the key metric)
-The single-agent case can't show the vector-substrate win — it appears **as the number of agents/hops grows.**
-So **vary the pipeline depth (e.g. 2 → 4 → 6 agents)** and measure how cost/latency scale:
-
-- **Primary chart:** total tokens + cost + latency **vs number of agents/hops**, for C and D.
-- **The thesis, made falsifiable:** D's per-task cost/latency should stay **flatter** as agents are added
-  (vector hops ~constant size, no re-reading the growing transcript), while C's **grows** (each agent
-  re-reads history as prompt tokens). If D does *not* diverge from C as depth grows, the thesis fails —
-  report that honestly.
-
-Secondary: task accuracy, and **safety abstention** (does D refuse-when-ungrounded where C hallucinates —
-the healthcare-critical differentiator).
-
-## 3. Scope: single-process first (CHORUS is Phase 2)
-- **H13 = single-process multi-agent.** Both C and D run all agents in one process. This tests the
-  **vector-substrate / PrismLang token+latency savings** — CHORUS is **not** exercised here.
-- **Phase 2 (later, distributed):** split D's agents across processes/containers so **CHORUS** carries the
-  vectors — that tests the transport story (179ms transatlantic, 4.45× bandwidth, no tokenization boundary).
-  **Flag it, don't build it in H13.** (Note in the doc that the single-process result understates D's full
-  advantage precisely because CHORUS isn't in play yet.)
-
-## 4. Deliverables (build the rig + prove it works — do NOT draw conclusions)
-- `benchmark/container_c/` — LangGraph multi-agent healthcare app (competent baseline + `FAIR_BASELINE_C.md`).
-- `benchmark/container_d/` — ChorusGraph multi-agent version (vector hops, role agents, cache, Cortex).
-- `benchmark/healthcare_workload.py` — real clinical cases (incl. safety-critical cases that *should* abstain);
-  document the case model; support **depth sweep** (2/4/6 agents).
-- **Shared measurement** — identical schema; add **per-hop** token/latency (to see the compounding).
-- `benchmark/run_multiagent.py` — harness with the depth sweep.
-- **Small dry-run** (e.g. 10–20 cases at each depth) proving both C and D run end-to-end with real Gemini,
-  **and that C's agents actually call tools and hand off** (the anti-A-bug gate).
-
-## 5. Explicitly OUT of scope
-Distributed CHORUS variant (Phase 2) · enterprise E-track · drawing conclusions / full-scale run (that's the
-run handoff, gated on quota) · any "D beats LangGraph" claim.
-
-## 6. Acceptance criteria
-- [ ] C is a **competent** LangGraph multi-agent build — agents call tools **and hand off correctly**
-      (verified: non-zero tool calls + real inter-agent state flow, per the fair-baseline audit).
-- [ ] Only the framework differs (identical agents/tools/prompts/model/cases/KB — checklist in handoffback).
-- [ ] Both C and D run the healthcare pipeline end-to-end on a dry-run with real Gemini.
-- [ ] Measurement captures **per-hop** cost/latency + a **depth sweep (2/4/6 agents)**.
-- [ ] Safety abstention is measured (grounding gate fires on ungrounded cases).
-- [ ] No fakes; no rigging; prior tests green. **No conclusions drawn — rig + dry-run only.**
-
-## 7. ⚠️ Quota reality
-Multi-agent burns **N× more LLM calls per task** (one per agent) — the Gemini 10k/day quota (which already
-throttled H9/H10/H12) will bite **harder** here. **Size the dry-run small**, and the full depth-sweep run is
-**gated on real quota headroom** (paid tier / Azure billing). Do not attempt the full run on the free key.
-
-## 8. Open questions for handoffbackH13
-1. C fair-baseline audit — where might a LangGraph expert say the multi-agent baseline is weak?
-2. Real KB + drug-interaction data source used?
-3. Dry-run: does D's per-hop cost stay flatter than C's as depth grows (directional signal)?
-4. Quota: how many cases × depths can a full run afford, and what quota is needed?
-5. Proposed scope for the full run + the Phase-2 (CHORUS distributed) variant.
-
-## 9. Return format
-Summary · file tree · how to run · dry-run output (both C and D, per-hop numbers, C tool-calls proven) ·
-fair-baseline audit for C · decisions/deviations · blockers · answers to §8 · proposed full-run scope.
+## 0. Operating rules (apply every lesson)
+- **Fairness is sacred.** A/B nearly shipped a mirage because Container A was broken (never called tools). In a
+  *multi-agent* baseline the failure surface is bigger — **C must be a genuinely competent LangGraph build.**
+- Only the framework differs. **Win by D's real capability, never by hobbling C.** No rigging, no rubric games.
+- No fakes — real Gemini, real tools/KB. Behavior-preserving refactors stay behavior-preserving.
+- **Quota-aware:** the Gemini 10k/day cap throttled H9/H10/H12; multi-agent burns it faster. Size runs accordingly.
 
 ---
-*Handoff H13 · multi-agent C vs D (healthcare) · tests the vector-substrate thesis A/B never could · fair baseline first · single-process now, CHORUS later · quota-gated.*
+
+# PART A — Finish the MVP
+
+## A1. Cortex 128-d verification / fix (from the H12 review)
+H12's embed-once refactor proved the **64-d cache path** unchanged (cache-hit 0.414 → 0.414, identical). But
+Cortex's native projection is **128-d** (it uses 128 because 64 "crowds at scale"), and the handoffbackH12
+diagram said *"Cortex uses shared 64-d."* The one `task_success` flip (task-0026) was a **Cortex** task.
+
+- **Verify** Cortex still projects to its **native 128-d** from the shared `raw_384` — **not** silently
+  downgraded to the shared 64-d.
+- If it *was* downgraded → **fix it** (Cortex applies its own 384→128 projection from `raw_384`); re-run the
+  60-task regression and confirm the Cortex/memory tasks match H11.
+- **Acceptance:** Cortex recall runs at 128-d; memory-task results equivalent to `h11_fixed_a_60` (the one
+  flip explained as LLM variance, not a dim change).
+
+## A2. The 300-task volume run (still open — quota blocked in H12)
+H12's volume run only got **~90 tasks on band 20**; **bands 40/60 never ran** (quota). The `MIN_HITS=300` bar
+is still not cleared → "validated at volume" remains open.
+
+- Run **≥300 tasks, bands 20/40/60**, post-fix A (H11) + embed-once D (H12), paired, with CIs.
+- **Gated on real quota** (paid Gemini tier / Azure billing / higher-cap key). **Do not attempt on the free key
+  — it will throttle again.** If quota isn't available yet, say so and leave A2 pending; A1 and Part B don't depend on it.
+- Report per-band cache hit-rate + `(h, FP)`; note any slug now `CACHEABLE` (n≥300). Update `docs/BENCHMARK_RESULTS.md`.
+
+## A3. Release marker (optional)
+Tag `v0.9.1` (or `v0.10.0`) once A1 passes and the Director approves the push.
+
+---
+
+# PART B — Multi-agent benchmark: C vs D (healthcare)
+
+A/B was single-agent — it never exercised the **vector substrate + fast M2M communication**, ChorusGraph's
+biggest differentiator. C vs D tests it.
+- **C = a competent multi-agent healthcare app on LangGraph** (baseline, text/JSON state between agents).
+- **D = the same app on ChorusGraph** (PrismLang vector envelope between hops, role-typed agents, cache, Cortex).
+Same app, agents, tools, model, cases — only the framework differs.
+
+## B1. The healthcare pipeline (identical in C and D)
+Supervisor + specialists: **Intake → Retrieve (real guideline KB/pgvector) → Analyze → Drug-interaction (real
+dataset/tool) → Safety-validator (abstain if ungrounded) → Writer (cited recommendation).** In D these are
+role-typed agents (§7.7) exchanging the vector envelope; in C they pass LangGraph text state.
+
+## B2. The experiment that proves the thesis
+The vector-substrate win only appears **as agents/hops grow**. So **sweep pipeline depth (2 → 4 → 6 agents)**:
+- **Primary chart:** total tokens + cost + latency **vs number of agents**, for C and D.
+- **Falsifiable thesis:** D should stay **flatter** as depth grows (vector hops ~constant, no re-reading the
+  growing transcript); C **grows** (each agent re-reads history as prompt tokens). **If D doesn't diverge from
+  C as depth increases, the thesis fails — report that honestly.**
+- Secondary: accuracy, and **safety abstention** (D refuses-when-ungrounded where C hallucinates — the
+  healthcare-critical differentiator).
+
+## B3. Scope: single-process now, CHORUS later
+- **H13 = single-process** multi-agent (all agents one process). Tests the **PrismLang vector-hop** savings;
+  **CHORUS is NOT exercised.** Note in the doc that this **understates** D's full advantage.
+- **Phase 2 (flag, don't build):** distributed variant — D's agents across processes/containers so **CHORUS**
+  carries the vectors (tests transport: 179ms transatlantic, 4.45× bandwidth, no tokenization boundary).
+
+## B4. Deliverables (build the rig + dry-run — no conclusions)
+- `benchmark/container_c/` — LangGraph multi-agent healthcare app + `FAIR_BASELINE_C.md`.
+- `benchmark/container_d/` — ChorusGraph multi-agent version.
+- `benchmark/healthcare_workload.py` — real clinical cases (incl. safety-critical → should abstain); depth sweep (2/4/6).
+- **Shared measurement** with **per-hop** token/latency (to see the compounding).
+- `benchmark/run_multiagent.py` — harness with the depth sweep.
+- **Small dry-run** (10–20 cases per depth) proving both run end-to-end AND **C's agents actually call tools and
+  hand off** (the anti-A-bug gate).
+
+---
+
+## Acceptance criteria
+**Part A**
+- [ ] Cortex verified at native **128-d** (or fixed); memory tasks equivalent to H11.
+- [ ] Volume run ≥300 tasks bands 20/40/60 with CIs — **or** explicitly marked pending on quota.
+
+**Part B**
+- [ ] C is a **competent** LangGraph multi-agent build — agents call tools **and hand off** (verified, per fair-baseline audit).
+- [ ] Only the framework differs (identical agents/tools/prompts/model/cases/KB).
+- [ ] C and D run the pipeline end-to-end on a dry-run with real Gemini.
+- [ ] Measurement captures **per-hop** cost/latency + **depth sweep (2/4/6)**.
+- [ ] Safety abstention measured.
+- [ ] No fakes; no rigging; prior tests green. **No conclusions drawn — rig + dry-run only.**
+
+## Open questions for handoffbackH13
+1. Cortex: was it 128-d or downgraded to 64-d? Fixed?
+2. Volume run: ran, or pending on quota? If ran, per-band cache + `(h,FP)`.
+3. C fair-baseline audit — where might a LangGraph expert call it weak?
+4. Dry-run: does D's per-hop cost stay flatter than C's as depth grows (directional)?
+5. Quota needed for the full multi-agent run; proposed full-run + Phase-2 (CHORUS) scope.
+
+## Return format
+Summary · file tree · how to run · Part A results (Cortex + volume/pending) · Part B dry-run (C+D per-hop, C
+tool-calls proven, fair-baseline audit) · decisions/deviations · blockers · answers to open questions.
+
+---
+*Handoff H13 · A) close the MVP (Cortex 128-d + volume) · B) multi-agent C vs D healthcare — the vector-substrate thesis · fair baseline first · single-process now, CHORUS later · quota-gated.*
