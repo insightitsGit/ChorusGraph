@@ -1,30 +1,73 @@
-"""Container D — ChorusGraph multi-agent healthcare (vector envelope between hops)."""
+"""Container D — ChorusGraph multi-agent healthcare (cache gate + envelope handoffs)."""
 
 from __future__ import annotations
 
-import operator
 import time
-from typing import Annotated, Any, Dict, List, Optional, TypedDict
+from typing import Any, Dict, List, Optional
 
 from langgraph.graph import END, START, StateGraph
-from prismlang import PrismEnvelope
 
-from benchmark.container_c.runner import HealthcareState, _record_hop
-from benchmark.container_d.nodes import make_d_nodes
+from benchmark.container_c.runner import _record_hop
+from benchmark.container_d.cache_helpers import (
+    apply_cache_payload,
+    cache_query_key,
+    cache_seed_phrases,
+)
+from benchmark.container_d.nodes import make_d_nodes, route_after_cache_d
 from benchmark.container_d.runtime import make_healthcare_envelope_runtime
+from benchmark.container_d.trace import clear_trace, trace_event, trace_path
 from benchmark.healthcare_workload import PIPELINE_AGENTS, HealthcareCase
 from benchmark.multiagent_measure import MultiAgentMeasurement, score_healthcare_answer, totals_from_hops
 from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient
+from benchmark.thresholds import measured_thresholds
 from chorusgraph.examples.finance_agent.nodes import make_vector_ingress_handler
 from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
+from chorusgraph.sections.models import CachePolicy, Section
+from chorusgraph.cache_gate.gate import gate
+from chorusgraph.transforms.projector import raw_from_state, vector_64_from_state
 
 
-class HealthcareVectorState(HealthcareState, total=False):
-    message: str
-    raw_embedding_384: List[float]
-    query_vector_64: List[float]
-    prism_sequence: Annotated[List[PrismEnvelope], operator.add]
-    vector_hops: Annotated[List[Dict[str, Any]], operator.add]
+from benchmark.container_d.state import HealthcareVectorState
+
+
+def _make_healthcare_cache_gate_handler(
+    runtime: FinanceRuntime,
+    *,
+    coarse_threshold: float,
+    verify_threshold: float,
+):
+    """Clinical cache gate — same two-stage gate as finance, slug clinical_guidelines."""
+
+    def cache_gate_node(state: HealthcareVectorState) -> Dict[str, Any]:
+        message = state.get("message") or ""
+        section = Section(
+            section_id="clinical_lookup",
+            category_slug="clinical_guidelines",
+            content=message,
+            cache_policy=CachePolicy.REPLAY_SAFE,
+        )
+        decision = gate(
+            message,
+            section,
+            runtime.cache,
+            runtime.sidecar,
+            coarse_threshold=coarse_threshold,
+            verify_threshold=verify_threshold,
+            raw_embedding_384=raw_from_state(state),
+            projected_vector_64=vector_64_from_state(state),
+        )
+        update: Dict[str, Any] = {
+            "cache_hit": decision.is_hit,
+            "cache_score": decision.verify_score or decision.coarse_score,
+            "cache_coarse_score": decision.coarse_score,
+            "cache_verify_score": decision.verify_score,
+            "cache_decision": decision.kind.value,
+        }
+        if decision.is_hit and decision.value:
+            update = apply_cache_payload(update, decision.value)
+        return update
+
+    return cache_gate_node
 
 
 def build_healthcare_graph_d(
@@ -35,30 +78,70 @@ def build_healthcare_graph_d(
 ):
     runtime = runtime or make_healthcare_envelope_runtime()
     gemini = gemini or InstrumentedGeminiClient()
+    runtime.gemini = gemini
     nodes = make_d_nodes(gemini, runtime)
     agents = PIPELINE_AGENTS[depth]
     ingress = make_vector_ingress_handler(runtime)
+    thresholds = measured_thresholds()
+    cache_gate_base = _make_healthcare_cache_gate_handler(
+        runtime,
+        coarse_threshold=thresholds.coarse,
+        verify_threshold=thresholds.verify_for("clinical_guidelines"),
+    )
 
     graph = StateGraph(HealthcareVectorState)
 
     def vector_ingress_node(state: HealthcareVectorState) -> Dict[str, Any]:
         started = time.perf_counter()
-        case = state["case"]
-        update = ingress({"message": case.presentation})
         gemini.reset_usage()
-        return {
+        case = state["case"]
+        query = cache_query_key(case)
+        update = ingress({"message": query})
+        out = {
             **update,
-            "message": case.presentation,
-            "vector_hops": [{"hop": "vector_ingress", "dim_64": len(update.get("query_vector_64") or [])}],
+            "message": query,
             **_record_hop(state, "vector_ingress", started, gemini),
         }
+        return out
+
+    def cache_gate_node(state: HealthcareVectorState) -> Dict[str, Any]:
+        started = time.perf_counter()
+        gemini.reset_usage()
+        update = cache_gate_base(state)
+        out = {**update, **_record_hop(state, "cache_gate", started, gemini)}
+        case = state.get("case")
+        trace_event(
+            "cache_gate_result",
+            case_id=getattr(case, "case_id", "") if case else "",
+            session_id=getattr(case, "session_id", "") if case else "",
+            hop="cache_gate",
+            cache_hit=update.get("cache_hit"),
+            cache_decision=update.get("cache_decision"),
+            has_cached_response=bool(update.get("cached_response")),
+        )
+        return out
 
     graph.add_node("vector_ingress", vector_ingress_node)
+    graph.add_node("cache_gate", cache_gate_node)
     for name in agents:
-        graph.add_node(name, nodes[name])
+        fn = nodes[name]
+        if name == "writer":
+
+            def writer_entry(state: HealthcareVectorState, _fn=fn) -> Dict[str, Any]:
+                return _fn(state)
+
+            graph.add_node(name, writer_entry)
+        else:
+            graph.add_node(name, fn)
 
     graph.add_edge(START, "vector_ingress")
-    graph.add_edge("vector_ingress", agents[0])
+    graph.add_edge("vector_ingress", "cache_gate")
+    first_agent = agents[0]
+    graph.add_conditional_edges(
+        "cache_gate",
+        lambda state: route_after_cache_d(state, first_agent=first_agent),
+        {first_agent: first_agent, "writer": "writer"},
+    )
     for i in range(len(agents) - 1):
         graph.add_edge(agents[i], agents[i + 1])
     graph.add_edge(agents[-1], END)
@@ -66,25 +149,44 @@ def build_healthcare_graph_d(
 
 
 class ContainerDRunner:
-    """ChorusGraph healthcare multi-agent — embed once + Prism envelope per hop."""
+    """ChorusGraph healthcare multi-agent — cache gate + envelope handoffs (mirror F)."""
 
     def __init__(self) -> None:
-        self._graphs: Dict[int, Any] = {}
-        self._gemini = InstrumentedGeminiClient()
-        self._runtime = make_healthcare_envelope_runtime()
+        self._graphs: Dict[str, Any] = {}
+        self._runtimes: Dict[str, FinanceRuntime] = {}
+        self._geminis: Dict[str, InstrumentedGeminiClient] = {}
 
-    def _graph(self, depth: int):
-        if depth not in self._graphs:
-            self._graphs[depth], _, _ = build_healthcare_graph_d(
-                depth=depth, runtime=self._runtime, gemini=self._gemini
+    def _runtime(self, case: HealthcareCase) -> tuple[FinanceRuntime, InstrumentedGeminiClient]:
+        if case.session_id not in self._runtimes:
+            self._runtimes[case.session_id] = make_healthcare_envelope_runtime()
+            self._geminis[case.session_id] = InstrumentedGeminiClient()
+        return self._runtimes[case.session_id], self._geminis[case.session_id]
+
+    def _session_graph(self, case: HealthcareCase):
+        key = f"{case.session_id}|d{case.pipeline_depth}"
+        if key not in self._graphs:
+            runtime, gemini = self._runtime(case)
+            compiled, _, _ = build_healthcare_graph_d(
+                depth=case.pipeline_depth,
+                runtime=runtime,
+                gemini=gemini,
             )
-        return self._graphs[depth]
+            self._graphs[key] = compiled
+        runtime, gemini = self._runtime(case)
+        return self._graphs[key], runtime, gemini
 
     def run(self, case: HealthcareCase) -> MultiAgentMeasurement:
-        compiled = self._graph(case.pipeline_depth)
+        compiled, runtime, gemini = self._session_graph(case)
         started = time.perf_counter()
-        self._gemini.reset_usage()
-        self._runtime.session_tool_cache.clear()
+        gemini.reset_usage()
+        trace_event(
+            "case_start",
+            case_id=case.case_id,
+            session_id=case.session_id,
+            variant=case.variant,
+            depth=case.pipeline_depth,
+            message=case.presentation[:120],
+        )
         try:
             result = compiled.invoke(
                 {
@@ -93,6 +195,8 @@ class ContainerDRunner:
                     "tool_calls": 0,
                     "vector_hops": [],
                     "hop_artifacts": {},
+                    "prism_sequence": [],
+                    "cache_seed_phrases": cache_seed_phrases(case),
                 }
             )
             latency = int((time.perf_counter() - started) * 1000)
@@ -102,6 +206,26 @@ class ContainerDRunner:
             abstained = bool(result.get("abstained"))
             answer = result.get("response") or ""
             embed_count = len(result.get("prism_sequence") or [])
+            success = score_healthcare_answer(
+                answer=answer,
+                must_cite=case.must_cite,
+                expected_abstain=case.expected_abstain,
+                abstained=abstained,
+            )
+            trace_event(
+                "case_end",
+                case_id=case.case_id,
+                session_id=case.session_id,
+                variant=case.variant,
+                depth=case.pipeline_depth,
+                latency_ms=latency,
+                cache_hit=result.get("cache_hit"),
+                llm_calls=llm_calls,
+                tokens_in=tokens_in,
+                task_success=success,
+                hops=[h.hop for h in hop_metrics],
+                embed_count=embed_count,
+            )
             return MultiAgentMeasurement(
                 case_id=case.case_id,
                 container="D",
@@ -112,17 +236,15 @@ class ContainerDRunner:
                 tokens_in=tokens_in,
                 tokens_out=tokens_out,
                 cost_usd=cost_usd,
-                task_success=score_healthcare_answer(
-                    answer=answer,
-                    must_cite=case.must_cite,
-                    expected_abstain=case.expected_abstain,
-                    abstained=abstained,
-                ),
+                task_success=success,
                 abstained=abstained,
                 answer=answer[:2000],
                 tool_calls=int(result.get("tool_calls") or 0),
                 hop_metrics=hop_metrics,
                 embed_count=embed_count,
+                cache_hit=result.get("cache_hit"),
+                cache_score=result.get("cache_score"),
+                variant=case.variant,
             )
         except Exception as exc:
             latency = int((time.perf_counter() - started) * 1000)
@@ -132,12 +254,22 @@ class ContainerDRunner:
                 pipeline_depth=case.pipeline_depth,
                 message=case.presentation,
                 latency_ms=latency,
-                llm_calls=self._gemini.usage.llm_calls,
-                tokens_in=self._gemini.usage.tokens_in,
-                tokens_out=self._gemini.usage.tokens_out,
-                cost_usd=self._gemini.usage.cost_usd,
+                llm_calls=gemini.usage.llm_calls,
+                tokens_in=gemini.usage.tokens_in,
+                tokens_out=gemini.usage.tokens_out,
+                cost_usd=gemini.usage.cost_usd,
                 task_success=False,
                 abstained=False,
                 answer="",
                 error=str(exc),
+                variant=case.variant,
             )
+
+
+__all__ = [
+    "ContainerDRunner",
+    "HealthcareVectorState",
+    "build_healthcare_graph_d",
+    "clear_trace",
+    "trace_path",
+]

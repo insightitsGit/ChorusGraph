@@ -8,10 +8,11 @@ import sys
 from pathlib import Path
 from typing import Annotated, List, TypedDict
 
-from langgraph.graph import END, START, StateGraph
 from prismlang import Category, PrismEnvelope, PrismProjector, TaxonomyConfig, prism_node
 
 from chorusgraph import SqliteLedgerSink, get_run, wrap
+from chorusgraph.graph.builder import Graph
+from chorusgraph.runtime.constants import END, START
 
 TENANT_ID = "demo-tenant"
 GRAPH_ID = "demo-routing-graph"
@@ -63,7 +64,7 @@ def build_demo_graph():
     def pick_route(state: DemoState) -> str:
         return state.get("route") or "short_path"
 
-    graph = StateGraph(DemoState)
+    graph = Graph(DemoState)
     graph.add_node("analyze", analyze)
     graph.add_node("route_decision", route_decision)
     graph.add_node("short_path", short_path)

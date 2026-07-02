@@ -12,6 +12,7 @@ COARSE_THRESHOLD: float = 0.88
 # fx_rates has no H3 CACHEABLE slug yet (n << MIN_HITS=300); use gate.py default until H9 calibrates.
 MEASURED_VERIFY_THRESHOLDS: Dict[str, float] = {
     "fx_rates": 0.95,
+    "clinical_guidelines": 0.95,
 }
 
 # Explicitly forbidden demo thresholds from H4 finance agent wiring.

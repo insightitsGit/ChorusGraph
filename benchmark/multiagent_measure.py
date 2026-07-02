@@ -35,6 +35,9 @@ class MultiAgentMeasurement:
     tool_calls: int = 0
     hop_metrics: List[HopMetric] = field(default_factory=list)
     embed_count: int = 0
+    cache_hit: Optional[bool] = None
+    cache_score: Optional[float] = None
+    variant: str = "novel"
     error: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:

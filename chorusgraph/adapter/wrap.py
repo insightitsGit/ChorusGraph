@@ -9,6 +9,7 @@ from uuid import uuid4
 
 from chorusgraph.ledger.models import LedgerStep, RouteLedger
 from chorusgraph.ledger.sink import LedgerSink, SqliteLedgerSink
+from chorusgraph.runtime.state import merge_state
 
 
 def _parse_edge_from_triggers(triggers: Optional[List[str]]) -> Optional[str]:
@@ -87,18 +88,8 @@ def _append_agent_trace_steps(
         )
 
 
-def _merge_state(base: Dict[str, Any], update: Dict[str, Any]) -> Dict[str, Any]:
-    merged = dict(base)
-    for key, value in update.items():
-        if key in merged and isinstance(merged[key], list) and isinstance(value, list):
-            merged[key] = merged[key] + value
-        else:
-            merged[key] = value
-    return merged
-
-
 class RunnableWithLedger:
-    """Wrapper around a compiled LangGraph that emits a Route Ledger per run."""
+    """Wrapper around a compiled graph (native or LangGraph) that emits a Route Ledger per run."""
 
     def __init__(
         self,
@@ -164,7 +155,7 @@ class RunnableWithLedger:
                 duration_ms = int((time.perf_counter() - started) * 1000)
                 result = payload.get("result") or {}
                 if isinstance(result, dict):
-                    state = _merge_state(state, result)
+                    state = merge_state(state, result)
                     final_state = state
                 ts_raw = event.get("timestamp")
                 timestamp = (
@@ -229,7 +220,7 @@ class RunnableWithLedger:
                 duration_ms = int((time.perf_counter() - started) * 1000)
                 result = payload.get("result") or {}
                 if isinstance(result, dict):
-                    state = _merge_state(state, result)
+                    state = merge_state(state, result)
                     final_state = state
                 ts_raw = event.get("timestamp")
                 timestamp = (
@@ -262,7 +253,7 @@ def wrap(
     graph_id: str,
     sink: Optional[LedgerSink] = None,
 ) -> RunnableWithLedger:
-    """Wrap a compiled LangGraph to record a durable Route Ledger on each invoke."""
+    """Wrap a compiled graph (ChorusGraph native or LangGraph) to record a Route Ledger."""
     return RunnableWithLedger(
         compiled_graph,
         tenant_id=tenant_id,

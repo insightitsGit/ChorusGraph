@@ -1,0 +1,172 @@
+{
+  "run_at": "2026-07-02T23:16:32.045923+00:00",
+  "run_label": "H13_multiagent_dryrun",
+  "n_cases": 18,
+  "seed": 42,
+  "containers": [
+    "C",
+    "D"
+  ],
+  "aggregate": {
+    "C": {
+      "2": {
+        "n": 6,
+        "avg_latency_ms": 5425.8,
+        "avg_total_tokens_in": 110.3,
+        "avg_tokens_in": 110.3,
+        "avg_tokens_out": 121.2,
+        "avg_cost_usd": 8.9e-05,
+        "avg_tool_calls": 0,
+        "task_success_rate": 0.0,
+        "abstain_rate": 0.0,
+        "avg_embed_count": 0,
+        "cache_hit_rate": 0.0,
+        "avg_hop_latency_ms": {
+          "intake": 1680.7,
+          "writer": 3743.2
+        },
+        "avg_hop_tokens_in": {
+          "intake": 57.3,
+          "writer": 53.0
+        }
+      },
+      "4": {
+        "n": 6,
+        "avg_latency_ms": 11738.3,
+        "avg_total_tokens_in": 919.3,
+        "avg_tokens_in": 919.3,
+        "avg_tokens_out": 406.7,
+        "avg_cost_usd": 0.000382,
+        "avg_tool_calls": 1,
+        "task_success_rate": 0.667,
+        "abstain_rate": 0.0,
+        "avg_embed_count": 0,
+        "cache_hit_rate": 0.0,
+        "avg_hop_latency_ms": {
+          "intake": 1809.7,
+          "retrieve": 2760.2,
+          "analyze": 3760.2,
+          "writer": 3405.0
+        },
+        "avg_hop_tokens_in": {
+          "intake": 57.5,
+          "retrieve": 228.3,
+          "analyze": 298.3,
+          "writer": 335.2
+        }
+      },
+      "6": {
+        "n": 6,
+        "avg_latency_ms": 10815.8,
+        "avg_total_tokens_in": 758,
+        "avg_tokens_in": 758,
+        "avg_tokens_out": 289.2,
+        "avg_cost_usd": 0.000287,
+        "avg_tool_calls": 1.5,
+        "task_success_rate": 0.5,
+        "abstain_rate": 1.0,
+        "avg_embed_count": 0,
+        "cache_hit_rate": 0.0,
+        "avg_hop_latency_ms": {
+          "intake": 1514.0,
+          "retrieve": 2357.3,
+          "analyze": 2922.2,
+          "drug_check": 869.8,
+          "safety": 3147.7,
+          "writer": 0.0
+        },
+        "avg_hop_tokens_in": {
+          "intake": 54.2,
+          "retrieve": 209.8,
+          "analyze": 251.3,
+          "drug_check": 54.2,
+          "safety": 188.5,
+          "writer": 0.0
+        }
+      }
+    },
+    "D": {
+      "2": {
+        "n": 6,
+        "avg_latency_ms": 5568.5,
+        "avg_total_tokens_in": 205.5,
+        "avg_tokens_in": 205.5,
+        "avg_tokens_out": 142.3,
+        "avg_cost_usd": 0.000116,
+        "avg_tool_calls": 0,
+        "task_success_rate": 0.167,
+        "abstain_rate": 0.0,
+        "avg_embed_count": 2,
+        "cache_hit_rate": 0.0,
+        "avg_hop_latency_ms": {
+          "vector_ingress": 5.7,
+          "cache_gate": 0.0,
+          "intake": 1832.3,
+          "writer": 3724.0
+        },
+        "avg_hop_tokens_in": {
+          "vector_ingress": 0.0,
+          "cache_gate": 0.0,
+          "intake": 58.3,
+          "writer": 147.2
+        }
+      },
+      "4": {
+        "n": 6,
+        "avg_latency_ms": 7.7,
+        "avg_total_tokens_in": 0,
+        "avg_tokens_in": 0,
+        "avg_tokens_out": 0,
+        "avg_cost_usd": 0.0,
+        "avg_tool_calls": 0,
+        "task_success_rate": 0.167,
+        "abstain_rate": 0.0,
+        "avg_embed_count": 0,
+        "cache_hit_rate": 1.0,
+        "avg_hop_latency_ms": {
+          "vector_ingress": 3.8,
+          "cache_gate": 0.0,
+          "writer": 0.0
+        },
+        "avg_hop_tokens_in": {
+          "vector_ingress": 0.0,
+          "cache_gate": 0.0,
+          "writer": 0.0
+        }
+      },
+      "6": {
+        "n": 6,
+        "avg_latency_ms": 6311.3,
+        "avg_total_tokens_in": 367.2,
+        "avg_tokens_in": 367.2,
+        "avg_tokens_out": 143.8,
+        "avg_cost_usd": 0.000141,
+        "avg_tool_calls": 0.67,
+        "task_success_rate": 0.333,
+        "abstain_rate": 0.0,
+        "avg_embed_count": 2,
+        "cache_hit_rate": 0.667,
+        "avg_hop_latency_ms": {
+          "vector_ingress": 4.2,
+          "cache_gate": 0.0,
+          "intake": 697.2,
+          "retrieve": 1034.2,
+          "analyze": 1335.0,
+          "drug_check": 592.8,
+          "safety": 1563.8,
+          "writer": 1077.7
+        },
+        "avg_hop_tokens_in": {
+          "vector_ingress": 0.0,
+          "cache_gate": 0.0,
+          "intake": 16.7,
+          "retrieve": 61.8,
+          "analyze": 51.8,
+          "drug_check": 33.3,
+          "safety": 95.8,
+          "writer": 107.7
+        }
+      }
+    }
+  }
+}

@@ -3,14 +3,40 @@
 from __future__ import annotations
 
 from benchmark.container_d.artifacts import (
+    analyze_handoff_plain,
     compact_artifact,
     envelope_handoff,
+    retrieve_handoff_plain,
     safety_handoff_user,
     should_abstain,
     store_envelope_artifact,
     writer_handoff_user,
 )
+from benchmark.container_d.cache_helpers import cached_response_from_state
 from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
+
+
+def test_cached_response_from_state():
+    state = {
+        "cache_hit": True,
+        "cached_response": "Cached clinical answer.",
+    }
+    assert cached_response_from_state(state) == "Cached clinical answer."
+    state2 = {"cache_hit": True, "response": "From response field."}
+    assert cached_response_from_state(state2) == "From response field."
+    assert cached_response_from_state({"cache_hit": False, "response": "x"}) is None
+
+
+def test_plain_handoffs_are_compact():
+    hop = {
+        "intake": {"facts": "brief", "drugs": ["warfarin"]},
+        "retrieve": {"cited_ids": ["warfarin_bleed"], "summary": "avoid combo"},
+    }
+    retrieve_text = retrieve_handoff_plain(hop, [{"id": "warfarin_bleed", "text": "avoid"}])
+    analyze_text = analyze_handoff_plain(hop)
+    assert len(retrieve_text) < 300
+    assert len(analyze_text) < 300
+    assert "previous_envelope_id" not in retrieve_text
 
 
 def test_envelope_handoff_has_no_upstream_blob():

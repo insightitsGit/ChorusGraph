@@ -193,7 +193,12 @@ def generate_healthcare_workload(
         if pos_in_session >= 3:
             pos_in_session = 0
 
-    rng.shuffle(tasks)
+    # Novel cases must run before repeats in the same session so cache can warm up.
+    def _variant_order(case: HealthcareCase) -> tuple[int, int]:
+        order = {"novel": 0, "paraphrase": 1, "exact_repeat": 2}
+        return (order.get(case.variant, 0), case.pipeline_depth)
+
+    tasks.sort(key=lambda c: (c.session_id, _variant_order(c)))
     return tasks
 
 

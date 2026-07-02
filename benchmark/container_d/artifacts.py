@@ -6,6 +6,7 @@ import json
 import re
 from typing import Any, Dict, List, Optional
 
+from benchmark.container_d.trace import trace_event
 from benchmark.healthcare.abstain import should_abstain
 
 __all__ = [
@@ -19,10 +20,15 @@ __all__ = [
     "envelope_handoff",
     "parse_json_object",
     "resolve_envelope_artifact",
+    "analyze_handoff_plain",
+    "drug_handoff_plain",
+    "retrieve_handoff_plain",
+    "safety_handoff_plain",
     "safety_handoff_user",
     "should_abstain",
     "store_envelope_artifact",
     "writer_handoff_user",
+    "writer_handoff_plain",
 ]
 
 
@@ -35,11 +41,28 @@ def envelope_handoff(
     hop: str,
     envelope_id: Optional[str],
     hop_input: Optional[Dict[str, Any]] = None,
+    runtime: Any = None,
+    case_id: str = "",
+    session_id: str = "",
 ) -> str:
-    """Chorus M2M handoff — envelope pointer + hop-local input only (no upstream blob)."""
+    """Chorus M2M handoff — envelope pointer + resolved artifact + hop-local input."""
     payload: Dict[str, Any] = {"hop": hop, "previous_envelope_id": envelope_id}
+    resolved: Dict[str, Any] = {}
+    if runtime is not None and envelope_id:
+        resolved = resolve_envelope_artifact(runtime, envelope_id)
+        if resolved:
+            payload["previous_artifact"] = resolved
     if hop_input:
         payload["hop_input"] = hop_input
+    trace_event(
+        "envelope_handoff",
+        case_id=case_id,
+        session_id=session_id,
+        hop=hop,
+        envelope_id=envelope_id,
+        resolved=bool(resolved),
+        resolved_keys=sorted(resolved.keys()) if resolved else [],
+    )
     return compact_json(payload)
 
 
@@ -156,10 +179,60 @@ def compact_artifact(source_hop: str, artifact: Optional[Dict[str, Any]]) -> Dic
     return fn(artifact) if fn else artifact
 
 
+def retrieve_handoff_plain(
+    hop_artifacts: Dict[str, Dict[str, Any]],
+    docs: List[Dict[str, Any]],
+) -> str:
+    """Cold path — compact facts + docs for retrieve LLM (no envelope JSON wrapper)."""
+    return compact_json(
+        {
+            "facts": compact_intake(hop_artifacts.get("intake")),
+            "retrieved_docs": bounded_docs(docs),
+        }
+    )
+
+
+def analyze_handoff_plain(hop_artifacts: Dict[str, Dict[str, Any]]) -> str:
+    return compact_json(
+        {
+            "intake": compact_intake(hop_artifacts.get("intake")),
+            "retrieve": compact_retrieve(hop_artifacts.get("retrieve")),
+        }
+    )
+
+
+def drug_handoff_plain(
+    hop_artifacts: Dict[str, Dict[str, Any]],
+    interactions: List[Dict[str, Any]],
+) -> str:
+    return compact_json(
+        {
+            "analyze": compact_analyze(hop_artifacts.get("analyze")),
+            "interactions": interactions,
+        }
+    )
+
+
+def safety_handoff_plain(hop_artifacts: Dict[str, Dict[str, Any]]) -> str:
+    retrieve = hop_artifacts.get("retrieve")
+    return compact_json(
+        {
+            "facts": compact_intake(hop_artifacts.get("intake")),
+            "cited_ids": compact_retrieve(retrieve).get("cited_ids") or [],
+            "retrieve_summary": compact_retrieve(retrieve).get("summary") or "",
+            "analysis": compact_analyze(hop_artifacts.get("analyze")),
+            "drug": compact_drug(hop_artifacts.get("drug_check")),
+        }
+    )
+
+
 def safety_handoff_user(
     *,
     envelope_id: Optional[str],
     hop_artifacts: Dict[str, Dict[str, Any]],
+    runtime: Any = None,
+    case_id: str = "",
+    session_id: str = "",
 ) -> str:
     """Safety sees envelope pointer + compact evidence snapshot (not full tree)."""
     retrieve = hop_artifacts.get("retrieve")
@@ -173,13 +246,43 @@ def safety_handoff_user(
             "analysis": compact_analyze(hop_artifacts.get("analyze")),
             "drug": compact_drug(hop_artifacts.get("drug_check")),
         },
+        runtime=runtime,
+        case_id=case_id,
+        session_id=session_id,
     )
+
+
+def writer_handoff_plain(
+    *,
+    hop_artifacts: Dict[str, Dict[str, Any]],
+    retrieved: Optional[List[Dict[str, Any]]] = None,
+    abstained: bool = False,
+) -> str:
+    """Plain clinical context on cache hit — mirror Container F / B writer."""
+    if abstained:
+        return "Clinical case requires abstention — insufficient grounded evidence."
+    retrieve = hop_artifacts.get("retrieve") or {}
+    intake = hop_artifacts.get("intake") or {}
+    drug = hop_artifacts.get("drug_check") or {}
+    safety = hop_artifacts.get("safety") or {}
+    parts = [
+        f"Clinical facts (authoritative): {compact_intake(intake)}",
+        f"Guideline summary (authoritative): {compact_retrieve(retrieve)}",
+        f"Drug check (authoritative): {compact_drug(drug)}",
+        f"Safety verdict: {safety.get('verdict') or ''} — {str(safety.get('reason') or '')[:150]}",
+    ]
+    if retrieved:
+        parts.append(f"Retrieved docs: {bounded_docs(list(retrieved)[:3])}")
+    return "\n".join(parts)
 
 
 def writer_handoff_user(
     *,
     envelope_id: Optional[str],
     hop_artifacts: Dict[str, Dict[str, Any]],
+    runtime: Any = None,
+    case_id: str = "",
+    session_id: str = "",
 ) -> str:
     """Writer sees envelope pointer + compact facts (not growing transcript)."""
     retrieve = hop_artifacts.get("retrieve")
@@ -196,4 +299,7 @@ def writer_handoff_user(
             "drug_summary": compact_drug(drug).get("summary") or "",
             "drug_severities": compact_drug(drug).get("severities") or [],
         },
+        runtime=runtime,
+        case_id=case_id,
+        session_id=session_id,
     )

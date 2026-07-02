@@ -14,7 +14,7 @@ from statistics import mean
 from typing import Dict, List, Optional
 
 from benchmark.container_c.runner import ContainerCRunner
-from benchmark.container_d.runner import ContainerDRunner
+from benchmark.container_d.runner import ContainerDRunner, clear_trace, trace_path
 from benchmark.healthcare_workload import HealthcareCase, generate_healthcare_workload
 from benchmark.multiagent_measure import MultiAgentMeasurement
 
@@ -27,6 +27,8 @@ def run_multiagent_benchmark(
     containers: Optional[List[str]] = None,
 ) -> Dict[str, List[MultiAgentMeasurement]]:
     containers = containers or ["C", "D"]
+    if "D" in containers:
+        clear_trace()
     cases = generate_healthcare_workload(n_cases, seed=seed, repeat_band_pct=repeat_band_pct)
     results: Dict[str, List[MultiAgentMeasurement]] = {"C": [], "D": []}
     runner_c = ContainerCRunner() if "C" in containers else None
@@ -57,6 +59,7 @@ def aggregate_by_depth(rows: List[MultiAgentMeasurement]) -> Dict[int, dict]:
                 hop_totals[hop.hop]["llm_calls"] += hop.llm_calls
 
         total_tokens_in = [i.tokens_in for i in items]
+        cache_hits = [i for i in items if i.cache_hit is True]
         out[depth] = {
             "n": len(items),
             "avg_latency_ms": round(mean(i.latency_ms for i in items), 1),
@@ -68,6 +71,7 @@ def aggregate_by_depth(rows: List[MultiAgentMeasurement]) -> Dict[int, dict]:
             "task_success_rate": round(sum(1 for i in items if i.task_success) / len(items), 3),
             "abstain_rate": round(sum(1 for i in items if i.abstained) / len(items), 3),
             "avg_embed_count": round(mean(i.embed_count for i in items), 2) if items else 0,
+            "cache_hit_rate": round(len(cache_hits) / len(items), 3) if items else 0,
             "avg_hop_latency_ms": {k: round(v["latency_ms"] / len(items), 1) for k, v in hop_totals.items()},
             "avg_hop_tokens_in": {k: round(v["tokens_in"] / len(items), 1) for k, v in hop_totals.items()},
         }
@@ -91,6 +95,11 @@ def format_report(results: Dict[str, List[MultiAgentMeasurement]]) -> str:
                 + (
                     f" embeds={stats['avg_embed_count']}"
                     if stats.get("avg_embed_count")
+                    else ""
+                )
+                + (
+                    f" cache_hit={stats.get('cache_hit_rate', 0)}"
+                    if container == "D"
                     else ""
                 )
             )
@@ -140,6 +149,8 @@ def main(argv: Optional[List[str]] = None) -> None:
     for container, rows in results.items():
         write_jsonl(out_dir / f"container_{container.lower()}.jsonl", rows)
     print(f"\nWrote results to {out_dir}")
+    if "D" in containers and trace_path().exists():
+        print(f"Container D trace: {trace_path()}")
 
 
 if __name__ == "__main__":

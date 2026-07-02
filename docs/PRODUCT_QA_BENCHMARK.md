@@ -22,7 +22,7 @@ wiring.
 | **A** | Finance | Single-agent LangGraph | N/A (baseline) | — |
 | **B** | Finance | Single-agent Chorus | **Yes** | **Yes** (cache + speed) |
 | **C** | Healthcare | Multi-agent LangGraph | N/A (baseline) | — |
-| **D** | Healthcare | Multi-agent Chorus | **No** (no cache_gate, write-only envelopes) | **No** |
+| **D** | Healthcare | Multi-agent Chorus | **Yes** (D1–D8 fixed Jul 2026) | **Partial** (cache on repeats; depth 4/6) |
 | **E** | Finance | Multi-agent LangGraph | N/A (baseline) | — |
 | **F** | Finance | Multi-agent Chorus | **Yes** (F1–F6 fixed Jul 2026) | **Yes** (cache + speed vs E) |
 
@@ -250,14 +250,18 @@ Use this as the single source for “what’s wrong with the benchmark integrati
 
 Documented in [`FINANCE_MULTIAGENT_CHORUS.md`](FINANCE_MULTIAGENT_CHORUS.md).
 
-### Container D (healthcare multi-agent) — P1
+### Container D (healthcare multi-agent) — DONE (Jul 2026)
 
-- [ ] **D1** Wire `cache_gate` at ingress (or document healthcare as clinical/safety domain, not
-      speed domain).
-- [ ] **D2** Define cacheable artifacts + `category_slug` for retrieve summaries.
-- [ ] **D3** Seed PrismCache after first retrieve hop.
-- [ ] **D4** Wire envelope read path (same as F3).
-- [ ] **D5** Add `cache_hit` to `MultiAgentMeasurement` schema.
+- [x] **D1** Wire `cache_gate` + conditional routing to writer on hit
+- [x] **D2** Reuse ingress vectors in `_envelope_update`
+- [x] **D3** `resolve_envelope_artifact()` in `envelope_handoff`
+- [x] **D4** Removed `session_tool_cache.clear()`; session-scoped runtime
+- [x] **D5** Clinical cache seed/restore (`cache_helpers.py`)
+- [x] **D6** Plain writer on cache hit; `cache_query_key` includes depth
+- [x] **D7** Workload sort: novel before repeats within session
+- [x] **D8** JSONL trace (`CHORUS_D_TRACE`)
+
+See `benchmark/container_d/README.md` and `docs/FINANCE_MULTIAGENT_CHORUS.md` (same pattern as F).
 
 ### Cross-cutting — P2
 

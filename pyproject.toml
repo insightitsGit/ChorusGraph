@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "chorusgraph"
 version = "0.9.1"
-description = "LangGraph adapter with durable Route Ledger and safe cache gate"
+description = "Native agent graph runtime with Prism cache, memory, and Route Ledger"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "Apache-2.0" }

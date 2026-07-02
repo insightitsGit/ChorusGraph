@@ -1,5 +1,6 @@
 """ChorusGraph built-in node primitives."""
 
+from chorusgraph.nodes.retrieve import RetrieveConfig, make_retrieve_handler, resonance_rerank
 from chorusgraph.nodes.roles import (
     Node,
     ResearcherNode,
@@ -18,6 +19,7 @@ from chorusgraph.nodes.tool import (
 __all__ = [
     "Node",
     "ResearcherNode",
+    "RetrieveConfig",
     "RoleTemplate",
     "ToolRegistry",
     "ToolResult",
@@ -25,5 +27,7 @@ __all__ = [
     "ValidatorNode",
     "WriterNode",
     "default_finance_registry",
+    "make_retrieve_handler",
+    "resonance_rerank",
     "run_tool",
 ]

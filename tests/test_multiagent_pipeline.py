@@ -105,6 +105,67 @@ def test_container_c_abstain_case():
     assert m.abstained or "abstain" in (m.answer or "").lower()
 
 
+def test_container_d_cache_hit_skips_llm_hops():
+    from benchmark.container_d.cache_helpers import build_cache_payload, cache_query_key, seed_healthcare_cache
+    from benchmark.container_d.runner import build_healthcare_graph_d
+    from benchmark.container_d.runtime import make_healthcare_envelope_runtime
+
+    case = HealthcareCase(
+        case_id="test-d-cache",
+        presentation="68yo AF on warfarin starting aspirin.",
+        expected_abstain=False,
+        must_cite=["warfarin"],
+        drugs=["warfarin", "aspirin"],
+        topic="anticoagulation",
+        pipeline_depth=6,
+        variant="exact_repeat",
+        session_id="hc-session-cache",
+        canonical_id="case-001",
+    )
+    stub = _StubHealthcareGemini()
+    runtime = make_healthcare_envelope_runtime()
+    graph, _, _ = build_healthcare_graph_d(depth=6, gemini=stub, runtime=runtime)
+    payload = build_cache_payload(
+        {
+            "hop_artifacts": {
+                "intake": {"facts": "68yo AF", "drugs": ["warfarin", "aspirin"]},
+                "retrieve": {"cited_ids": ["warfarin_bleed"], "summary": "Avoid combo."},
+                "analyze": {"reasoning": "High bleeding risk.", "uncertainties": []},
+                "drug_check": {"summary": "Major risk.", "interactions": []},
+                "safety": {"verdict": "APPROVED", "reason": "grounded"},
+            },
+            "retrieved": [{"id": "warfarin_bleed", "text": "avoid"}],
+            "interactions": [{"pair": ["warfarin", "aspirin"], "severity": "major"}],
+            "drugs": ["warfarin", "aspirin"],
+            "topic": "anticoagulation",
+            "abstained": False,
+        },
+        response=stub._writer_text,
+    )
+    seed_healthcare_cache(runtime, cache_query_key(case), payload)
+
+    result = graph.invoke(
+        {
+            "case": case,
+            "hop_metrics": [],
+            "tool_calls": 0,
+            "vector_hops": [],
+            "hop_artifacts": {},
+            "prism_sequence": [],
+            "cache_seed_phrases": [],
+        }
+    )
+    hops = [h.hop for h in result.get("hop_metrics") or []]
+    assert "intake" not in hops
+    assert "retrieve" not in hops
+    assert hops == ["vector_ingress", "cache_gate", "writer"]
+    assert result.get("cache_hit") is True
+    assert result.get("response") == stub._writer_text
+    writer_hop = next(h for h in result.get("hop_metrics") or [] if h.hop == "writer")
+    assert writer_hop.llm_calls == 0
+    assert stub.usage.llm_calls == 0
+
+
 def test_container_d_envelope_hops_and_bounded_handoff():
     from benchmark.container_d.runner import build_healthcare_graph_d
     from benchmark.container_d.runtime import make_healthcare_envelope_runtime
@@ -122,12 +183,19 @@ def test_container_d_envelope_hops_and_bounded_handoff():
     runtime = make_healthcare_envelope_runtime()
     graph, _, _ = build_healthcare_graph_d(depth=6, gemini=stub, runtime=runtime)
     result = graph.invoke(
-        {"case": case, "hop_metrics": [], "tool_calls": 0, "vector_hops": [], "hop_artifacts": {}}
+        {
+            "case": case,
+            "hop_metrics": [],
+            "tool_calls": 0,
+            "vector_hops": [],
+            "hop_artifacts": {},
+            "prism_sequence": [],
+            "cache_seed_phrases": [],
+        }
     )
-    vhops = result.get("vector_hops") or []
-    agent_hops = {h["hop"] for h in vhops}
-    assert "intake" in agent_hops
-    assert "retrieve" in agent_hops
+    hops = [h.hop for h in result.get("hop_metrics") or []]
+    assert "intake" in hops
+    assert "retrieve" in hops
     assert result.get("hop_artifacts", {}).get("intake")
     assert int(result.get("tool_calls") or 0) >= 2
     assert len(result.get("prism_sequence") or []) >= 5
