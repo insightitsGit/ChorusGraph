@@ -44,9 +44,13 @@ Also share the **64-d** projection between the cache_gate and the writer hop (sa
 ONNX embed happens **only at ingress**. Add an **instrumented counter** on the embedder (count `embed()`
 calls per turn) and a **test that fails if it fires more than once** per turn on the finance path.
 
-### 2.4 Prove no behavior change (regression)
-Re-run the H11 workload; assert **identical** accuracy, cache-hit-rate, and answers vs `h11_fixed_a_60`.
-Any delta = a bug in the refactor.
+### 2.4 Regression gate — small run FIRST, must match exactly (do this before the volume run)
+Re-run the **same small workload** (the 40/60-task pilot, **same seed** as the prior run) on the refactored
+code and assert **identical** accuracy, cache-hit-rate, and **per-task answers** vs the pre-refactor baseline
+(`h11_fixed_a_60`). **Diff the per-task answers, not just the aggregates.**
+
+**This is a HARD GATE:** if *anything* differs, STOP and fix the refactor — do **NOT** run the 300-task
+volume until the small regression is byte-clean. The whole point of H12 is "same outputs, computed once."
 
 ### 2.5 Measure the savings (honest)
 Report embeds/turn (before 3 → after 1) and the **latency delta**, especially on **cache hits** (where the
@@ -54,7 +58,7 @@ turn is embed-dominated). Note: the saving is **CPU/latency + throughput** (ONNX
 LLM cost. Real and meaningful at scale and on hits; modest on LLM-bound misses. State it accurately.
 
 ### 2.6 Then: the 300-task volume run (on the fixed code)
-After 2.1–2.5, run **≥300 tasks, bands 20/40/60**, post-fix A (from H11), paired, with CIs → clears the
+**Only after the §2.4 small regression gate passes byte-clean,** run **≥300 tasks, bands 20/40/60**, post-fix A (from H11), paired, with CIs → clears the
 `MIN_HITS=300` bar **and** shows the embed-once latency win at volume. Update `docs/BENCHMARK_RESULTS.md`.
 
 ## 3. Out of scope
@@ -63,7 +67,7 @@ Enterprise E1–E9 · changing projection dims or thresholds · new features · 
 ## 4. Acceptance criteria
 - [ ] ONNX `embed()` fires **exactly once** per finance turn (proven by the instrumented counter + a test).
 - [ ] cache_gate, writer `project_text`, and Cortex recall all consume the shared `raw_384`; no internal re-embed.
-- [ ] **Outputs identical** to `h11_fixed_a_60` (accuracy, cache-hit, answers) — regression proven.
+- [ ] **Small-workload regression gate run FIRST** and passes **identical** (accuracy, cache-hit, per-task answers) vs `h11_fixed_a_60` — the 300-task run is **not** started until this is clean.
 - [ ] Latency/throughput saving measured + reported (embeds 3→1; hit-latency delta).
 - [ ] 300-task run (bands 20/40/60) on the fixed code, with CIs; `MIN_HITS=300` addressed.
 - [ ] No fakes; prior tests green; no dim/threshold changes.
