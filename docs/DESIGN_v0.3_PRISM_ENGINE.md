@@ -134,6 +134,10 @@ for each super-step (node N → node M):
 
 On verified hit: skip retrieve + LLM (fast path). Resonance is **not optional** — it scores L1 candidates.
 
+> **CacheProfile (H21):** per-node × category attributes (`keying`, `ttl_s`, `scope`, `risk_tier`) govern
+> the gate — see [`CACHE_PROFILES.md`](CACHE_PROFILES.md). Healthcare judgment hops use fingerprint keying
+> and quality-gated seeding; finance `fx_rates` uses semantic + short TTL.
+
 **Code:** `chorusgraph/cache_gate/gate.py`, `cache_gate/backend.py`
 
 ### 4.3 L2 — PrismRAG + Resonance rerank (retrieve node)

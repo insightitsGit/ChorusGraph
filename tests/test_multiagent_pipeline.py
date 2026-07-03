@@ -105,7 +105,8 @@ def test_container_c_abstain_case():
     assert m.abstained or "abstain" in (m.answer or "").lower()
 
 
-def test_container_d_cache_hit_skips_llm_hops():
+def test_container_d_cache_hit_prefills_facts_runs_pipeline():
+    """H21: cache hit restores facts only — full pipeline runs, writer regenerates judgment."""
     from benchmark.hc2.cache_helpers import build_cache_payload, cache_query_key, seed_healthcare_cache
     from benchmark.hc2.runner import build_healthcare_graph_hc2
     from benchmark.hc2.runtime import make_healthcare_envelope_runtime
@@ -161,14 +162,13 @@ def test_container_d_cache_hit_skips_llm_hops():
         }
     )
     hops = [h.hop for h in result.get("hop_metrics") or []]
-    assert "intake" not in hops
-    assert "retrieve" not in hops
-    assert hops == ["vector_ingress", "cache_gate", "writer"]
+    assert "intake" in hops
+    assert "writer" in hops
     assert result.get("cache_hit") is True
-    assert result.get("response") == stub._writer_text
-    writer_hop = next(h for h in result.get("hop_metrics") or [] if h.hop == "writer")
-    assert writer_hop.llm_calls == 0
-    assert stub.usage.llm_calls == 0
+    assert result.get("cache_facts") is True
+    assert result.get("retrieved")
+    assert result.get("response")
+    assert stub.usage.llm_calls > 0
 
 
 def test_container_d_envelope_hops_and_bounded_handoff():

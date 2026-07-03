@@ -12,6 +12,7 @@ from benchmark.hc2.cache_helpers import (
     apply_cache_payload,
     cache_query_key,
     cache_seed_phrases,
+    gate_clinical,
 )
 from benchmark.hc2.nodes import make_hc2_nodes, route_after_cache_hc2
 from benchmark.hc2.runtime import make_healthcare_envelope_runtime
@@ -22,10 +23,7 @@ from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient
 from benchmark.thresholds import measured_thresholds
 from chorusgraph.examples.finance_agent.nodes import make_vector_ingress_handler
 from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
-from chorusgraph.sections.models import CachePolicy, Section
-from chorusgraph.cache_gate.gate import gate
 from chorusgraph.transforms.projector import raw_from_state, vector_64_from_state
-
 
 from benchmark.hc2.state import HealthcareVectorState
 
@@ -36,21 +34,16 @@ def _make_healthcare_cache_gate_handler(
     coarse_threshold: float,
     verify_threshold: float,
 ):
-    """Clinical cache gate — same two-stage gate as finance, slug clinical_guidelines."""
+    """Clinical cache gate — CacheProfile global facts (H21)."""
 
     def cache_gate_node(state: HealthcareVectorState) -> Dict[str, Any]:
         message = state.get("message") or ""
-        section = Section(
-            section_id="clinical_lookup",
-            category_slug="clinical_guidelines",
-            content=message,
-            cache_policy=CachePolicy.REPLAY_SAFE,
-        )
-        decision = gate(
-            message,
-            section,
-            runtime.cache,
-            runtime.sidecar,
+        case = state.get("case")
+        session_id = getattr(case, "session_id", "") if case else ""
+        decision = gate_clinical(
+            runtime,
+            query=message,
+            session_id=session_id,
             coarse_threshold=coarse_threshold,
             verify_threshold=verify_threshold,
             raw_embedding_384=raw_from_state(state),
@@ -140,7 +133,7 @@ def build_healthcare_graph_hc2(
     graph.add_conditional_edges(
         "cache_gate",
         lambda state: route_after_cache_hc2(state, first_agent=first_agent),
-        {first_agent: first_agent, "writer": "writer"},
+        {first_agent: first_agent},
     )
     for i in range(len(agents) - 1):
         graph.add_edge(agents[i], agents[i + 1])

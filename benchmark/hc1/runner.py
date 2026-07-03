@@ -15,22 +15,20 @@ from benchmark.hc1.cache_helpers import (
     build_hc1_cache_payload,
     cache_query_key,
     cache_seed_phrases,
-    cached_response_from_state,
-    seed_healthcare_cache,
 )
 from benchmark.hc1.runtime import GRAPH_ID, HC1_TENANT_ID, make_healthcare_hc1_runtime
+from benchmark.hc2.cache_helpers import seed_healthcare_cache
 from benchmark.multiagent_measure import MultiAgentMeasurement, score_healthcare_answer
+from benchmark.shared.healthcare_cache import gate_clinical
 from benchmark.shared.healthcare_react import HEALTHCARE_REACT_SYSTEM, HEALTHCARE_WRITER_SYSTEM
 from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient
 from benchmark.thresholds import measured_thresholds
 from chorusgraph import SqliteLedgerSink, wrap
 from chorusgraph.agents.react_utils import parse_react_json
-from chorusgraph.cache_gate.gate import gate
 from chorusgraph.core import END, Graph, START
 from chorusgraph.core.node import NodeContext
 from chorusgraph.core.channels import NodeUpdate
 from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
-from chorusgraph.sections.models import CachePolicy, Section
 
 MAX_REACT_STEPS = 6
 
@@ -62,18 +60,10 @@ def build_healthcare_graph_hc1(
     def cache_gate(ctx: NodeContext) -> NodeUpdate:
         view = _read_view(ctx)
         case: HealthcareCase = view["case"]
-        message = case.presentation
-        section = Section(
-            section_id="clinical_lookup",
-            category_slug=CLINICAL_SLUG,
-            content=message,
-            cache_policy=CachePolicy.REPLAY_SAFE,
-        )
-        decision = gate(
-            message,
-            section,
-            runtime.cache,
-            runtime.sidecar,
+        decision = gate_clinical(
+            runtime,
+            query=cache_query_key(case),
+            session_id=case.session_id,
             coarse_threshold=coarse_threshold,
             verify_threshold=verify_threshold,
         )
@@ -82,7 +72,7 @@ def build_healthcare_graph_hc1(
             "cache_score": decision.verify_score or decision.coarse_score,
             "cache_coarse_score": decision.coarse_score,
             "cache_verify_score": decision.verify_score,
-            "cache_decision": decision.kind.value,
+            "cache_decision": decision.kind.value if decision.kind else "miss",
         }
         if decision.is_hit and decision.value:
             artifact = apply_cache_payload(artifact, decision.value)
@@ -150,18 +140,6 @@ def build_healthcare_graph_hc1(
     def writer(ctx: NodeContext) -> NodeUpdate:
         view = _read_view(ctx)
         case: HealthcareCase = view["case"]
-        cached = cached_response_from_state(view)
-        if view["cache_hit"] and cached:
-            return ctx.publish(
-                artifact={
-                    "response": cached,
-                    "abstained": view.get("abstained"),
-                    "raw_output": cached[:200],
-                },
-                category_slug="general",
-                rule_chain=["writer=cache_hit"],
-            )
-
         retrieved = view.get("retrieved") or []
         interactions = view.get("interactions") or []
         cited = [str(d.get("id") or "") for d in retrieved if d.get("id")]
@@ -177,13 +155,14 @@ def build_healthcare_graph_hc1(
                 "I must abstain from a definitive clinical recommendation because "
                 "grounded guideline or interaction evidence is insufficient for this case."
             )
-            if not view["cache_hit"] and runtime.cache is not None:
+            if runtime.cache is not None:
                 seed_healthcare_cache(
                     runtime,
                     cache_query_key(case),
                     build_hc1_cache_payload({**view, "abstained": True}, response=response),
                     extra_queries=cache_seed_phrases(case),
                     pipeline_depth=case.pipeline_depth,
+                    session_id=case.session_id,
                 )
             return ctx.publish(
                 artifact={"response": response, "abstained": True, "raw_output": response},
@@ -195,13 +174,14 @@ def build_healthcare_graph_hc1(
             "Write a concise clinical recommendation citing sources."
         )
         response = gemini.generate(HEALTHCARE_WRITER_SYSTEM, user)
-        if not view["cache_hit"] and runtime.cache is not None:
+        if runtime.cache is not None:
             seed_healthcare_cache(
                 runtime,
                 cache_query_key(case),
                 build_hc1_cache_payload({**view, "abstained": False}, response=response),
                 extra_queries=cache_seed_phrases(case),
                 pipeline_depth=case.pipeline_depth,
+                session_id=case.session_id,
             )
         return ctx.publish(
             artifact={"response": response, "abstained": False, "raw_output": response},
@@ -210,7 +190,7 @@ def build_healthcare_graph_hc1(
         )
 
     def route_cache(view: dict) -> str:
-        if view.get("cache_hit") and cached_response_from_state(view):
+        if view.get("cache_hit") and (view.get("retrieved") or view.get("interactions")):
             return "writer"
         return "react"
 
@@ -240,40 +220,37 @@ def build_healthcare_graph_hc1(
 
 
 class HC1Runner:
-    """ChorusGraph core engine — single-agent healthcare with cache + Route Ledger."""
+    """ChorusGraph core engine — shared global cache + Route Ledger (H21 T5)."""
+
+    _shared_runtime: FinanceRuntime | None = None
 
     def __init__(self) -> None:
         self._thresholds = measured_thresholds()
-        self._sessions: Dict[str, Tuple[Any, FinanceRuntime, InstrumentedGeminiClient]] = {}
         self._sink = SqliteLedgerSink(":memory:")
         self.last_ledger = None
-
-    def _session_wrapped(self, case: HealthcareCase):
-        key = case.session_id
-        if key not in self._sessions:
-            gemini = InstrumentedGeminiClient()
-            runtime = make_healthcare_hc1_runtime(gemini=gemini)
-            compiled, _, rt = build_healthcare_graph_hc1(
-                runtime=runtime,
-                gemini=gemini,
-                coarse_threshold=self._thresholds.coarse,
-                verify_threshold=self._thresholds.verify_for(CLINICAL_SLUG),
-            )
-            wrapped = wrap(
-                compiled,
-                tenant_id=HC1_TENANT_ID,
-                graph_id=GRAPH_ID,
-                sink=self._sink,
-            )
-            self._sessions[key] = (wrapped, rt, gemini)
-        return self._sessions[key]
+        if HC1Runner._shared_runtime is None:
+            HC1Runner._shared_runtime = make_healthcare_hc1_runtime()
+        self._runtime = HC1Runner._shared_runtime
+        self._gemini = InstrumentedGeminiClient()
+        compiled, _, _ = build_healthcare_graph_hc1(
+            runtime=self._runtime,
+            gemini=self._gemini,
+            coarse_threshold=self._thresholds.coarse,
+            verify_threshold=self._thresholds.verify_for(CLINICAL_SLUG),
+        )
+        self.wrapped = wrap(
+            compiled,
+            tenant_id=HC1_TENANT_ID,
+            graph_id=GRAPH_ID,
+            sink=self._sink,
+        )
 
     def run(self, case: HealthcareCase) -> MultiAgentMeasurement:
-        wrapped, _runtime, gemini = self._session_wrapped(case)
+        gemini = self._gemini
         gemini.reset_usage()
         started = time.perf_counter()
         try:
-            result = wrapped.invoke(
+            result = self.wrapped.invoke(
                 {
                     "case": case,
                     "react_step": 0,
@@ -289,7 +266,7 @@ class HC1Runner:
                 }
             )
             latency = int((time.perf_counter() - started) * 1000)
-            self.last_ledger = wrapped.last_ledger
+            self.last_ledger = self.wrapped.last_ledger
             answer = result.get("response") or ""
             abstained = bool(result.get("abstained"))
             return MultiAgentMeasurement(

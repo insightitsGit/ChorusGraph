@@ -1,0 +1,39 @@
+{
+  "category_slug": "fx_rates",
+  "canonical_query": "USD to EUR exchange rate today",
+  "canonical_answer": "1 USD = 0.92 EUR",
+  "probes": [
+    {
+      "kind": "paraphrase",
+      "query": "What is the current EUR rate for one US dollar?",
+      "answer": "1 USD = 0.92 EUR"
+    },
+    {
+      "kind": "paraphrase",
+      "query": "Convert 1 dollar to euros at today's rate",
+      "answer": "1 USD = 0.92 EUR"
+    },
+    {
+      "kind": "delta",
+      "semantic_close": false,
+      "query": "USD to GBP exchange rate today",
+      "answer": "1 USD = 0.79 GBP"
+    },
+    {
+      "kind": "delta",
+      "semantic_close": false,
+      "query": "USD to JPY exchange rate today",
+      "answer": "1 USD = 149.2 JPY"
+    }
+  ],
+  "volatility_series": [
+    {"timestamp": "2026-07-01T08:00:00Z", "answer": "1 USD = 0.92 EUR"},
+    {"timestamp": "2026-07-01T12:00:00Z", "answer": "1 USD = 0.92 EUR"},
+    {"timestamp": "2026-07-02T08:00:00Z", "answer": "1 USD = 0.91 EUR"},
+    {"timestamp": "2026-07-03T08:00:00Z", "answer": "1 USD = 0.90 EUR"}
+  ],
+  "context_probes": [
+    {"scope": "global", "query": "USD to EUR exchange rate today", "answer": "1 USD = 0.92 EUR"},
+    {"scope": "user:alice", "query": "USD to EUR exchange rate today", "answer": "1 USD = 0.92 EUR"}
+  ]
+}

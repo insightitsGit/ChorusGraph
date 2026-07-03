@@ -31,6 +31,11 @@ required deliverable — someone who knows LangGraph signs off that A is a reaso
 - **A:** LangGraph state/checkpoint; no semantic cache, no Cortex memory, no route ledger.
 - **B:** ChorusGraph cache (measured thresholds), Cortex memory, agent patterns, Route Ledger.
 
+**CacheProfile disclosure (H21):** when B (or C/D/E/F ChorusGraph scenarios) uses semantic cache, the
+[`CacheProfile`](../docs/CACHE_PROFILES.md) per `category_slug` must be documented in
+[`benchmark/SCENARIOS.md`](../benchmark/SCENARIOS.md) — keying, TTL, scope, risk tier. Measured profiles
+come from [`benchmark/profiler.py`](../benchmark/profiler.py) (offline fixtures or live probes).
+
 ## Workload design (this is how we escape the H3 data desert)
 The H3 finding was: production traffic is too thin to validate the cache. The benchmark *generates* the
 volume instead:

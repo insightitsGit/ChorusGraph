@@ -146,25 +146,20 @@ def seed_healthcare_clinical_cache(
     pipeline_depth: int,
     payload: Dict[str, Any],
     seed_phrases: Sequence[str],
-    category_slug: str = "clinical_guidelines",
+    category_slug: str = "clinical_retrieval",
+    session_id: Optional[str] = None,
 ) -> None:
-    """Seed clinical pipeline payload (HC2 writer post-run pattern)."""
-    from chorusgraph.cache_gate import seed_cache_entry
+    """Seed clinical pipeline facts (H21 — delegates to quality-gated helper)."""
+    from benchmark.hc2.cache_helpers import seed_healthcare_cache
 
-    for query_key in healthcare_cache_query_keys(
-        presentation=presentation,
+    seed_healthcare_cache(
+        runtime,
+        presentation,
+        payload,
+        extra_queries=list(seed_phrases),
         pipeline_depth=pipeline_depth,
-        seed_phrases=seed_phrases,
-    ):
-        seed_cache_entry(
-            runtime.cache,
-            runtime.sidecar,
-            query=query_key,
-            value=payload,
-            category_slug=category_slug,
-            cache_policy="replay_safe",
-        )
-        runtime.session_tool_cache[query_key] = payload
+        session_id=session_id,
+    )
 
 
 def warm_finance_corpus_cache(

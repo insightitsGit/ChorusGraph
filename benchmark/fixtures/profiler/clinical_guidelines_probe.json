@@ -1,0 +1,39 @@
+{
+  "category_slug": "clinical_guidelines",
+  "canonical_query": "68yo AF on warfarin asking about starting aspirin",
+  "canonical_answer": "Avoid routine aspirin with warfarin due to major bleeding risk; monitor INR if combined.",
+  "probes": [
+    {
+      "kind": "paraphrase",
+      "query": "Elderly patient anticoagulated with warfarin wants aspirin — guidance?",
+      "answer": "Avoid routine aspirin with warfarin due to major bleeding risk; monitor INR if combined."
+    },
+    {
+      "kind": "paraphrase",
+      "query": "Can I take aspirin while on warfarin for atrial fibrillation?",
+      "answer": "Avoid routine aspirin with warfarin due to major bleeding risk; monitor INR if combined."
+    },
+    {
+      "kind": "delta",
+      "semantic_close": true,
+      "query": "68yo AF on warfarin, K+ 5.8, asking about starting aspirin",
+      "answer": "Hold or reduce warfarin; hyperkalemia requires urgent evaluation before any antiplatelet add-on."
+    },
+    {
+      "kind": "delta",
+      "semantic_close": true,
+      "query": "68yo AF on warfarin and apixaban asking about aspirin",
+      "answer": "Do not combine warfarin with apixaban; dual anticoagulation is contraindicated."
+    }
+  ],
+  "volatility_series": [
+    {"timestamp": "2026-06-01T00:00:00Z", "answer": "Avoid routine aspirin with warfarin due to major bleeding risk; monitor INR if combined."},
+    {"timestamp": "2026-07-01T00:00:00Z", "answer": "Avoid routine aspirin with warfarin due to major bleeding risk; monitor INR if combined."},
+    {"timestamp": "2026-07-03T00:00:00Z", "answer": "Avoid routine aspirin with warfarin due to major bleeding risk; monitor INR if combined."}
+  ],
+  "context_probes": [
+    {"scope": "global", "query": "warfarin aspirin bleeding risk guidelines", "answer": "Major bleeding risk when combining warfarin and aspirin."},
+    {"scope": "session:s1", "query": "68yo AF on warfarin asking about starting aspirin", "answer": "Avoid routine aspirin with warfarin due to major bleeding risk; monitor INR if combined."},
+    {"scope": "session:s2", "query": "68yo AF on warfarin asking about starting aspirin", "answer": "Patient-specific contraindication noted in chart — defer to cardiology."}
+  ]
+}

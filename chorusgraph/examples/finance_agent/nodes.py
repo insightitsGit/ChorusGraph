@@ -18,6 +18,7 @@ from chorusgraph.transforms.projector import (
 )
 from chorusgraph.transforms.templates import try_template_draft
 from chorusgraph.sections.models import CachePolicy, Section
+from chorusgraph.sections.profiles import default_registry
 
 _CURRENCY_RE = re.compile(r"\b([A-Z]{3})\b")
 _FX_HINTS = ("exchange rate", "convert", "fx", "currency", "usd", "eur", "gbp", "jpy")
@@ -102,12 +103,15 @@ def make_cache_gate_handler(
         message = state.get("message") or ""
         compound = parse_compound_params(message)
         slug = "compound_savings" if compound else "fx_rates"
+        profile = default_registry().get(slug)
         section = Section(
             section_id="fx_lookup" if slug == "fx_rates" else "compound_lookup",
             category_slug=slug,
             content=message,
             cache_policy=CachePolicy.REPLAY_SAFE,
         )
+        task = state.get("task")
+        session_id = str(getattr(task, "session_id", "") or "") if task else None
         decision = gate(
             message,
             section,
@@ -115,6 +119,9 @@ def make_cache_gate_handler(
             runtime.sidecar,
             coarse_threshold=coarse_threshold,
             verify_threshold=verify_threshold,
+            profile=profile,
+            session_id=session_id,
+            tenant_id=runtime.tenant_id,
             raw_embedding_384=raw_from_state(state),
             projected_vector_64=vector_64_from_state(state),
         )

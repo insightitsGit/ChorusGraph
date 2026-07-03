@@ -1,27 +1,40 @@
-"""Healthcare semantic cache — seed and restore pipeline state (mirror FC2)."""
+"""Healthcare semantic cache — facts-only seed/restore (H21 archetype C)."""
 
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
 from benchmark.healthcare.cases import CASES, PARAPHRASES
+from benchmark.healthcare.fingerprint import clinical_fingerprint
 from benchmark.healthcare_workload import HealthcareCase
-from benchmark.shared.corpus_seed import (
-    healthcare_cache_query_key,
-    healthcare_seed_phrases,
-    seed_healthcare_clinical_cache,
+from benchmark.shared.corpus_seed import healthcare_seed_phrases
+from benchmark.shared.healthcare_cache import (
+    CLINICAL_RETRIEVAL_SLUG,
+    facts_only_payload,
+    gate_clinical,
+    seed_clinical_cache_entry,
 )
+from chorusgraph.sections.profiles import default_registry
 
-CLINICAL_SLUG = "clinical_guidelines"
+CLINICAL_SLUG = CLINICAL_RETRIEVAL_SLUG
 
 
 def cache_query_key(case: HealthcareCase) -> str:
-    """Cache key includes depth — hop artifacts differ by pipeline depth."""
-    return healthcare_cache_query_key(case.presentation, pipeline_depth=case.pipeline_depth)
+    """Semantic lookup key — topic + canonical presentation."""
+    return f"{case.topic}:{case.canonical_id or case.case_id}"
+
+
+def cache_fingerprint_key(state: Dict[str, Any], case: HealthcareCase) -> str:
+    hop = dict(state.get("hop_artifacts") or {})
+    intake = hop.get("intake") or {
+        "drugs": list(case.drugs),
+        "topic": case.topic,
+        "facts": case.presentation[:200],
+    }
+    return clinical_fingerprint(intake, pipeline_depth=case.pipeline_depth, drugs=case.drugs, topic=case.topic)
 
 
 def cache_seed_phrases(case: HealthcareCase) -> List[str]:
-    """Canonical + paraphrase phrases for a clinical case (H10 multi-phrase pattern)."""
     return healthcare_seed_phrases(
         case_id=case.case_id,
         presentation=case.presentation,
@@ -30,19 +43,20 @@ def cache_seed_phrases(case: HealthcareCase) -> List[str]:
 
 
 def build_cache_payload(state: Dict[str, Any], *, response: str = "") -> Dict[str, Any]:
-    """Snapshot restorable clinical pipeline state for cache reuse."""
-    hop_artifacts = dict(state.get("hop_artifacts") or {})
-    return {
-        "hop_artifacts": hop_artifacts,
+    """Facts snapshot for cache — response kept for seed policy check only."""
+    case = state.get("case")
+    payload = {
+        "hop_artifacts": dict(state.get("hop_artifacts") or {}),
         "retrieved": list(state.get("retrieved") or []),
         "interactions": list(state.get("interactions") or []),
-        "drugs": list(state.get("drugs") or []),
-        "topic": str(state.get("topic") or ""),
+        "drugs": list(state.get("drugs") or (getattr(case, "drugs", None) or [])),
+        "topic": str(state.get("topic") or (getattr(case, "topic", None) or "")),
         "abstained": bool(state.get("abstained")),
         "analysis": str(state.get("analysis") or ""),
-        "safety_verdict": str(state.get("safety_verdict") or ""),
+        "safety_verdict": state.get("hop_artifacts", {}).get("safety") or state.get("safety_verdict"),
         "response": response,
     }
+    return payload
 
 
 def seed_healthcare_cache(
@@ -52,50 +66,75 @@ def seed_healthcare_cache(
     *,
     extra_queries: Optional[List[str]] = None,
     pipeline_depth: Optional[int] = None,
+    session_id: Optional[str] = None,
+    fingerprint_key: str = "",
+    trace_fn: Optional[Any] = None,
 ) -> None:
     if pipeline_depth is None:
         raise ValueError("pipeline_depth required for healthcare cache seed")
-    seed_healthcare_clinical_cache(
-        runtime,
-        presentation=message,
-        pipeline_depth=pipeline_depth,
-        payload=payload,
-        seed_phrases=extra_queries or [],
-        category_slug=CLINICAL_SLUG,
-    )
+    response = str(payload.get("response") or "")
+    abstained = bool(payload.get("abstained"))
+    safety = payload.get("safety_verdict")
+    facts = facts_only_payload(payload)
+
+    queries = [message] if message else []
+    for phrase in extra_queries or []:
+        if phrase and phrase not in queries:
+            queries.append(phrase)
+    if cache_query_key_from_parts(message, pipeline_depth) not in queries:
+        queries.append(f"{message}\n[pipeline_depth={pipeline_depth}]")
+
+    for query_key in queries:
+        seed_clinical_cache_entry(
+            runtime,
+            query=query_key,
+            payload=facts,
+            category_slug=CLINICAL_RETRIEVAL_SLUG,
+            session_id=session_id,
+            fingerprint_key="",
+            response=response,
+            abstained=abstained,
+            safety_verdict=safety,
+            trace_fn=trace_fn,
+        )
+
+    if fingerprint_key:
+        seed_clinical_cache_entry(
+            runtime,
+            query=fingerprint_key,
+            payload=facts,
+            category_slug=CLINICAL_RETRIEVAL_SLUG,
+            profile=default_registry().get("clinical_judgment"),
+            session_id=session_id,
+            fingerprint_key=fingerprint_key,
+            response=response,
+            abstained=abstained,
+            safety_verdict=safety,
+            trace_fn=trace_fn,
+        )
+
+
+def cache_query_key_from_parts(presentation: str, pipeline_depth: int) -> str:
+    return f"{presentation}\n[pipeline_depth={pipeline_depth}]"
 
 
 def cached_response_from_state(state: Dict[str, Any]) -> Optional[str]:
-    """Resolved cached answer for cache-hit writer fast path (mirror FC2)."""
-    if not state.get("cache_hit"):
-        return None
-    for key in ("cached_response", "response"):
-        raw = state.get(key)
-        if raw:
-            return str(raw)
-    writer_art = (state.get("hop_artifacts") or {}).get("writer") or {}
-    if writer_art.get("response"):
-        return str(writer_art["response"])
+    """Judgment responses are not replayed from cache (archetype C)."""
     return None
 
 
 def apply_cache_payload(update: Dict[str, Any], payload: Dict[str, Any]) -> Dict[str, Any]:
-    """Merge cached clinical state into graph update after cache_gate hit."""
+    """Merge cached clinical facts — never replay writer response."""
     if not isinstance(payload, dict):
         return update
+    facts = facts_only_payload(payload)
     merged = dict(update)
-    merged["hop_artifacts"] = dict(payload.get("hop_artifacts") or {})
-    merged["retrieved"] = list(payload.get("retrieved") or [])
-    merged["interactions"] = list(payload.get("interactions") or [])
-    merged["drugs"] = list(payload.get("drugs") or [])
-    merged["topic"] = str(payload.get("topic") or "")
-    merged["abstained"] = bool(payload.get("abstained"))
-    merged["analysis"] = str(payload.get("analysis") or "")
-    merged["safety_verdict"] = str(payload.get("safety_verdict") or "")
-    response = str(payload.get("response") or "")
-    if response:
-        merged["cached_response"] = response
-        merged["response"] = response
+    merged["hop_artifacts"] = dict(facts.get("hop_artifacts") or {})
+    merged["retrieved"] = list(facts.get("retrieved") or [])
+    merged["interactions"] = list(facts.get("interactions") or [])
+    merged["drugs"] = list(facts.get("drugs") or [])
+    merged["topic"] = str(facts.get("topic") or "")
+    merged["cache_facts"] = True
     return merged
 
 
@@ -105,8 +144,10 @@ __all__ = [
     "CLINICAL_SLUG",
     "apply_cache_payload",
     "build_cache_payload",
+    "cache_fingerprint_key",
     "cache_query_key",
     "cache_seed_phrases",
     "cached_response_from_state",
+    "gate_clinical",
     "seed_healthcare_cache",
 ]

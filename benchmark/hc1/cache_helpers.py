@@ -1,4 +1,4 @@
-"""HC1 single-agent clinical cache — seed and restore (mirror FC1 / HC2)."""
+"""HC1 single-agent clinical cache — seed and restore (mirror HC2 facts-only)."""
 
 from __future__ import annotations
 
@@ -16,7 +16,6 @@ from benchmark.healthcare_workload import HealthcareCase
 
 
 def build_hc1_cache_payload(view: Dict[str, Any], *, response: str) -> Dict[str, Any]:
-    """Snapshot restorable single-agent clinical state for cache reuse."""
     case: HealthcareCase = view["case"]
     return {
         "retrieved": list(view.get("retrieved") or []),

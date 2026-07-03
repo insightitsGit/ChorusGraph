@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, List, Optional
+from typing import Any, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -13,6 +13,24 @@ class CachePolicy(str, Enum):
     SEMANTIC = "semantic"
     EXACT = "exact"
     REPLAY_SAFE = "replay_safe"
+
+
+CacheKeying = Literal["semantic", "fingerprint", "exact"]
+CacheScope = Literal["global", "tenant", "user", "session"]
+RiskTier = Literal["low", "high"]
+
+
+class CacheProfile(BaseModel):
+    """
+    Measured cache attributes per category_slug (CACHE_PROFILES.md §3).
+
+    Attach per node via NodeCacheSpec.profile override.
+    """
+
+    keying: CacheKeying = "semantic"
+    ttl_s: Optional[int] = None
+    scope: CacheScope = "global"
+    risk_tier: RiskTier = "low"
 
 
 class Section(BaseModel):

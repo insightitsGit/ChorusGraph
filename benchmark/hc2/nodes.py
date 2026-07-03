@@ -20,11 +20,13 @@ from benchmark.hc2.artifacts import (
 )
 from benchmark.hc2.cache_helpers import (
     build_cache_payload,
+    cache_fingerprint_key,
     cache_query_key,
     cache_seed_phrases,
-    cached_response_from_state,
+    gate_clinical,
     seed_healthcare_cache,
 )
+from benchmark.healthcare.prompts import WRITER_SYSTEM as HL2_WRITER_SYSTEM
 from benchmark.hc2.prompts import (
     ANALYZE_D_SYSTEM,
     DRUG_D_SYSTEM,
@@ -71,21 +73,19 @@ def _hop_trace(
 
 
 def route_after_cache_hc2(state: HealthcareVectorState, *, first_agent: str) -> str:
-    """D1: skip LLM hops on verified cache hit — jump to writer (mirror F/B)."""
-    hit = bool(state.get("cache_hit") and state.get("hop_artifacts"))
-    route = "writer" if hit else first_agent
+    """H21: cache hit restores facts only — always run pipeline (never skip to writer)."""
     case_id, session_id = _trace_ids(state)
     trace_event(
         "route_after_cache",
         case_id=case_id,
         session_id=session_id,
-        route=route,
+        route=first_agent,
         cache_hit=state.get("cache_hit"),
         cache_decision=state.get("cache_decision"),
-        has_hop_artifacts=bool(state.get("hop_artifacts")),
-        has_cached_response=bool(cached_response_from_state(state)),
+        has_retrieved=bool(state.get("retrieved")),
+        cache_facts=bool(state.get("cache_facts")),
     )
-    return route
+    return first_agent
 
 
 def _envelope_update(
@@ -244,25 +244,11 @@ def make_hc2_nodes(gemini: InstrumentedGeminiClient, runtime: FinanceRuntime) ->
         started = time.perf_counter()
         gemini.reset_usage()
         case_id, session_id = _trace_ids(state)
+        case = state["case"]
+        depth = int(case.pipeline_depth)
         hop_artifacts = dict(state.get("hop_artifacts") or {})
         abstained = bool(state.get("abstained"))
         cache_hit = bool(state.get("cache_hit"))
-        cached = cached_response_from_state(state)
-
-        if cache_hit and cached:
-            trace_event(
-                "writer_prompt",
-                case_id=case_id,
-                session_id=session_id,
-                hop="writer",
-                mode="cache_hit_response",
-            )
-            out = {
-                "response": cached,
-                **_record_hop(state, "writer", started, gemini),
-            }
-            _hop_trace(state, "writer", started, gemini, used_cache_response=True)
-            return out
 
         if abstained:
             response = "ABSTAIN: insufficient grounded evidence for a definitive recommendation."
@@ -273,31 +259,53 @@ def make_hc2_nodes(gemini: InstrumentedGeminiClient, runtime: FinanceRuntime) ->
             _hop_trace(state, "writer", started, gemini, abstained=True)
             return out
 
-        user = writer_handoff_plain(
-            hop_artifacts=hop_artifacts,
-            retrieved=list(state.get("retrieved") or []),
-            abstained=abstained,
-        )
-        trace_event(
-            "writer_prompt",
-            case_id=case_id,
-            session_id=session_id,
-            hop="writer",
-            mode="cache_hit_plain" if cache_hit else "plain_handoff",
-        )
+        retrieved = list(state.get("retrieved") or [])
+        interactions = list(state.get("interactions") or [])
 
-        response = gemini.generate(WRITER_D_SYSTEM, user)
-        if not cache_hit and runtime.cache is not None:
-            case = state["case"]
+        if depth < 6:
+            user = (
+                f"Analysis:\n{state.get('analysis') or hop_artifacts.get('analyze', {})}\n\n"
+                f"Guidelines:\n{retrieved}\n\nInteractions:\n{interactions}\n"
+            )
+            trace_event(
+                "writer_prompt",
+                case_id=case_id,
+                session_id=session_id,
+                hop="writer",
+                mode="hl2_style",
+                depth=depth,
+            )
+            response = gemini.generate(HL2_WRITER_SYSTEM, user)
+        else:
+            user = writer_handoff_plain(
+                hop_artifacts=hop_artifacts,
+                retrieved=retrieved,
+                abstained=abstained,
+            )
+            trace_event(
+                "writer_prompt",
+                case_id=case_id,
+                session_id=session_id,
+                hop="writer",
+                mode="cache_hit_plain" if cache_hit else "plain_handoff",
+                depth=depth,
+            )
+            response = gemini.generate(WRITER_D_SYSTEM, user)
+
+        if runtime.cache is not None:
+            fp = cache_fingerprint_key(state, case)
             seed_healthcare_cache(
                 runtime,
                 cache_query_key(case),
                 build_cache_payload(state, response=response),
                 extra_queries=cache_seed_phrases(case),
                 pipeline_depth=case.pipeline_depth,
+                session_id=session_id,
+                fingerprint_key=fp,
+                trace_fn=lambda event, **kw: trace_event(event, case_id=case_id, session_id=session_id, **kw),
             )
 
-        artifact = {"response": response[:500], "from_cache": cache_hit}
+        artifact = {"response": response[:500], "from_cache": False}
         out = {
             "response": response,
             **_envelope_update(
@@ -305,7 +313,7 @@ def make_hc2_nodes(gemini: InstrumentedGeminiClient, runtime: FinanceRuntime) ->
                 "writer",
                 artifact,
                 state=state,
-                skip_embed=cache_hit,
+                skip_embed=False,
             ),
             **_record_hop(state, "writer", started, gemini),
         }

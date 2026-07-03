@@ -74,15 +74,27 @@ Each pair is compared on the **same task IDs** (paired analysis):
 | **Tools** | Tool calls per task | Lower |
 | **Reliability** | Error rate | Lower |
 | **Cache (Chorus)** | Cache hit rate | Higher |
-| **Cache proof** | LLM calls on cache hit | Should be **0** |
-| **Multi-agent** | Embed count per task | Lower |
-| **Healthcare** | Abstain rate | Context-dependent |
+| **Cache proof** | LLM calls on cache hit | Finance: **0** on whole-answer hit; Healthcare (archetype C): facts prefilled, judgment hops still run |
 
 **Paired deltas** (same task/case): cost Δ, latency Δ, LLM calls Δ, success Δ — ChorusGraph minus LangGraph.
 
 **Winner rule:** non-overlapping 95% CIs → clear winner; overlapping CIs → marginal (point estimate).
 
 **By variant slice:** novel / exact_repeat / paraphrase breakdowns in `comparison.json`.
+
+## CacheProfile per scenario (H21)
+
+Profiles from [`docs/CACHE_PROFILES.md`](../docs/CACHE_PROFILES.md) and `chorusgraph/sections/profiles.default.json`. Measure offline: `python -m benchmark.run_profiler`.
+
+| Scenario | Category slugs | keying | ttl | scope | risk |
+|----------|----------------|--------|-----|-------|------|
+| **FC1 / FC2** | `fx_rates` | semantic | 1h | global | low |
+| **FC1 / FC2** | `user_profile` | semantic | none | user | low |
+| **FC1 / FC2** | `compound_savings` | semantic | none | global | low |
+| **HC1 / HC2** | `clinical_retrieval` / `clinical_guidelines` | semantic | 30d | **global** | low |
+| **HC1 / HC2** | `clinical_judgment` | fingerprint | none | session | **high** |
+
+HC1/HC2 use **facts-only cache** (retrieval, interactions) — writer judgment is never replayed. Quality-gated seeding blocks abstain/refusal chains from entering cache.
 
 ## Route Ledger (ChorusGraph scenarios)
 

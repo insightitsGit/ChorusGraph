@@ -25,3 +25,4 @@ class HealthcareVectorState(HealthcareState, total=False):
     cache_decision: Optional[str]
     cache_seed_phrases: List[str]
     cached_response: Optional[str]
+    cache_facts: Optional[bool]

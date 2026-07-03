@@ -1,16 +1,18 @@
-"""Node-entry cache interceptor — deterministic-first (P4)."""
+"""Node-entry cache interceptor — deterministic-first (P4) + CacheProfile (H21)."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, Optional, TYPE_CHECKING
 
 import numpy as np
 
 from chorusgraph.cache_gate.decision import Decision
 from chorusgraph.cache_gate.gate import gate
+from chorusgraph.cache_gate.scope import scope_id as make_scope_id
 from chorusgraph.core.channels import NodeUpdate, publish_update
-from chorusgraph.sections.models import CachePolicy, Section
+from chorusgraph.sections.models import CachePolicy, CacheProfile, Section
+from chorusgraph.sections.profiles import default_registry
 from chorusgraph.transforms.projector import raw_from_state, vector_64_from_state
 
 if TYPE_CHECKING:
@@ -27,6 +29,8 @@ class CacheRuntime:
     sidecar: "SidecarStore"
     coarse_threshold: float = 0.88
     verify_threshold: float = 0.95
+    tenant_id: str = "default"
+    registry: Any = field(default_factory=default_registry)
 
 
 @dataclass
@@ -35,6 +39,10 @@ class NodeCacheSpec:
     category_slug: str = "general"
     cache_policy: CachePolicy = CachePolicy.NO_CACHE
     query_key: str = "message"
+    profile: Optional[CacheProfile] = None
+    fingerprint_key: str = "fingerprint_key"
+    scope_session_key: str = "session_id"
+    scope_user_key: str = "user_id"
 
 
 class CacheInterceptor:
@@ -56,8 +64,17 @@ class CacheInterceptor:
             return None
 
         query = str(view.get(spec.query_key) or view.get("message") or "")
-        if not query.strip():
+        if not query.strip() and spec.profile and spec.profile.keying != "fingerprint":
             return None
+
+        profile = self._runtime.registry.get(spec.category_slug, override=spec.profile)
+        fp_key = str(view.get(spec.fingerprint_key) or "") if profile.keying == "fingerprint" else None
+        sid = make_scope_id(
+            profile.scope,
+            tenant_id=self._runtime.tenant_id,
+            user_id=str(view.get(spec.scope_user_key) or "") or None,
+            session_id=str(view.get(spec.scope_session_key) or "") or None,
+        )
 
         section = Section(
             section_id=f"{node_id}_cache",
@@ -74,13 +91,19 @@ class CacheInterceptor:
             self._runtime.sidecar,
             coarse_threshold=self._runtime.coarse_threshold,
             verify_threshold=self._runtime.verify_threshold,
+            profile=profile,
+            scope_id=sid,
+            fingerprint_key=fp_key,
+            tenant_id=self._runtime.tenant_id,
+            user_id=str(view.get(spec.scope_user_key) or "") or None,
+            session_id=str(view.get(spec.scope_session_key) or "") or None,
             raw_embedding_384=np.asarray(raw, dtype=np.float32) if raw is not None else None,
             projected_vector_64=np.asarray(vec, dtype=np.float32) if vec is not None else None,
         )
         if not decision.is_hit or not decision.value:
             return None
 
-        artifact = dict(decision.value)
+        artifact = dict(decision.value) if isinstance(decision.value, dict) else {"value": decision.value}
         artifact.setdefault("_cache_hit", True)
         artifact.setdefault("cache_hit", True)
         update = publish_update(

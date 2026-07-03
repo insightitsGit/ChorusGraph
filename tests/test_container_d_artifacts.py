@@ -17,13 +17,14 @@ from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
 
 
 def test_cached_response_from_state():
+    """H21 archetype C — judgment responses are never replayed from cache."""
     state = {
         "cache_hit": True,
         "cached_response": "Cached clinical answer.",
     }
-    assert cached_response_from_state(state) == "Cached clinical answer."
+    assert cached_response_from_state(state) is None
     state2 = {"cache_hit": True, "response": "From response field."}
-    assert cached_response_from_state(state2) == "From response field."
+    assert cached_response_from_state(state2) is None
     assert cached_response_from_state({"cache_hit": False, "response": "x"}) is None
 
 
