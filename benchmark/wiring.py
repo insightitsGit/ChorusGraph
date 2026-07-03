@@ -93,8 +93,10 @@ def verify_benchmark_wiring() -> List[str]:
     assert callable(build_healthcare_graph_hc2)
     ok.append("Graph builders: build_healthcare_graph_hc1/hc2")
 
+    from benchmark.framework_guard import verify_framework_split
     from chorusgraph.examples.finance_agent.nodes import make_cache_gate_handler
 
+    ok.extend(verify_framework_split())
     assert callable(make_cache_gate_handler)
     ok.append("Finance: make_cache_gate_handler (CacheProfile-aware gate)")
 

@@ -178,6 +178,7 @@ def main(argv: Optional[List[str]] = None) -> None:
             raise SystemExit(2)
 
     print(f"Running scenarios: {selected} ({args.tasks} tasks each, seed={args.seed})")
+    print("  Framework: FL/HL = LangGraph baseline | FC/HC = ChorusGraph native + ChorusStack")
     configure(cache_enabled=not args.no_cache)
     install_benchmark_cache_policy()
     try:
