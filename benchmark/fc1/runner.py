@@ -9,7 +9,6 @@ from typing import Any, Dict, List, Optional
 from benchmark.measure import TaskMeasurement, score_task_success
 from benchmark.shared.corpus_seed import finance_seed_mode, finance_seed_phrases
 from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient
-from benchmark.thresholds import measured_thresholds
 from benchmark.workload import WorkloadTask
 from chorusgraph.agents.policy import PlanPolicy
 from chorusgraph.examples.finance_agent.patterns_graph import (
@@ -48,7 +47,6 @@ class FC1Runner:
 
     def __init__(self, *, seed_all_canonical_phrases: bool = True) -> None:
         self._seed_all_canonical_phrases = seed_all_canonical_phrases
-        self._thresholds = measured_thresholds()
         self._sessions: Dict[str, tuple[Any, FinanceRuntime]] = {}
         self._histories: Dict[str, List[Dict[str, str]]] = {}
 
@@ -68,10 +66,6 @@ class FC1Runner:
             compiled, rt = build_react_graph(
                 runtime,
                 policy=PlanPolicy(max_steps=6),
-                coarse_threshold=self._thresholds.coarse,
-                verify_threshold=self._thresholds.verify_for(
-                    "compound_savings" if (task.canonical_id or "").startswith("compound_") else "fx_rates"
-                ),
             )
             self._sessions[key] = (compiled, rt)
         return self._sessions[key]

@@ -96,14 +96,21 @@ def make_vector_ingress_handler(runtime: FinanceRuntime):
 def make_cache_gate_handler(
     runtime: FinanceRuntime,
     *,
-    coarse_threshold: float = 0.82,
-    verify_threshold: float = 0.85,
+    coarse_threshold: float | None = None,
+    verify_threshold: float | None = None,
 ):
     def cache_gate_node(state: Dict[str, Any]) -> Dict[str, Any]:
         message = state.get("message") or ""
         compound = parse_compound_params(message)
         slug = "compound_savings" if compound else "fx_rates"
         profile = default_registry().get(slug)
+        stack_rt = runtime.stack.to_cache_runtime()
+        coarse = coarse_threshold if coarse_threshold is not None else stack_rt.coarse_threshold
+        verify = (
+            verify_threshold
+            if verify_threshold is not None
+            else stack_rt.verify_threshold_for(slug)
+        )
         section = Section(
             section_id="fx_lookup" if slug == "fx_rates" else "compound_lookup",
             category_slug=slug,
@@ -117,8 +124,8 @@ def make_cache_gate_handler(
             section,
             runtime.cache,
             runtime.sidecar,
-            coarse_threshold=coarse_threshold,
-            verify_threshold=verify_threshold,
+            coarse_threshold=coarse,
+            verify_threshold=verify,
             profile=profile,
             session_id=session_id,
             tenant_id=runtime.tenant_id,

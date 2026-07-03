@@ -19,6 +19,8 @@ from benchmark.healthcare_workload import HealthcareCase, generate_healthcare_wo
 from benchmark.measure import TaskMeasurement
 from benchmark.multiagent_measure import MultiAgentMeasurement
 from benchmark.scenarios import ScenarioId, make_runner
+from benchmark.thresholds import measured_thresholds
+from benchmark.tiers import TierName, repeat_band_for_tier, tasks_for_tier
 from benchmark.wiring import BenchmarkWiringError, verify_benchmark_wiring
 from benchmark.workload import WorkloadTask, generate_workload
 
@@ -119,6 +121,20 @@ def write_jsonl(path: Path, rows: List[Any]) -> None:
             f.write(json.dumps(asdict(row) if hasattr(row, "__dataclass_fields__") else row) + "\n")
 
 
+def _cache_profile_disclosure() -> Dict[str, Any]:
+    from chorusgraph.sections.profiles import load_default_profiles
+
+    profiles = load_default_profiles()
+    thresholds = measured_thresholds()
+    return {
+        "thresholds": {
+            "coarse": thresholds.coarse,
+            "verify_by_slug": dict(thresholds.verify_by_slug),
+        },
+        "profiles": {slug: p.model_dump() for slug, p in profiles.items()},
+    }
+
+
 def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(description="ChorusGraph MVP scenario benchmark")
     parser.add_argument(
@@ -126,9 +142,15 @@ def main(argv: Optional[List[str]] = None) -> None:
         default="all",
         help="Comma-separated scenario IDs (FL1,FC1,...) or: all, finance, healthcare, single, multi, pairs",
     )
-    parser.add_argument("--tasks", type=int, default=12)
+    parser.add_argument(
+        "--tier",
+        choices=("light", "mid", "heavy"),
+        default=None,
+        help="Workload tier: light=40, mid=100, heavy=300 tasks per scenario (overrides --tasks when set)",
+    )
+    parser.add_argument("--tasks", type=int, default=None, help="Tasks per scenario (default: 12, or tier preset)")
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--repeat-band", type=int, default=40)
+    parser.add_argument("--repeat-band", type=int, default=None)
     parser.add_argument("--output-dir", type=Path, default=Path("benchmark/results/mvp_scenarios"))
     parser.add_argument(
         "--no-cache",
@@ -148,6 +170,14 @@ def main(argv: Optional[List[str]] = None) -> None:
         help="Skip comparison report",
     )
     args = parser.parse_args(argv)
+
+    tier: Optional[TierName] = args.tier  # type: ignore[assignment]
+    if tier is not None:
+        n_tasks = tasks_for_tier(tier)
+        repeat_band = repeat_band_for_tier(tier) if args.repeat_band is None else args.repeat_band
+    else:
+        n_tasks = args.tasks if args.tasks is not None else 12
+        repeat_band = args.repeat_band if args.repeat_band is not None else 40
 
     if not os.environ.get("GEMINI_API_KEY") and not os.environ.get("GOOGLE_API_KEY"):
         from chorusgraph.examples.finance_agent.gemini_client import resolve_gemini_api_key
@@ -177,8 +207,8 @@ def main(argv: Optional[List[str]] = None) -> None:
             print(f"Unknown scenario: {s}", file=sys.stderr)
             raise SystemExit(2)
 
-    print(f"Running scenarios: {selected} ({args.tasks} tasks each, seed={args.seed})")
-    print("  Framework: FL/HL = LangGraph baseline | FC/HC = ChorusGraph native + ChorusStack")
+    print(f"Running scenarios: {selected} ({n_tasks} tasks each, seed={args.seed}, tier={tier or 'custom'})")
+    print("  Framework: FL/HL = LangGraph baseline | FC/HC = ChorusGraph native + ChorusStack + CacheProfile")
     configure(cache_enabled=not args.no_cache)
     install_benchmark_cache_policy()
     try:
@@ -191,7 +221,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     if args.no_cache:
         print("Cache: DISABLED (honest cold-path — expect 0% cache hits on C scenarios)")
 
-    results = run_scenarios(selected, n_tasks=args.tasks, seed=args.seed, repeat_band_pct=args.repeat_band)
+    results = run_scenarios(selected, n_tasks=n_tasks, seed=args.seed, repeat_band_pct=repeat_band)
 
     out_dir = args.output_dir
     summary: Dict[str, Any] = {}
@@ -205,10 +235,12 @@ def main(argv: Optional[List[str]] = None) -> None:
     meta = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "scenarios": selected,
-        "n_tasks": args.tasks,
+        "tier": tier,
+        "n_tasks": n_tasks,
         "seed": args.seed,
-        "repeat_band_pct": args.repeat_band,
+        "repeat_band_pct": repeat_band,
         "cache_enabled": not args.no_cache,
+        "cache_profiles": _cache_profile_disclosure(),
         "summary": summary,
     }
 

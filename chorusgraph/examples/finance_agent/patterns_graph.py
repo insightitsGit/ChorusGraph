@@ -22,6 +22,7 @@ from chorusgraph.examples.finance_agent.pattern_nodes import (
     make_react_agent_handler,
     make_reflection_validator_handler,
 )
+from chorusgraph.cache_gate.thresholds import measured_thresholds
 from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
 
 TENANT_ID = "finance-tenant"
@@ -66,8 +67,8 @@ def _add_common_nodes(
     graph: Graph,
     runtime: FinanceRuntime,
     *,
-    coarse_threshold: float = 0.82,
-    verify_threshold: float = 0.85,
+    coarse_threshold: float | None = None,
+    verify_threshold: float | None = None,
 ) -> None:
     graph.add_node(
         "vector_ingress",
@@ -96,8 +97,8 @@ def build_react_graph(
     *,
     checkpointer: Optional[EngineCheckpointer] = None,
     policy: Optional[PlanPolicy] = None,
-    coarse_threshold: float = 0.82,
-    verify_threshold: float = 0.85,
+    coarse_threshold: float | None = None,
+    verify_threshold: float | None = None,
 ):
     runtime = runtime or FinanceRuntime()
     graph = Graph(tenant_id=TENANT_ID, graph_id=GRAPH_ID)

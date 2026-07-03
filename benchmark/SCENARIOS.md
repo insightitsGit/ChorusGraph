@@ -20,7 +20,16 @@ Legacy containers A–F were renamed to this matrix (old dirs removed).
 ```powershell
 # Requires GEMINI_API_KEY in .env
 python -m benchmark.run_scenarios --tasks 12 --scenarios all
+
+# Workload tiers (same 40% repeat band; task count per scenario)
+python -m benchmark.run_scenarios --tier light --scenarios all   # 40 tasks — smoke / CI
+python -m benchmark.run_scenarios --tier mid --scenarios all     # 100 tasks — regression
+python -m benchmark.run_scenarios --tier heavy --scenarios all  # 300 tasks — scale
 ```
+
+Azure: pass `-Tier light` to `benchmark/azure/deploy_and_run.ps1` or set `BENCHMARK_TIER=light` on the container (`--tier` overrides `--tasks` when set).
+
+`run_meta.json` records `tier`, `cache_profiles` (thresholds + profile registry), and per-scenario summaries.
 
 ## Honest cold-path run (0% cache)
 

@@ -2,11 +2,17 @@
 set -euo pipefail
 
 TASKS="${BENCHMARK_TASKS:-12}"
+TIER="${BENCHMARK_TIER:-}"
 SEED="${BENCHMARK_SEED:-42}"
 BAND="${BENCHMARK_REPEAT_BAND:-40}"
 SCENARIOS="${BENCHMARK_SCENARIOS:-all}"
 OUT_DIR="${BENCHMARK_OUTPUT_DIR:-/results/mvp_scenarios}"
 RUN_ID="${BENCHMARK_RUN_ID:-$(date -u +%Y%m%d_%H%M%S)}"
+
+TIER_ARGS=()
+if [[ -n "$TIER" ]]; then
+  TIER_ARGS+=(--tier "$TIER")
+fi
 
 mkdir -p "$OUT_DIR"
 
@@ -14,6 +20,7 @@ echo "=============================================="
 echo "ChorusGraph MVP benchmark — Azure"
 echo "  run_id:    $RUN_ID"
 echo "  scenarios: $SCENARIOS"
+echo "  tier:      ${TIER:-custom}"
 echo "  tasks:     $TASKS"
 echo "  seed:      $SEED"
 echo "  band:      $BAND"
@@ -28,6 +35,7 @@ echo "=============================================="
 
 python -m benchmark.run_scenarios \
   --scenarios "$SCENARIOS" \
+  "${TIER_ARGS[@]}" \
   --tasks "$TASKS" \
   --seed "$SEED" \
   --repeat-band "$BAND" \

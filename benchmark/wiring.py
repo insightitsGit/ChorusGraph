@@ -95,10 +95,23 @@ def verify_benchmark_wiring() -> List[str]:
 
     from benchmark.framework_guard import verify_framework_split
     from chorusgraph.examples.finance_agent.nodes import make_cache_gate_handler
+    from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
+    from benchmark.thresholds import measured_thresholds
 
     ok.extend(verify_framework_split())
     assert callable(make_cache_gate_handler)
     ok.append("Finance: make_cache_gate_handler (CacheProfile-aware gate)")
+
+    rt = FinanceRuntime(tenant_id="wiring-check")
+    stack_rt = rt.stack.to_cache_runtime()
+    thresholds = measured_thresholds()
+    if stack_rt.coarse_threshold != thresholds.coarse:
+        raise BenchmarkWiringError(
+            f"ChorusStack coarse mismatch: {stack_rt.coarse_threshold} != {thresholds.coarse}"
+        )
+    if stack_rt.verify_threshold_for("fx_rates") != thresholds.verify_for("fx_rates"):
+        raise BenchmarkWiringError("ChorusStack verify_for(fx_rates) != measured_thresholds")
+    ok.append("ChorusStack: measured thresholds via to_cache_runtime()")
 
     return ok
 

@@ -10,6 +10,8 @@ param(
     [int]$Cpu = 4,
     [double]$MemoryGb = 8,
     [int]$Tasks = 12,
+    [ValidateSet("", "light", "mid", "heavy")]
+    [string]$Tier = "",
     [int]$Seed = 42,
     [int]$RepeatBand = 40,
     [string]$Scenarios = "all",
@@ -51,7 +53,7 @@ Write-Host "    ACR:       $loginServer"
 Write-Host "    Image:     $image"
 Write-Host "    Container: $ContainerName ($ResourceGroup)"
 Write-Host "    Run ID:    $runId"
-Write-Host "    Scenarios: $Scenarios | Tasks: $Tasks | Seed: $Seed"
+Write-Host "    Scenarios: $Scenarios | Tier: $(if ($Tier) { $Tier } else { 'custom' }) | Tasks: $Tasks | Seed: $Seed"
 
 if (-not $SkipBuild) {
     Write-Host "`n==> Building image in ACR (az acr build)..."
@@ -123,6 +125,7 @@ az container create `
     --environment-variables `
         "BENCHMARK_RUN_ID=$runId" `
         "BENCHMARK_SCENARIOS=$Scenarios" `
+        "BENCHMARK_TIER=$Tier" `
         "BENCHMARK_TASKS=$Tasks" `
         "BENCHMARK_SEED=$Seed" `
         "BENCHMARK_REPEAT_BAND=$RepeatBand" `

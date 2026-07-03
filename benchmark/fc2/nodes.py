@@ -29,7 +29,6 @@ from benchmark.finance_multiagent_shared import (
 )
 from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient
 from benchmark.shared.prompts import WRITER_SYSTEM
-from benchmark.thresholds import measured_thresholds
 from chorusgraph.examples.finance_agent.nodes import (
     make_cache_gate_handler,
     make_vector_ingress_handler,
@@ -420,14 +419,9 @@ def build_finance_graph_fc2(
     runtime = runtime or FinanceRuntime(tenant_id=TENANT_ID)
     gemini = gemini or InstrumentedGeminiClient()
     runtime.gemini = gemini
-    thresholds = measured_thresholds()
     nodes = make_f_nodes(gemini, runtime)
     ingress = make_vector_ingress_handler(runtime)
-    cache_gate_base = make_cache_gate_handler(
-        runtime,
-        coarse_threshold=thresholds.coarse,
-        verify_threshold=thresholds.verify_for("fx_rates"),
-    )
+    cache_gate_base = make_cache_gate_handler(runtime)
 
     graph = Graph(tenant_id=TENANT_ID, graph_id="finance-fc2")
 
