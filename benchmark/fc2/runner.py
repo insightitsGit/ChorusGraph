@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 from benchmark.fc2.nodes import BENCHMARK_CORTEX_ROOT, TENANT_ID, build_finance_graph_fc2
 from benchmark.fc2.trace import clear_trace, trace_event, trace_path
 from benchmark.measure import TaskMeasurement, score_task_success
+from benchmark.multiagent_measure import hop_names, totals_from_hops
 from benchmark.shared.corpus_seed import finance_seed_mode, finance_seed_phrases
 from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient
 from benchmark.workload import WorkloadTask
@@ -100,9 +101,7 @@ class FC2Runner:
                     runtime.cortex.wait_for_digest(timeout=120)
 
             hop_metrics = list(result.get("hop_metrics") or [])
-            llm_calls = sum(h.llm_calls for h in hop_metrics)
-            tokens_in = sum(h.tokens_in for h in hop_metrics)
-            tokens_out = sum(h.tokens_out for h in hop_metrics)
+            llm_calls, tokens_in, tokens_out = totals_from_hops(hop_metrics)
             embed_count = len(result.get("prism_sequence") or [])
 
             trace_event(
@@ -124,7 +123,7 @@ class FC2Runner:
                     tool_result=result.get("tool_result"),
                     variant=task.variant,
                 ),
-                hops=[h.hop for h in hop_metrics],
+                hops=hop_names(hop_metrics),
                 embed_count=embed_count,
                 trace_path=str(trace_path()),
             )
@@ -159,7 +158,9 @@ class FC2Runner:
                 category_slug=task.category_slug,
                 memory_cortex_group=task.memory_cortex_group,
                 cross_session_recall=task.cross_session_recall or None,
-                hop_metrics=[h.__dict__ for h in hop_metrics],
+                hop_metrics=[
+                    h if isinstance(h, dict) else h.__dict__ for h in hop_metrics
+                ],
                 embed_count=embed_count,
             )
         except Exception as exc:
