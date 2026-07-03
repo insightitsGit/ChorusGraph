@@ -13,12 +13,12 @@ from pathlib import Path
 from statistics import mean
 from typing import Any, Dict, List, Optional
 
-from benchmark.container_a.runner import ContainerARunner
-from benchmark.container_b.runner import ContainerBRunner
-from benchmark.container_c.runner import ContainerCRunner
-from benchmark.container_d.runner import ContainerDRunner
-from benchmark.container_e.runner import ContainerERunner
-from benchmark.container_f.runner import ContainerFRunner
+from benchmark.fl1.runner import FL1Runner
+from benchmark.fc1.runner import FC1Runner
+from benchmark.hl2.runner import HL2Runner
+from benchmark.hc2.runner import HC2Runner
+from benchmark.fl2.runner import FL2Runner
+from benchmark.fc2.runner import FC2Runner
 from benchmark.healthcare_workload import generate_healthcare_workload, workload_stats as hc_stats
 from benchmark.measure import TaskMeasurement
 from benchmark.multiagent_measure import MultiAgentMeasurement
@@ -36,8 +36,8 @@ def run_single_agent(
     repeat_band_pct: int,
 ) -> Dict[str, List[TaskMeasurement]]:
     tasks = generate_workload(n_tasks, seed=seed, repeat_band_pct=repeat_band_pct)
-    runner_a = ContainerARunner()
-    runner_b = ContainerBRunner(seed_all_canonical_phrases=True)
+    runner_a = FL1Runner()
+    runner_b = FC1Runner(seed_all_canonical_phrases=True)
     results: Dict[str, List[TaskMeasurement]] = {"A": [], "B": []}
     for task in tasks:
         row_a = runner_a.run(task)
@@ -189,8 +189,8 @@ def main(argv: Optional[List[str]] = None) -> None:
     if "C" not in skip or "D" not in skip:
         print("Running healthcare multi-agent C/D...")
         hc = generate_healthcare_workload(args.tasks, seed=args.seed, repeat_band_pct=args.band)
-        runner_c = ContainerCRunner() if "C" not in skip else None
-        runner_d = ContainerDRunner() if "D" not in skip else None
+        runner_c = HL2Runner() if "C" not in skip else None
+        runner_d = HC2Runner() if "D" not in skip else None
         for case in hc:
             if runner_c:
                 healthcare["C"].append(runner_c.run(case))

@@ -13,8 +13,8 @@ from pathlib import Path
 from statistics import mean
 from typing import Dict, List, Optional
 
-from benchmark.container_c.runner import ContainerCRunner
-from benchmark.container_d.runner import ContainerDRunner, clear_trace, trace_path
+from benchmark.hl2.runner import HL2Runner
+from benchmark.hc2.runner import HC2Runner, clear_trace, trace_path
 from benchmark.healthcare_workload import HealthcareCase, generate_healthcare_workload
 from benchmark.multiagent_measure import MultiAgentMeasurement
 
@@ -31,8 +31,8 @@ def run_multiagent_benchmark(
         clear_trace()
     cases = generate_healthcare_workload(n_cases, seed=seed, repeat_band_pct=repeat_band_pct)
     results: Dict[str, List[MultiAgentMeasurement]] = {"C": [], "D": []}
-    runner_c = ContainerCRunner() if "C" in containers else None
-    runner_d = ContainerDRunner() if "D" in containers else None
+    runner_c = HL2Runner() if "C" in containers else None
+    runner_d = HC2Runner() if "D" in containers else None
 
     for case in cases:
         if runner_c:
@@ -150,7 +150,7 @@ def main(argv: Optional[List[str]] = None) -> None:
         write_jsonl(out_dir / f"container_{container.lower()}.jsonl", rows)
     print(f"\nWrote results to {out_dir}")
     if "D" in containers and trace_path().exists():
-        print(f"Container D trace: {trace_path()}")
+        print(f"HC2 trace: {trace_path()}")
 
 
 if __name__ == "__main__":

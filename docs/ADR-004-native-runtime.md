@@ -1,8 +1,13 @@
 # ADR-004: Native Graph Runtime
 
-**Status:** Accepted · implemented in `chorusgraph/graph/` + `chorusgraph/runtime/`  
+**Status:** Superseded by `chorusgraph/core/` (handoff H20, 2026-07-02)  
 **Supersedes:** DESIGN v0.2 §5 “adapter-first only” as the *sole* execution path  
 **Date:** 2026-07-02
+
+> **Note:** The phase-1 packages `chorusgraph/graph/`, `chorusgraph/runtime/`, and
+> `chorusgraph/engine/` were removed in H20. Use `chorusgraph.core.Graph` — envelope channels,
+> Resonance bus routing, BSP scheduler, and native checkpointing. LangGraph remains available
+> via `wrap()` for migration benchmarks only.
 
 ## Context
 

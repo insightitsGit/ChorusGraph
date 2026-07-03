@@ -1,10 +1,10 @@
-"""Container A LangGraph baseline — H11 tool-routing regression tests."""
+"""FL1 LangGraph baseline — H11 tool-routing regression tests."""
 
 from __future__ import annotations
 
 from typing import Dict, List
 
-from benchmark.container_a.graph import build_langgraph_agent, fresh_turn_state, run_task
+from benchmark.fl1.graph import build_langgraph_agent, fresh_turn_state, run_task
 from benchmark.shared.stub_gemini import StubGemini
 from benchmark.workload import CANONICAL_QUERIES
 

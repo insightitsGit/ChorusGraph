@@ -1,4 +1,4 @@
-"""H11 — diagnose Container A FX routing (one task, optional live Gemini)."""
+"""H11 — diagnose FL1 FX routing (one task, optional live Gemini)."""
 
 from __future__ import annotations
 
@@ -6,12 +6,12 @@ import argparse
 import json
 import sys
 
-from benchmark.container_a.graph import build_langgraph_agent, fresh_turn_state, run_task
+from benchmark.fl1.graph import build_langgraph_agent, fresh_turn_state, run_task
 from benchmark.workload import CANONICAL_QUERIES
 
 
 def main(argv: list[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(description="Diagnose Container A ReAct → tool routing")
+    parser = argparse.ArgumentParser(description="Diagnose FL1 ReAct → tool routing")
     parser.add_argument(
         "--message",
         default=CANONICAL_QUERIES["usd_eur"][0],

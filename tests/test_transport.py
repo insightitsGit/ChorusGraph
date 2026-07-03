@@ -4,10 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from chorusgraph.engine.context import PrismEngineContext
-from chorusgraph.graph.builder import Graph
 from chorusgraph.nodes.retrieve import resonance_rerank
-from chorusgraph.runtime.constants import END, START
 from chorusgraph.transport import (
     InProcSpine,
     PrismAPISpine,
@@ -16,6 +13,8 @@ from chorusgraph.transport import (
     resolve_envelope_artifact,
 )
 from chorusgraph.transport.chorus import ChorusSpine
+from chorusgraph.transport.context import PrismEngineContext
+from chorusgraph.transport.spine import TransportSpine
 
 
 def test_inproc_publish_and_resolve():
@@ -54,13 +53,14 @@ def test_prismapi_spine_stub():
 
 def test_graph_edge_transport_metadata():
     ctx = PrismEngineContext(tenant_id="edge-test", enable_cortex=False)
-    graph = Graph()
-    graph.add_node("a", lambda s: {"x": 1})
-    graph.add_node("b", lambda s: {"y": 2})
-    graph.add_edge(START, "a")
-    graph.add_edge("a", "b", transport=TransportMode.INPROC)
-    graph.add_edge("b", END)
-    result = graph.compile(context=ctx).invoke({})
+    spine = TransportSpine(ctx)
+    state = {"latest_envelope_id": "env-1", "query_vector_64": [0.1] * 64}
+    result = spine.edge_handoff(
+        mode=TransportMode.INPROC,
+        from_hop="a",
+        to_hop="b",
+        state=state,
+    )
     assert result["last_transport"] == "inproc"
     assert result["last_edge"] == "a->b"
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from chorusgraph.engine.context import PrismEngineContext
+from chorusgraph.transport.context import PrismEngineContext
 from chorusgraph.transport.chorus import ChorusSpine
 from chorusgraph.transport.inproc import InProcSpine
 from chorusgraph.transport.modes import DEFAULT_TRANSPORT, TransportMode

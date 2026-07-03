@@ -1,0 +1,136 @@
+{
+  "run_id": "20260703_042206",
+  "canonical": true,
+  "label": "MVP 8-scenario pilot (post-HC1 fix)",
+  "timestamp": "2026-07-03T04:53:23.261811+00:00",
+  "platform": "azure_aci",
+  "image": "chorusacrd7a6d0.azurecr.io/chorusgraph-mvp-benchmark:latest",
+  "n_tasks": 40,
+  "seed": 42,
+  "repeat_band_pct": 40,
+  "scenarios": [
+    "FL1",
+    "FC1",
+    "FL2",
+    "FC2",
+    "HL1",
+    "HC1",
+    "HL2",
+    "HC2"
+  ],
+  "per_scenario": {
+    "FL1": {
+      "n": 40,
+      "avg_latency_ms": 5194.1,
+      "avg_llm_calls": 3.33,
+      "avg_tokens_in": 1123.8,
+      "task_success_rate": 0.75,
+      "cache_hit_rate": 0.0
+    },
+    "FC1": {
+      "n": 40,
+      "avg_latency_ms": 1386.3,
+      "avg_llm_calls": 0.93,
+      "avg_tokens_in": 336.4,
+      "task_success_rate": 0.85,
+      "cache_hit_rate": 0.475
+    },
+    "FL2": {
+      "n": 40,
+      "avg_latency_ms": 3245.5,
+      "avg_llm_calls": 2.02,
+      "avg_tokens_in": 573.2,
+      "task_success_rate": 0.7,
+      "cache_hit_rate": 0.0
+    },
+    "FC2": {
+      "n": 40,
+      "avg_latency_ms": 1057.0,
+      "avg_llm_calls": 0.68,
+      "avg_tokens_in": 152.4,
+      "task_success_rate": 0.875,
+      "cache_hit_rate": 0.475
+    },
+    "HL1": {
+      "n": 40,
+      "avg_latency_ms": 6797.5,
+      "avg_llm_calls": 3,
+      "avg_tokens_in": 926.3,
+      "task_success_rate": 0.725,
+      "abstain_rate": 0.3,
+      "cache_hit_rate": 0.0
+    },
+    "HC1": {
+      "n": 40,
+      "avg_latency_ms": 6742.3,
+      "avg_llm_calls": 3,
+      "avg_tokens_in": 938.4,
+      "task_success_rate": 0.725,
+      "abstain_rate": 0.325,
+      "cache_hit_rate": 0.0
+    },
+    "HL2": {
+      "n": 40,
+      "avg_latency_ms": 10145.3,
+      "avg_llm_calls": 3.85,
+      "avg_tokens_in": 789.4,
+      "task_success_rate": 0.575,
+      "abstain_rate": 0.1,
+      "cache_hit_rate": 0.0
+    },
+    "HC2": {
+      "n": 40,
+      "avg_latency_ms": 3195.7,
+      "avg_llm_calls": 1.02,
+      "avg_tokens_in": 138.2,
+      "task_success_rate": 0.45,
+      "abstain_rate": 0.025,
+      "cache_hit_rate": 0.625
+    }
+  },
+  "group_winners": {
+    "finance_single": {
+      "langgraph": "FL1",
+      "chorusgraph": "FC1",
+      "overall_winner": "chorusgraph",
+      "chorus_wins": 10,
+      "langgraph_wins": 0,
+      "n_paired": 40
+    },
+    "finance_multi": {
+      "langgraph": "FL2",
+      "chorusgraph": "FC2",
+      "overall_winner": "chorusgraph",
+      "chorus_wins": 10,
+      "langgraph_wins": 1,
+      "n_paired": 40
+    },
+    "healthcare_single": {
+      "langgraph": "HL1",
+      "chorusgraph": "HC1",
+      "overall_winner": "tie",
+      "chorus_wins": 4,
+      "langgraph_wins": 4,
+      "n_paired": 40
+    },
+    "healthcare_multi": {
+      "langgraph": "HL2",
+      "chorusgraph": "HC2",
+      "overall_winner": "chorusgraph",
+      "chorus_wins": 9,
+      "langgraph_wins": 3,
+      "n_paired": 40
+    }
+  },
+  "notes": [
+    "HC1 fix: ambiguous resonance routing + dict channel state (core/ir.py, core/channels.py)",
+    "Supersedes run 20260703_034124 where HC1 showed 0% success (engine bug)"
+  ],
+  "artifacts": {
+    "comparison_report": "benchmark/results/mvp_scenarios/20260703_042206/COMPARISON_REPORT.md",
+    "run_meta": "benchmark/results/mvp_scenarios/20260703_042206/run_meta.json",
+    "comparison_json": "benchmark/results/mvp_scenarios/20260703_042206/comparison.json",
+    "blob_prefix": "stinsightitsprod01/benchmark-results/mvp_scenarios/20260703_042206/",
+    "azure_mirror": "benchmark/results/azure_20260703_042206/mvp_scenarios/20260703_042206/"
+  }
+}

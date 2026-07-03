@@ -70,6 +70,12 @@ existing parts onto it.
 > **Engineer:** for every symbol above, run a 2-line import + `dir()` / `inspect.signature` check before
 > coding against it. Do not assume a signature. If a symbol's shape differs from this table, **flag it in
 > the return** rather than working around it silently.
+>
+> **Dependency note — CHORUS + PrismAPI are open-source and local, not blockers.** They ship inside
+> **`prismlib-plus` v0.7.0** at `C:\code\PrismLabPlusAPI` (import root `prism`; subpackages `api`,
+> `cluster`, `bridge`, `enterprise`, `security`, `observability`). Install editable so the engine can
+> import them: `pip install -e C:\code\PrismLabPlusAPI`. `prism.cluster.transport` is the CHORUS mesh
+> transport (P5); `prism.api` is the PrismAPI federation layer (P6); `PrismAPI.md` is the reference.
 
 ---
 
@@ -155,15 +161,19 @@ emits super-step + Resonance-routing events. Tests: interrupt→edit→resume; e
 ## 5. Follow-on phases (scheduled here so nothing is missing)
 
 ### P5 — Distribution (multi-machine, same cluster)
-`RedisBroadcast` for the bus + **CHORUS** transport for cross-machine envelopes. Scheduler stays
-location-transparent. Exit: the same graph runs across 2 processes/machines; envelopes ship as CHORUS
-tensors; results identical to single-runtime.
+`RedisBroadcast` for the bus + **CHORUS mesh transport** (`prism.cluster.transport`, with
+`prism.cluster.node`/`health`) for cross-machine envelopes. Scheduler stays location-transparent.
+Exit: the same graph runs across 2 processes/machines; envelopes ship as CHORUS tensors; results
+identical to single-runtime.
 
-### P6 — Federation (cross-container multi-agent) — **requires adding PrismAPI**
-Add the PrismAPI dependency (separate repo — **Director to confirm access**). Cross-container agent
-hops go over PrismAPI with `BoundaryTranslator.translate` re-projecting envelopes at the boundary.
-Exit: an agent in container A federates to an agent in container B via PrismAPI; §2.4 routing rule
-(in-proc → cluster → container) selects the transport automatically.
+### P6 — Federation (cross-container multi-agent) — **PrismAPI, local open-source, not blocked**
+Federate over **PrismAPI** (`prism.api` — `provider`/`consumer`/`auth`/`schema`, plus `mcp` for
+MCP-exposed agents), with `prism.bridge.vector` (and `prismlang.BoundaryTranslator.translate`)
+re-projecting envelopes at the container boundary. PrismAPI's contract — *providers embed once, agents
+retrieve pre-projected float32 vectors over CHORUS* — means a cross-container hop carries the envelope
+vector directly, **no re-embedding at the boundary** (the embed-once mandate, enforced across containers).
+Exit: an agent in container A federates to an agent in container B via PrismAPI with zero re-embed;
+§2.4 routing rule (in-proc → cluster → container) selects the transport automatically.
 
 ### P7 — Migration shim + honest re-benchmark
 - `chorusgraph.compat.langgraph` — run an existing `StateGraph` definition on the ChorusGraph engine
@@ -189,7 +199,7 @@ P1 gates everything; P2/P3/P4 can partially overlap after P1's scheduler is stab
 | P4 | Cache interceptor + native ledger + roles/multi-agent | 4–5 d | P1 | Jul 30 – Aug 05 |
 | **MVP** | **P1–P4 complete, zero langgraph, end-to-end** | — | — | **≈ Aug 05** |
 | P5 | Distribution (RedisBroadcast + CHORUS) | 4–6 d | P4 | Aug 06 – Aug 13 |
-| P6 | Federation (PrismAPI + BoundaryTranslator) | 5–7 d | P5, PrismAPI access | Aug 14 – Aug 22 |
+| P6 | Federation (PrismAPI `prism.api` + bridge) | 5–7 d | P5 | Aug 14 – Aug 22 |
 | P7 | Migration shim + honest re-benchmark + D cache fix | 5–7 d | P4 (P5 for distributed bench) | Aug 22 – Sep 01 |
 
 **Milestone gates (Architect reviews each return against real code before the next phase starts):**
@@ -244,8 +254,8 @@ For each phase completed, return:
 2. **Exit-criteria checklist** with pass/fail and the command output proving each (esp. the
    `grep langgraph` gate and the cache-skip `llm_calls==0` test).
 3. **Signature deviations** — any Prism symbol whose real shape differed from §3, and how you handled it.
-4. **Anything you could not verify** (e.g., PrismAPI access, CHORUS availability) stated plainly — do not
-   paper over a gap.
+4. **Anything you could not verify** (e.g., a `prism.*` symbol whose shape differs, an editable-install
+   issue with `prismlib-plus`) stated plainly — do not paper over a gap.
 5. **No commit/push** unless the Director asked; if asked, include the commit hash and confirm the trailer.
 
 ---

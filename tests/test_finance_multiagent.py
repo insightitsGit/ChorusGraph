@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from benchmark.container_e.runner import ContainerERunner, build_finance_graph_e
-from benchmark.container_f.nodes import build_finance_graph_f, route_after_cache_f
-from benchmark.container_f.runner import ContainerFRunner
-from benchmark.container_f.trace import clear_trace, trace_path
+from benchmark.fl2.runner import FL2Runner, build_finance_graph_fl2
+from benchmark.fc2.nodes import build_finance_graph_fc2, route_after_cache_fc2
+from benchmark.fc2.runner import FC2Runner
+from benchmark.fc2.trace import clear_trace, trace_path
 from benchmark.finance_multiagent_shared import heuristic_tool_plan
 from benchmark.workload import WorkloadTask, generate_workload
 
@@ -63,7 +63,7 @@ def test_container_e_graph_runs_fx_task():
         canonical_id="usd_eur",
     )
     stub = _StubFinanceGemini()
-    graph, _ = build_finance_graph_e(gemini=stub)
+    graph, _ = build_finance_graph_fl2(gemini=stub)
     result = graph.invoke(
         {
             "task": task,
@@ -90,10 +90,10 @@ def test_container_e_runner_offline():
         variant="novel",
         canonical_id="usd_eur",
     )
-    runner = ContainerERunner()
+    runner = FL2Runner()
     with patch.object(runner, "_gemini", _StubFinanceGemini()):
         m = runner.run(task)
-    assert m.container == "E"
+    assert m.container == "FL2"
     assert m.hop_metrics
     assert len(m.hop_metrics) == 4
 
@@ -104,9 +104,9 @@ def test_workload_generates_tasks_for_multiagent():
     assert any(t.variant == "exact_repeat" for t in tasks)
 
 
-def test_route_after_cache_f_skips_to_writer():
-    assert route_after_cache_f({"cache_hit": True, "tool_result": {"rate": 0.9}}) == "writer"
-    assert route_after_cache_f({"cache_hit": False}) == "researcher"
+def test_route_after_cache_fc2_skips_to_writer():
+    assert route_after_cache_fc2({"cache_hit": True, "tool_result": {"rate": 0.9}}) == "writer"
+    assert route_after_cache_fc2({"cache_hit": False}) == "researcher"
 
 
 def test_container_f_graph_cache_hit_path_offline():
@@ -120,7 +120,7 @@ def test_container_f_graph_cache_hit_path_offline():
         canonical_id="usd_eur",
     )
     stub = _StubFinanceGemini()
-    graph, _, runtime = build_finance_graph_f(gemini=stub)
+    graph, _, runtime = build_finance_graph_fc2(gemini=stub)
     runtime.seed_tool_cache(task.message, {"from_currency": "USD", "to_currency": "EUR", "rate": 0.87727})
 
     result = graph.invoke(

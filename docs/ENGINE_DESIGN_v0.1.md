@@ -25,8 +25,8 @@ already exists and is Prism-native** — it was simply wired to LangGraph instea
 | Message / channel value | `prismlang.PrismEnvelope` (vector + `rule_chain` audit) | ✅ exists |
 | Communication bus | `prismresonance.FrequencyBroadcast` / `InProcessBroadcast` / `RedisBroadcast` | ✅ exists |
 | Semantic routing / search | `prismresonance.ResonanceEngine`, `dominant_frequency` | ✅ exists |
-| Cross-machine transport (tensors) | **CHORUS** | ✅ exists (separate lib) |
-| Cross-container federation | **PrismAPI** + `prismlang.BoundaryTranslator.translate` | ⚠️ PrismAPI separate repo, not yet wired |
+| Cross-machine transport (tensors) | **CHORUS mesh** — `prism.cluster.transport` (in `prismlib-plus`) | ✅ exists |
+| Cross-container federation | **PrismAPI** — `prism.api` + `prism.bridge.vector` + `BoundaryTranslator.translate` | ✅ exists (open-source, `C:\code\PrismLabPlusAPI`) |
 | Checkpoint / persistence / time-travel | `prismlang.AsyncPostgresCheckpointer` (`aput_writes`, `aget_delta_channel_history`, `aprune`) | ✅ exists |
 | Long-term memory | Cortex (`chorusgraph/memory`, `digest`/`recall`/`explain`, bitemporal) | ✅ exists |
 | Semantic cache / skip | `chorusgraph/cache_gate`, `CachePolicy` | ✅ exists |
@@ -207,6 +207,12 @@ These already exist; the engine makes them **built-ins**, not adapters:
 ---
 
 ## 5. Cache-gate as a native channel interceptor (the real "skip" win)
+
+> **Design addition — [`CACHE_PROFILES.md`](CACHE_PROFILES.md):** the interceptor below is governed by a
+> per-node×category **CacheProfile** (`keying` / `ttl_s` / `scope` / `risk_tier`) measured by a profiler,
+> so caching adapts per domain (finance = smooth+volatile archetype B; healthcare = brittle+stable
+> archetype C caches mid-pipeline facts, never judgments). See that doc for the four axes, the four
+> domain archetypes, and quality-gated seeding.
 
 Today the cache is a *node* you route around (the healthcare-D fix). Natively, the engine consults the
 gate at **node entry**:

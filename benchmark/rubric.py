@@ -78,6 +78,18 @@ def score_by_canonical(
             expected = _CANONICAL_FV
         return _amount_near(text, expected)
 
+    if canonical_id in ("compound_retirement", "compound_loan"):
+        params = parse_compound_params(message)
+        if params and tool_result and tool_result.get("future_value") is not None:
+            expected = float(tool_result["future_value"])
+        elif params:
+            from chorusgraph.nodes.tool import compound_interest
+
+            expected = float(compound_interest(**params)["future_value"])
+        else:
+            return False
+        return _amount_near(text, expected)
+
     if canonical_id == "usd_eur":
         return _score_fx_pair(text, "USD", "EUR", tool_result)
     if canonical_id == "usd_gbp":
@@ -86,6 +98,12 @@ def score_by_canonical(
         return _score_fx_pair(text, "EUR", "GBP", tool_result)
     if canonical_id == "usd_jpy":
         return _score_fx_pair(text, "USD", "JPY", tool_result)
+    if canonical_id == "usd_chf":
+        return _score_fx_pair(text, "USD", "CHF", tool_result)
+    if canonical_id == "usd_cad":
+        return _score_fx_pair(text, "USD", "CAD", tool_result)
+    if canonical_id == "eur_jpy":
+        return _score_fx_pair(text, "EUR", "JPY", tool_result)
     if canonical_id == "compare_usd_eur_gbp":
         if not (_has_decimal(text) and "EUR" in text.upper() and "GBP" in text.upper()):
             return False

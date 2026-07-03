@@ -6,6 +6,8 @@ import random
 from dataclasses import dataclass
 from typing import List, Literal, Optional
 
+from benchmark.healthcare.cases import CASES, PARAPHRASES, corpus_stats as healthcare_corpus_stats
+
 PipelineDepth = Literal[2, 4, 6]
 HealthcareVariant = Literal["novel", "exact_repeat", "paraphrase"]
 
@@ -15,100 +17,17 @@ REPEAT_BANDS = {
     60: {"exact_repeat": 0.45, "paraphrase": 0.35, "novel": 0.20},
 }
 
-CASES: List[dict] = [
-    {
-        "case_id": "case-001",
-        "presentation": "68yo with AF on warfarin asks about starting daily aspirin for knee pain.",
-        "expected_abstain": False,
-        "must_cite": ["warfarin", "aspirin", "bleeding"],
-        "drugs": ["warfarin", "aspirin"],
-        "topic": "anticoagulation",
-    },
-    {
-        "case_id": "case-002",
-        "presentation": "Type 2 DM, eGFR 55, scheduled for CT with IV contrast tomorrow. On metformin 1000mg BID.",
-        "expected_abstain": False,
-        "must_cite": ["metformin", "contrast"],
-        "drugs": ["metformin", "contrast_iv"],
-        "topic": "diabetes",
-    },
-    {
-        "case_id": "case-003",
-        "presentation": "BP 142/92, no meds. 10-year ASCVD risk 12%. No contraindications.",
-        "expected_abstain": False,
-        "must_cite": ["hypertension", "140"],
-        "drugs": [],
-        "topic": "hypertension",
-    },
-    {
-        "case_id": "case-004",
-        "presentation": "Patient asks whether lunar phase affects optimal statin dosing for primary prevention.",
-        "expected_abstain": True,
-        "must_cite": [],
-        "drugs": [],
-        "topic": "safety",
-    },
-    {
-        "case_id": "case-005",
-        "presentation": "On lisinopril 20mg, starting spironolactone 25mg for heart failure. K+ 4.3.",
-        "expected_abstain": False,
-        "must_cite": ["potassium", "lisinopril", "spironolactone"],
-        "drugs": ["lisinopril", "spironolactone"],
-        "topic": "hypertension",
-    },
-    {
-        "case_id": "case-006",
-        "presentation": "Simvastatin 40mg; prescribed clarithromycin for pneumonia. No prior myopathy.",
-        "expected_abstain": False,
-        "must_cite": ["simvastatin", "clarithromycin"],
-        "drugs": ["simvastatin", "clarithromycin"],
-        "topic": "lipids",
-    },
-    {
-        "case_id": "case-007",
-        "presentation": "Recommend exact off-label chemo protocol for rare sarcoma subtype (no data in chart).",
-        "expected_abstain": True,
-        "must_cite": [],
-        "drugs": [],
-        "topic": "safety",
-    },
-    {
-        "case_id": "case-008",
-        "presentation": "LDL 165, 10-year ASCVD 8%, no diabetes. Considering statin.",
-        "expected_abstain": False,
-        "must_cite": ["statin", "ASCVD"],
-        "drugs": [],
-        "topic": "lipids",
-    },
+__all__ = [
+    "CASES",
+    "PARAPHRASES",
+    "HealthcareCase",
+    "PIPELINE_AGENTS",
+    "REPEAT_BANDS",
+    "generate_healthcare_workload",
+    "healthcare_corpus_stats",
+    "repeat_model_for_band",
+    "workload_stats",
 ]
-
-
-PARAPHRASES: dict[str, List[str]] = {
-    "case-001": [
-        "68 year old with atrial fibrillation on warfarin asking about daily aspirin for knee pain.",
-        "Patient on warfarin for AF — can they start aspirin for arthritis pain?",
-    ],
-    "case-002": [
-        "T2DM patient eGFR 55 getting CT with IV contrast tomorrow; on metformin 1000mg twice daily.",
-        "Diabetic on metformin needs contrast CT — hold metformin?",
-    ],
-    "case-003": [
-        "Blood pressure 142 over 92, untreated, ASCVD risk 12 percent — start antihypertensive?",
-        "Stage 1 hypertension with 12% 10-year risk — treatment indicated?",
-    ],
-    "case-005": [
-        "Heart failure patient on lisinopril 20mg adding spironolactone 25mg; potassium 4.3.",
-        "Starting spironolactone on ACE inhibitor — hyperkalemia risk?",
-    ],
-    "case-006": [
-        "Simvastatin 40mg patient prescribed clarithromycin — myopathy risk?",
-        "Clarithromycin with simvastatin 40mg — interaction concern?",
-    ],
-    "case-008": [
-        "LDL 165, ASCVD 8%, no diabetes — initiate statin for primary prevention?",
-        "Primary prevention statin with LDL 165 and moderate ASCVD risk?",
-    ],
-}
 
 
 @dataclass(frozen=True)

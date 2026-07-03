@@ -13,9 +13,9 @@ from pathlib import Path
 from statistics import mean
 from typing import Dict, List, Optional
 
-from benchmark.container_e.runner import ContainerERunner
-from benchmark.container_f.runner import ContainerFRunner
-from benchmark.container_f.trace import clear_trace, trace_path
+from benchmark.fl2.runner import FL2Runner
+from benchmark.fc2.runner import FC2Runner
+from benchmark.fc2.trace import clear_trace, trace_path
 from benchmark.measure import TaskMeasurement
 from benchmark.workload import WorkloadTask, generate_workload, workload_stats
 
@@ -37,8 +37,8 @@ def run_finance_multiagent(
         include_memory_tasks=True,
     )
     results: Dict[str, List[TaskMeasurement]] = {"E": [], "F": []}
-    runner_e = ContainerERunner() if "E" in containers else None
-    runner_f = ContainerFRunner() if "F" in containers else None
+    runner_e = FL2Runner() if "E" in containers else None
+    runner_f = FC2Runner() if "F" in containers else None
 
     for task in tasks:
         if runner_e:
@@ -177,7 +177,7 @@ def main(argv: Optional[List[str]] = None) -> None:
     print(format_report(results, repeat_band_pct=args.band))
     print(f"\nWrote results to {out_dir}")
     if "F" in containers and trace_path().exists():
-        print(f"Container F trace: {trace_path()}")
+        print(f"FC2 trace: {trace_path()}")
 
 
 if __name__ == "__main__":

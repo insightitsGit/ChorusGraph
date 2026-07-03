@@ -9,21 +9,21 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-from benchmark.container_a.runner import ContainerARunner
-from benchmark.container_b.runner import ContainerBRunner
+from benchmark.fl1.runner import FL1Runner
+from benchmark.fc1.runner import FC1Runner
 from benchmark.measure import ComparisonReport
 from benchmark.stub_gemini import StubGeminiClient
 from benchmark.thresholds import THRESHOLD_PROVENANCE, measured_thresholds
 from benchmark.workload import REPEAT_MODEL_DOC, generate_workload, workload_stats
 
 
-def _patch_runner_a(runner: ContainerARunner, stub: StubGeminiClient) -> None:
-    from benchmark.container_a import graph as a_graph
+def _patch_runner_a(runner: FL1Runner, stub: StubGeminiClient) -> None:
+    from benchmark.fl1 import graph as a_graph
 
     runner.compiled, runner.gemini, runner._checkpointer = a_graph.build_langgraph_agent(gemini=stub)
 
 
-def _patch_runner_b(runner: ContainerBRunner, stub: StubGeminiClient) -> None:
+def _patch_runner_b(runner: FC1Runner, stub: StubGeminiClient) -> None:
     runner._sessions.clear()
     runner._histories.clear()
 
@@ -58,8 +58,8 @@ def run_offline_benchmark(
     report.notes.append(f"Workload stats: {workload_stats(tasks)}")
     report.notes.append(f"Thresholds: coarse={measured_thresholds().coarse}, verify={measured_thresholds().verify_for('fx_rates')}")
 
-    runner_a = ContainerARunner()
-    runner_b = ContainerBRunner()
+    runner_a = FL1Runner()
+    runner_b = FC1Runner()
     stub_a = StubGeminiClient()
     stub_b = StubGeminiClient()
     _patch_runner_a(runner_a, stub_a)

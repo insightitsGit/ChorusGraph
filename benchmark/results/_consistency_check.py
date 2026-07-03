@@ -1,4 +1,4 @@
-"""Verify consistency: Container C vs D across all 18 cases."""
+"""Verify consistency: HL2 vs D across all 18 cases."""
 import json
 import statistics
 from pathlib import Path

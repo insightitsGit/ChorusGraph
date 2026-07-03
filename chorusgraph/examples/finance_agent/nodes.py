@@ -100,9 +100,11 @@ def make_cache_gate_handler(
 ):
     def cache_gate_node(state: Dict[str, Any]) -> Dict[str, Any]:
         message = state.get("message") or ""
+        compound = parse_compound_params(message)
+        slug = "compound_savings" if compound else "fx_rates"
         section = Section(
-            section_id="fx_lookup",
-            category_slug="fx_rates",
+            section_id="fx_lookup" if slug == "fx_rates" else "compound_lookup",
+            category_slug=slug,
             content=message,
             cache_policy=CachePolicy.REPLAY_SAFE,
         )
@@ -226,6 +228,8 @@ def seed_fx_cache_from_tool_calls(
     extra_queries: Optional[List[str]] = None,
 ) -> None:
     """Seed semantic cache after FX tool runs (ReAct path and other AgentNode callers)."""
+    from benchmark.shared.corpus_seed import seed_finance_tool_cache
+
     extra_queries = extra_queries or []
     for call in tool_calls:
         if call.get("tool") != "fetch_exchange_rate" or not call.get("ok"):
@@ -233,13 +237,34 @@ def seed_fx_cache_from_tool_calls(
         data = call.get("data")
         if not isinstance(data, dict) or data.get("rate") is None:
             continue
-        pair = f"{data.get('from_currency', '')}/{data.get('to_currency', '')}"
-        queries = [message or pair]
-        for phrase in extra_queries:
-            if phrase and phrase not in queries:
-                queries.append(phrase)
-        for query_key in queries:
-            runtime.seed_tool_cache(query_key, data)
+        seed_finance_tool_cache(
+            runtime,
+            message or f"{data.get('from_currency', '')}/{data.get('to_currency', '')}",
+            data,
+            extra_queries=extra_queries,
+            category_slug="fx_rates",
+        )
+
+
+def seed_compound_cache_from_result(
+    runtime: FinanceRuntime,
+    message: str,
+    tool_result: Dict[str, Any],
+    *,
+    extra_queries: Optional[List[str]] = None,
+) -> None:
+    """Seed semantic cache after compound tool — mirrors H10 FX multi-phrase seed."""
+    from benchmark.shared.corpus_seed import seed_finance_tool_cache
+
+    if not tool_result or tool_result.get("future_value") is None:
+        return
+    seed_finance_tool_cache(
+        runtime,
+        message,
+        tool_result,
+        extra_queries=extra_queries or [],
+        category_slug="compound_savings",
+    )
 
 
 def make_compound_tool_handler(runtime: FinanceRuntime):
@@ -256,13 +281,21 @@ def make_compound_tool_handler(runtime: FinanceRuntime):
         result = runtime.tool_registry.run("compound_interest", **params)
         tool_calls = list(state.get("tool_calls") or [])
         tool_calls.append(result.to_state_dict())
-        return {
+        update: Dict[str, Any] = {
             "tool_result": result.data if result.ok else None,
             "tool_error": result.error,
             "tool_calls": tool_calls,
             "needs_tool": False,
             "rule_chain": [f"compound_tool ok={result.ok}"],
         }
+        if result.ok and result.data:
+            seed_compound_cache_from_result(
+                runtime,
+                message,
+                result.data,
+                extra_queries=list(state.get("cache_seed_phrases") or []),
+            )
+        return update
 
     return compound_tool_node
 

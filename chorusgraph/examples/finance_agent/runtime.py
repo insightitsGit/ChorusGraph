@@ -38,7 +38,13 @@ class FinanceRuntime:
             self.gemini = GeminiClient()
         return self.gemini
 
-    def seed_tool_cache(self, query_key: str, tool_result: Dict[str, Any]) -> None:
+    def seed_tool_cache(
+        self,
+        query_key: str,
+        tool_result: Dict[str, Any],
+        *,
+        category_slug: str = "fx_rates",
+    ) -> None:
         from chorusgraph.cache_gate import seed_cache_entry
 
         seed_cache_entry(
@@ -46,7 +52,7 @@ class FinanceRuntime:
             self.sidecar,
             query=query_key,
             value=tool_result,
-            category_slug="fx_rates",
+            category_slug=category_slug,
             cache_policy="replay_safe",
         )
         self.session_tool_cache[query_key] = tool_result

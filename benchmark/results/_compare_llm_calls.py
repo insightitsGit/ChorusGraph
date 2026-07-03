@@ -1,4 +1,4 @@
-"""Compare Gemini LLM call counts: Container C vs D."""
+"""Compare Gemini LLM call counts: HL2 vs D."""
 import json
 import sys
 from pathlib import Path
@@ -40,13 +40,13 @@ def main() -> None:
     c = load("container_c.jsonl")
     d = load("container_d.jsonl")
 
-    summarize("Container C (all cases)", c)
-    summarize("Container D (all cases)", d)
+    summarize("HL2 (all cases)", c)
+    summarize("HC2 (all cases)", d)
 
     d_miss = [r for r in d if not r.get("cache_hit")]
     d_hit = [r for r in d if r.get("cache_hit")]
-    summarize("Container D — CACHE MISS only", d_miss)
-    summarize("Container D — CACHE HIT only", d_hit)
+    summarize("HC2 — CACHE MISS only", d_miss)
+    summarize("HC2 — CACHE HIT only", d_hit)
 
     print("=== Same case: C vs D llm_calls ===")
     c_by = {r["case_id"]: r for r in c}

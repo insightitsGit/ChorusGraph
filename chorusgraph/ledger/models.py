@@ -18,6 +18,7 @@ class LedgerStep(BaseModel):
 
     node: str
     edge_taken: Optional[str] = None
+    route_via: Optional[str] = None
     rule_chain: Optional[List[str]] = None
     duration_ms: int = 0
     timestamp: datetime = Field(default_factory=_utcnow)

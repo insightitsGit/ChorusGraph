@@ -1,8 +1,8 @@
-"""Tests for Container D artifact helpers."""
+"""Tests for HC2 artifact helpers."""
 
 from __future__ import annotations
 
-from benchmark.container_d.artifacts import (
+from benchmark.hc2.artifacts import (
     analyze_handoff_plain,
     compact_artifact,
     envelope_handoff,
@@ -12,7 +12,7 @@ from benchmark.container_d.artifacts import (
     store_envelope_artifact,
     writer_handoff_user,
 )
-from benchmark.container_d.cache_helpers import cached_response_from_state
+from benchmark.hc2.cache_helpers import cached_response_from_state
 from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
 
 

@@ -6,6 +6,8 @@ import random
 from dataclasses import dataclass
 from typing import Dict, List, Literal, Optional
 
+from benchmark.finance.corpus import CANONICAL_QUERIES, COMPOUND_SCENARIOS, MEMORY_PROFILES
+
 Variant = Literal[
     "exact_repeat",
     "paraphrase",
@@ -15,65 +17,21 @@ Variant = Literal[
     "memory_recall_cross",
 ]
 
-# Memory-bearing sessions — seed turn stores profile; recall turn exercises Cortex.
-MEMORY_PROFILES: Dict[str, Dict[str, object]] = {
-    "memory_risk_conservative": {
-        "seed": (
-            "I'm a conservative investor with low risk tolerance. "
-            "I prefer stable USD-heavy portfolios and minimal FX speculation."
-        ),
-        "recalls": [
-            "Given my stated risk tolerance, would increasing EUR exposure fit my profile?",
-            "What risk profile did I tell you I prefer?",
-        ],
-        "expected_terms": ["conservative", "low", "usd"],
-    },
-    "memory_horizon_long": {
-        "seed": (
-            "I'm investing for a 20-year horizon and can tolerate short-term market volatility."
-        ),
-        "recalls": [
-            "Based on my investment horizon, is a 3-year savings goal aligned with my plan?",
-            "Remind me what time horizon I mentioned for my investments.",
-        ],
-        "expected_terms": ["20", "horizon", "long"],
-    },
-}
-
-# Canonical FX query intents — each maps to fx_rates slug.
-CANONICAL_QUERIES: Dict[str, List[str]] = {
-    "usd_eur": [
-        "What is the USD to EUR exchange rate today?",
-        "USD/EUR rate please",
-        "How many euros per US dollar right now?",
-        "Current dollar to euro FX rate",
-    ],
-    "usd_gbp": [
-        "What is the USD to GBP exchange rate today?",
-        "USD/GBP rate please",
-        "How many pounds sterling per dollar?",
-        "Current USD to British pound exchange rate",
-    ],
-    "eur_gbp": [
-        "What is the EUR to GBP exchange rate today?",
-        "EUR/GBP rate please",
-        "Euro to pound exchange rate now",
-    ],
-    "usd_jpy": [
-        "What is the USD to JPY exchange rate today?",
-        "USD/JPY rate please",
-        "Dollar to yen FX rate",
-    ],
-    "compare_usd_eur_gbp": [
-        "Compare USD to EUR and USD to GBP exchange rates — which is stronger against USD?",
-        "USD/EUR vs USD/GBP — which currency is stronger versus the dollar?",
-        "Give me both USD-EUR and USD-GBP rates and say which buys more per dollar.",
-    ],
-    "compound_savings": [
-        "If I invest $10,000 at 5% annual interest compounded monthly for 3 years, what is the future value?",
-        "Compound interest: $10000 principal, 5% APR, 3 years, monthly compounding.",
-    ],
-}
+# Re-export corpus for backward-compatible imports (benchmark.workload.CANONICAL_QUERIES).
+__all__ = [
+    "CANONICAL_QUERIES",
+    "COMPOUND_SCENARIOS",
+    "MEMORY_PROFILES",
+    "REPEAT_BANDS",
+    "REPEAT_MODEL",
+    "REPEAT_MODEL_DOC",
+    "Variant",
+    "WorkloadTask",
+    "estimate_min_tasks_for_slug",
+    "generate_workload",
+    "repeat_model_for_band",
+    "workload_stats",
+]
 
 # Default repeat model weights (must sum to 1.0 for non-seed tasks).
 REPEAT_MODEL = {
@@ -141,7 +99,7 @@ def generate_workload(
     Generate a volume-controllable finance query set.
 
     Each session starts with a novel seed, then mixes repeats and paraphrases
-    so Container B's semantic cache can observe realistic hit patterns.
+    so FC1's semantic cache can observe realistic hit patterns.
     """
     if n_tasks < 1:
         raise ValueError("n_tasks must be >= 1")
@@ -234,7 +192,7 @@ def generate_workload(
                     message = CANONICAL_QUERIES[other][0]
                     session_canonical = other
                 fx_pos += 1
-            slug = "compound_savings" if session_canonical == "compound_savings" else "fx_rates"
+            slug = "compound_savings" if session_canonical.startswith("compound_") else "fx_rates"
             canonical = session_canonical
             mem_group = cortex_group if memory_session else None
 

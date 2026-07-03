@@ -1,13 +1,11 @@
-"""ChorusGraph — native agent runtime with Prism cache, memory, and Route Ledger."""
+"""ChorusGraph — native Prism execution engine with cache, memory, and Route Ledger."""
 
-__version__ = "0.10.0"
+__version__ = "0.11.0"
 
 from chorusgraph.adapter import RunnableWithLedger, wrap
 from chorusgraph.cache_gate import Decision, DecisionKind, SidecarStore, gate, seed_cache_entry
 from chorusgraph.checkpoint import PrismCheckpointer, create_checkpointer, sqlite_checkpointer
-from chorusgraph.engine.context import PrismEngineContext
-from chorusgraph.graph.builder import Graph
-from chorusgraph.runtime import END, START, CompiledGraph, merge_state
+from chorusgraph.core import END, START, CompiledGraph, Graph, NodeContext, NodeFn
 from chorusgraph.transport import TransportMode, publish_hop
 from chorusgraph.ledger import (
     LedgerStep,
@@ -31,9 +29,10 @@ __all__ = [
     "DecisionKind",
     "END",
     "Graph",
+    "NodeContext",
+    "NodeFn",
     "LedgerSink",
     "LedgerStep",
-    "PrismEngineContext",
     "TransportMode",
     "PrismCheckpointer",
     "RouteLedger",
@@ -47,7 +46,6 @@ __all__ = [
     "get_cortex_service",
     "get_run",
     "list_runs",
-    "merge_state",
     "publish_hop",
     "run_shadow_measurement",
     "seed_cache_entry",

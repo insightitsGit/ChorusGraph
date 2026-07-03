@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from benchmark.container_c.runner import ContainerCRunner, build_healthcare_graph_c
+from benchmark.hl2.runner import HL2Runner, build_healthcare_graph_hl2
 from benchmark.healthcare.tools import check_drug_interactions, retrieve_guidelines
 from benchmark.healthcare_workload import HealthcareCase, PIPELINE_AGENTS
 from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient
@@ -76,7 +76,7 @@ def test_container_c_depth6_calls_tools_and_hands_off():
         pipeline_depth=6,
     )
     stub = _StubHealthcareGemini()
-    graph, _ = build_healthcare_graph_c(depth=6, gemini=stub)
+    graph, _ = build_healthcare_graph_hl2(depth=6, gemini=stub)
     result = graph.invoke({"case": case, "hop_metrics": [], "tool_calls": 0})
 
     assert result.get("response")
@@ -98,7 +98,7 @@ def test_container_c_abstain_case():
         pipeline_depth=6,
     )
     stub = _StubHealthcareGemini()
-    runner = ContainerCRunner()
+    runner = HL2Runner()
     with patch.object(runner, "_gemini", stub):
         runner._graphs.clear()
         m = runner.run(case)
@@ -106,9 +106,9 @@ def test_container_c_abstain_case():
 
 
 def test_container_d_cache_hit_skips_llm_hops():
-    from benchmark.container_d.cache_helpers import build_cache_payload, cache_query_key, seed_healthcare_cache
-    from benchmark.container_d.runner import build_healthcare_graph_d
-    from benchmark.container_d.runtime import make_healthcare_envelope_runtime
+    from benchmark.hc2.cache_helpers import build_cache_payload, cache_query_key, seed_healthcare_cache
+    from benchmark.hc2.runner import build_healthcare_graph_hc2
+    from benchmark.hc2.runtime import make_healthcare_envelope_runtime
 
     case = HealthcareCase(
         case_id="test-d-cache",
@@ -124,7 +124,7 @@ def test_container_d_cache_hit_skips_llm_hops():
     )
     stub = _StubHealthcareGemini()
     runtime = make_healthcare_envelope_runtime()
-    graph, _, _ = build_healthcare_graph_d(depth=6, gemini=stub, runtime=runtime)
+    graph, _, _ = build_healthcare_graph_hc2(depth=6, gemini=stub, runtime=runtime)
     payload = build_cache_payload(
         {
             "hop_artifacts": {
@@ -142,7 +142,12 @@ def test_container_d_cache_hit_skips_llm_hops():
         },
         response=stub._writer_text,
     )
-    seed_healthcare_cache(runtime, cache_query_key(case), payload)
+    seed_healthcare_cache(
+        runtime,
+        cache_query_key(case),
+        payload,
+        pipeline_depth=case.pipeline_depth,
+    )
 
     result = graph.invoke(
         {
@@ -167,8 +172,8 @@ def test_container_d_cache_hit_skips_llm_hops():
 
 
 def test_container_d_envelope_hops_and_bounded_handoff():
-    from benchmark.container_d.runner import build_healthcare_graph_d
-    from benchmark.container_d.runtime import make_healthcare_envelope_runtime
+    from benchmark.hc2.runner import build_healthcare_graph_hc2
+    from benchmark.hc2.runtime import make_healthcare_envelope_runtime
 
     case = HealthcareCase(
         case_id="test-d-06",
@@ -181,7 +186,7 @@ def test_container_d_envelope_hops_and_bounded_handoff():
     )
     stub = _StubHealthcareGemini()
     runtime = make_healthcare_envelope_runtime()
-    graph, _, _ = build_healthcare_graph_d(depth=6, gemini=stub, runtime=runtime)
+    graph, _, _ = build_healthcare_graph_hc2(depth=6, gemini=stub, runtime=runtime)
     result = graph.invoke(
         {
             "case": case,

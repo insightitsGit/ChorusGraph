@@ -1,51 +1,72 @@
-"""PrismCheckpointer — LangGraph checkpointer factory (SQLite / Postgres)."""
+"""PrismCheckpointer — native prismlang persistence."""
 
 from __future__ import annotations
 
-import os
-import sqlite3
+import warnings
 from typing import Any, Literal, Optional
 
-from langgraph.checkpoint.base import BaseCheckpointSaver
+from chorusgraph.core.persistence import (
+    EngineCheckpointer,
+    json_file_checkpointer,
+    postgres_checkpointer as engine_postgres_checkpointer,
+)
+
+
+def _json_backend(path: str = ".chorusgraph/checkpoints") -> Any:
+    from prismlang import JsonFileCheckpointer
+
+    return JsonFileCheckpointer(path)
 
 
 def sqlite_checkpointer(
-    path: str = ".chorusgraph/checkpoints.sqlite",
+    path: str = ".chorusgraph/checkpoints",
     *,
-    conn: Optional[sqlite3.Connection] = None,
-) -> BaseCheckpointSaver:
-    """Create a SQLite-backed checkpointer for local dev and demos."""
-    from langgraph.checkpoint.sqlite import SqliteSaver
+    conn: Any = None,
+) -> Any:
+    """
+    Deprecated alias for file-backed checkpointing.
 
-    if conn is None:
-        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-        conn = sqlite3.connect(path, check_same_thread=False)
-    return SqliteSaver(conn)
+    ``conn`` is ignored — use ``json_file_checkpointer`` or ``postgres_checkpointer``.
+    """
+    _ = conn
+    warnings.warn(
+        "sqlite_checkpointer is file-backed; use json_file_checkpointer or postgres_checkpointer",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return _json_backend(path)
 
 
-def postgres_checkpointer(conn_string: str) -> BaseCheckpointSaver:
-    """Create a Postgres-backed checkpointer (requires langgraph-checkpoint-postgres)."""
-    try:
-        from langgraph.checkpoint.postgres import PostgresSaver
-    except ImportError as exc:
-        raise ImportError(
-            "Postgres checkpointer requires langgraph-checkpoint-postgres. "
-            "Install with: pip install chorusgraph[postgres-checkpoint]"
-        ) from exc
+def engine_checkpointer(path: str = ".chorusgraph/checkpoints") -> EngineCheckpointer:
+    """Native engine wrapper for ``CompiledGraph`` checkpoint boundaries."""
+    return json_file_checkpointer(path)
 
-    return PostgresSaver.from_conn_string(conn_string)
+
+def postgres_checkpointer(conn_string: str) -> EngineCheckpointer:
+    """Postgres checkpointer wrapped for ``chorusgraph.core.Graph``."""
+    return engine_postgres_checkpointer(conn_string)
 
 
 def create_checkpointer(
-    backend: Literal["sqlite", "postgres"] = "sqlite",
+    backend: Literal["sqlite", "json", "postgres"] = "json",
     *,
-    path: str = ".chorusgraph/checkpoints.sqlite",
-    conn: Optional[sqlite3.Connection] = None,
+    path: str = ".chorusgraph/checkpoints",
+    conn: Any = None,
     conn_string: Optional[str] = None,
-) -> BaseCheckpointSaver:
-    """Factory for PrismCheckpointer backends."""
-    if backend == "sqlite":
-        return sqlite_checkpointer(path, conn=conn)
+    native: bool = False,
+) -> Any:
+    """
+    Factory for checkpointers.
+
+    ``native=True`` returns ``EngineCheckpointer`` for ``chorusgraph.Graph``.
+    Default returns prismlang backend for LangGraph-compatible graphs.
+    """
+    if native:
+        return engine_checkpointer(path)
+    if backend in ("sqlite", "json"):
+        if backend == "sqlite":
+            return sqlite_checkpointer(path, conn=conn)
+        return _json_backend(path)
     if backend == "postgres":
         if not conn_string:
             raise ValueError("conn_string is required for postgres backend")
@@ -54,8 +75,19 @@ def create_checkpointer(
 
 
 def PrismCheckpointer(
-    backend: Literal["sqlite", "postgres"] = "sqlite",
+    backend: Literal["sqlite", "json", "postgres"] = "json",
     **kwargs: Any,
-) -> BaseCheckpointSaver:
+) -> Any:
     """Alias for create_checkpointer — DESIGN §5.3 PrismCheckpointer."""
     return create_checkpointer(backend, **kwargs)
+
+
+__all__ = [
+    "EngineCheckpointer",
+    "PrismCheckpointer",
+    "create_checkpointer",
+    "engine_checkpointer",
+    "json_file_checkpointer",
+    "postgres_checkpointer",
+    "sqlite_checkpointer",
+]

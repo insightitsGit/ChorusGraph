@@ -1,4 +1,4 @@
-"""Measured cache thresholds for Container B — NOT H4 demo values (0.82/0.85)."""
+"""Measured cache thresholds for FC1 — NOT H4 demo values (0.82/0.85)."""
 
 from __future__ import annotations
 
@@ -12,6 +12,7 @@ COARSE_THRESHOLD: float = 0.88
 # fx_rates has no H3 CACHEABLE slug yet (n << MIN_HITS=300); use gate.py default until H9 calibrates.
 MEASURED_VERIFY_THRESHOLDS: Dict[str, float] = {
     "fx_rates": 0.95,
+    "compound_savings": 0.95,
     "clinical_guidelines": 0.95,
 }
 

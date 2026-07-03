@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Literal, Optional
 
-ContainerId = Literal["C", "D"]
+ContainerId = Literal["HL1", "HC1", "HL2", "HC2"]
 
 
 @dataclass

@@ -1,4 +1,4 @@
-"""Identical per-task measurement schema for Container A and B."""
+"""Identical per-task measurement schema for FL1 and B."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import statistics
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Literal, Optional
 
-ContainerId = Literal["A", "B", "E", "F"]
+ContainerId = Literal["FL1", "FC1", "FL2", "FC2"]
 
 
 def score_task_success(
@@ -20,7 +20,7 @@ def score_task_success(
     tool_result: Optional[Dict[str, Any]] = None,
     variant: Optional[str] = None,
 ) -> bool:
-    """Fixed rubric applied identically to Container A and B."""
+    """Fixed rubric applied identically to FL1 and B."""
     import re
 
     from benchmark.rubric import score_by_canonical

@@ -61,7 +61,7 @@ def test_analyze_produces_ci():
         TaskMeasurement(
             task_id=f"t{i}",
             session_id="s",
-            container="A",
+            container="FL1",
             message="q",
             variant="novel",
             latency_ms=100 + i,
@@ -80,9 +80,9 @@ def test_analyze_produces_ci():
 
 
 def test_container_b_uses_react_path_constant():
-    from benchmark.container_b.runner import B_REASONING_PATH
+    from benchmark.fc1.runner import FC1_REASONING_PATH
 
-    assert "react" in B_REASONING_PATH.lower()
+    assert "react" in FC1_REASONING_PATH.lower()
 
 
 def test_belief_calibration_returns_dict():
@@ -93,7 +93,7 @@ def test_belief_calibration_returns_dict():
         TaskMeasurement(
             task_id="t1",
             session_id="s",
-            container="B",
+            container="FC1",
             message="q",
             variant="exact_repeat",
             latency_ms=50,
@@ -138,7 +138,7 @@ def test_measurement_schema_shared_fields():
     row_a = TaskMeasurement(
         task_id="t1",
         session_id="s1",
-        container="A",
+        container="FL1",
         message="USD/EUR?",
         variant="novel",
         latency_ms=100,
@@ -152,7 +152,7 @@ def test_measurement_schema_shared_fields():
     row_b = TaskMeasurement(
         task_id="t1",
         session_id="s1",
-        container="B",
+        container="FC1",
         message="USD/EUR?",
         variant="novel",
         latency_ms=80,
@@ -194,7 +194,7 @@ def test_comparison_report_skeleton():
             TaskMeasurement(
                 task_id="t1",
                 session_id="s1",
-                container="A",
+                container="FL1",
                 message="q",
                 variant="novel",
                 latency_ms=100,
@@ -210,7 +210,7 @@ def test_comparison_report_skeleton():
             TaskMeasurement(
                 task_id="t1",
                 session_id="s1",
-                container="B",
+                container="FC1",
                 message="q",
                 variant="novel",
                 latency_ms=50,
@@ -286,7 +286,7 @@ def test_belief_calibration_grounding_from_memory_rows():
         TaskMeasurement(
             task_id="m1",
             session_id="s",
-            container="B",
+            container="FC1",
             message="recall",
             variant="memory_recall",
             latency_ms=100,
@@ -301,7 +301,7 @@ def test_belief_calibration_grounding_from_memory_rows():
         TaskMeasurement(
             task_id="m2",
             session_id="s",
-            container="B",
+            container="FC1",
             message="recall",
             variant="memory_recall",
             latency_ms=100,
@@ -326,7 +326,7 @@ def test_slice_rows_fx_and_compound_excludes_memory():
         TaskMeasurement(
             task_id="t1",
             session_id="s",
-            container="B",
+            container="FC1",
             message="q",
             variant="memory_recall_cross",
             latency_ms=1,
@@ -341,7 +341,7 @@ def test_slice_rows_fx_and_compound_excludes_memory():
         TaskMeasurement(
             task_id="t2",
             session_id="s",
-            container="B",
+            container="FC1",
             message="fx",
             variant="novel",
             latency_ms=1,

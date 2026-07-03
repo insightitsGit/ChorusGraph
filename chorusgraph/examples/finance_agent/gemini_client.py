@@ -67,6 +67,22 @@ class GeminiClient:
         response = self._client.models.generate_content(model=self._model, contents=prompt, config=cfg)
         return (response.text or "").strip()
 
+    def generate_stream(self, system: str, user: str, history: Optional[List[Dict[str, str]]] = None):
+        """Yield text chunks from the live Gemini stream (real client only)."""
+        from google.genai import types
+
+        prompt = self._build_prompt(system, user, history)
+        cfg = types.GenerateContentConfig(temperature=0.2, max_output_tokens=1024)
+        stream = self._client.models.generate_content_stream(
+            model=self._model,
+            contents=prompt,
+            config=cfg,
+        )
+        for chunk in stream:
+            text = getattr(chunk, "text", None)
+            if text:
+                yield text
+
     def generate_json(self, system: str, user: str) -> str:
         from google.genai import types
 

@@ -1,4 +1,4 @@
-"""Shared finance agent prompts — identical across Container A and B."""
+"""Shared finance agent prompts — identical across FL1 and B."""
 
 from __future__ import annotations
 

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import time
 
-from benchmark.container_d.artifacts import compact_json
-from benchmark.container_d.runtime import make_healthcare_envelope_runtime
+from benchmark.hc2.artifacts import compact_json
+from benchmark.hc2.runtime import make_healthcare_envelope_runtime
 from chorusgraph.transforms.projector import project_text
 
 
@@ -23,7 +23,7 @@ def test_envelope_uses_compact_json_not_python_repr():
 
 
 def test_compact_artifact_shrinks_intake():
-    from benchmark.container_d.artifacts import compact_artifact
+    from benchmark.hc2.artifacts import compact_artifact
 
     big = {"facts": "x" * 500, "drugs": ["a"] * 10, "question": "q" * 200}
     slim = compact_artifact("intake", big)

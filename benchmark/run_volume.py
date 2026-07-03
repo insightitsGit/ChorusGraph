@@ -21,8 +21,8 @@ from benchmark.analyze import (
     paraphrase_cache_forensics,
 )
 from benchmark.belief_calibration import calibrate_from_measurements
-from benchmark.container_a.runner import ContainerARunner
-from benchmark.container_b.runner import ContainerBRunner
+from benchmark.fl1.runner import FL1Runner
+from benchmark.fc1.runner import FC1Runner
 from benchmark.jsonl_io import append_measurement, completed_task_ids, load_measurements
 from benchmark.measure import TaskMeasurement
 from benchmark.thresholds import THRESHOLD_PROVENANCE, measured_thresholds
@@ -48,8 +48,8 @@ def run_band(
     path_b = out_dir / f"band_{band_pct}_container_b.jsonl"
 
     done = completed_task_ids([path_a, path_b]) if resume else set()
-    runner_a = ContainerARunner()
-    runner_b = ContainerBRunner(seed_all_canonical_phrases=seed_all_canonical_phrases)
+    runner_a = FL1Runner()
+    runner_b = FC1Runner(seed_all_canonical_phrases=seed_all_canonical_phrases)
 
     started = time.perf_counter()
     for i, task in enumerate(tasks):
