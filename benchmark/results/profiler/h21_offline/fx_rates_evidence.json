@@ -1,0 +1,21 @@
+{
+  "run_id": "h21_offline",
+  "category_slug": "fx_rates",
+  "profile": {
+    "keying": "semantic",
+    "ttl_s": 86400,
+    "scope": "global",
+    "risk_tier": "low"
+  },
+  "evidence": {
+    "paraphrase_match_rate": 1.0,
+    "delta_flip_rate": 0.0,
+    "recommended_keying": "semantic",
+    "fingerprint_fields": [],
+    "volatility_half_life_hours": 24.0,
+    "recommended_ttl_s": 86400,
+    "context_sensitive": false,
+    "recommended_scope": "global",
+    "recommended_risk_tier": "low"
+  }
+}

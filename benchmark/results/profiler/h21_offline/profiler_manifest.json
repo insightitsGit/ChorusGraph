@@ -1,0 +1,22 @@
+{
+  "run_id": "h21_offline",
+  "profiles": {
+    "fx_rates": {
+      "keying": "semantic",
+      "ttl_s": 86400,
+      "scope": "global",
+      "risk_tier": "low"
+    },
+    "clinical_guidelines": {
+      "keying": "fingerprint",
+      "ttl_s": null,
+      "scope": "session",
+      "risk_tier": "high"
+    }
+  },
+  "evidence_files": [
+    "benchmark\\results\\profiler\\h21_offline\\fx_rates_evidence.json",
+    "benchmark\\results\\profiler\\h21_offline\\clinical_guidelines_evidence.json"
+  ],
+  "fixture_dir": "C:\\code\\ChorusGraph\\benchmark\\fixtures\\profiler"
+}

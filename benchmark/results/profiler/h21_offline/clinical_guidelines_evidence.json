@@ -1,0 +1,26 @@
+{
+  "run_id": "h21_offline",
+  "category_slug": "clinical_guidelines",
+  "profile": {
+    "keying": "fingerprint",
+    "ttl_s": null,
+    "scope": "session",
+    "risk_tier": "high"
+  },
+  "evidence": {
+    "paraphrase_match_rate": 1.0,
+    "delta_flip_rate": 1.0,
+    "recommended_keying": "fingerprint",
+    "fingerprint_fields": [
+      "drugs",
+      "topic",
+      "labs",
+      "pipeline_depth"
+    ],
+    "volatility_half_life_hours": null,
+    "recommended_ttl_s": null,
+    "context_sensitive": true,
+    "recommended_scope": "session",
+    "recommended_risk_tier": "high"
+  }
+}
