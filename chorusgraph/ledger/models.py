@@ -25,6 +25,8 @@ class LedgerStep(BaseModel):
     cache_hit: Optional[bool] = None
     cache_score: Optional[float] = None
     grounding_score: Optional[float] = None
+    parent_run_id: Optional[str] = None
+    subgraph_node: Optional[str] = None
 
 
 class RouteLedger(BaseModel):

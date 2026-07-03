@@ -12,12 +12,14 @@ from chorusgraph.core.cache_interceptor import CacheInterceptor, CacheRuntime, N
 from chorusgraph.core.constants import END, START
 from chorusgraph.core.ir import ConditionalEdge, GraphIR
 from chorusgraph.core.node import NodeContext, NodeFn, dict_node_adapter, is_native_node
+from chorusgraph.core.send import JoinSpec
 from chorusgraph.core.persistence import EngineCheckpointer
 from chorusgraph.core.scheduler import CompiledGraph, EngineConfig
 from chorusgraph.core.trace import RouteTracker
 from chorusgraph.core.transport_router import TransportRouter
 from chorusgraph.ledger.sink import LedgerSink
 from chorusgraph.nodes.roles import Node
+from chorusgraph.core.subgraph import SubgraphSpec, build_subgraph_node
 from chorusgraph.sections.models import CachePolicy
 from chorusgraph.transport.modes import TransportMode
 
@@ -53,6 +55,7 @@ class Graph:
         self._node_cache: Dict[str, NodeCacheSpec] = {}
         self._interrupt_before: set[str] = set()
         self._interrupt_after: set[str] = set()
+        self._join_policies: Dict[str, JoinSpec] = {}
         self._entry: Optional[str] = None
 
     def add_node(
@@ -63,6 +66,7 @@ class Graph:
         category_slug: str = "general",
         cache_policy: CachePolicy = CachePolicy.NO_CACHE,
         cache_query_key: str = "message",
+        join: JoinSpec | None = None,
     ) -> None:
         if name in (START, END):
             raise ValueError(f"Reserved node name: {name}")
@@ -82,6 +86,8 @@ class Graph:
                 cache_policy=cache_policy,
                 query_key=cache_query_key,
             )
+        if join is not None:
+            self._join_policies[name] = join
 
     def add_role_node(self, name: str, role_node: Node, fn: NodeFn | LegacyNodeFn) -> None:
         slug = role_node.role.role if role_node.role else "general"
@@ -92,6 +98,37 @@ class Graph:
 
     def set_interrupt_after(self, *nodes: str) -> None:
         self._interrupt_after.update(nodes)
+
+    def add_subgraph(
+        self,
+        name: str,
+        compiled_child: CompiledGraph,
+        *,
+        input_map: Mapping[str, str],
+        output_map: Mapping[str, str],
+        location: str = "local",
+        cache_policy: CachePolicy = CachePolicy.NO_CACHE,
+        category_slug: str = "general",
+    ) -> None:
+        if name in (START, END):
+            raise ValueError(f"Reserved node name: {name}")
+        spec = SubgraphSpec(
+            name=name,
+            child=compiled_child,
+            input_map=dict(input_map),
+            output_map=dict(output_map),
+            location=location,
+        )
+        wrapped = build_subgraph_node(spec)
+        self._nodes[name] = wrapped
+        self._node_categories[name] = category_slug
+        if cache_policy != CachePolicy.NO_CACHE:
+            self._node_cache[name] = NodeCacheSpec(
+                node_id=name,
+                category_slug=category_slug,
+                cache_policy=cache_policy,
+                query_key="message",
+            )
 
     def add_edge(self, src: str, dst: str) -> None:
         if dst not in self._nodes and dst != END:
@@ -172,6 +209,7 @@ class Graph:
             node_cache_specs=dict(self._node_cache),
             interrupt_before=set(self._interrupt_before),
             interrupt_after=set(self._interrupt_after),
+            join_policies=dict(self._join_policies),
             entry=self._entry,
         )
         return CompiledGraph(

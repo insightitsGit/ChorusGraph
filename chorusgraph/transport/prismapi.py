@@ -82,5 +82,23 @@ class PrismAPISpine:
             "last_transport": self.mode.value,
         }
 
+    def route_envelope(self, encoded: Dict[str, Any]) -> Dict[str, Any]:
+        """Contract-only envelope routing (in-memory round-trip)."""
+        self._calls.append(
+            RemoteQuery(
+                provider_id="subgraph",
+                query_text=str(encoded.get("artifact_ref") or ""),
+                category_slug="subgraph",
+                tenant_id=self.tenant_id,
+                metadata={"encoded": encoded},
+            )
+        )
+        return {
+            "envelope_id": encoded.get("envelope_id"),
+            "vector_64": list(encoded.get("vector_64") or [0.0] * 64),
+            "artifact_ref": encoded.get("artifact_ref"),
+            "metadata": {"routed_via": self.mode.value, "stub": self.client is None},
+        }
+
 
 __all__ = ["PrismAPISpine", "RemoteQuery", "RemoteResponse"]

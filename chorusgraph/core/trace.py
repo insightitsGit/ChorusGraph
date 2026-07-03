@@ -28,6 +28,8 @@ class RouteTracker:
     sink: Optional[LedgerSink] = None
     run_id: str = field(default_factory=lambda: str(uuid4()))
     turn_id: Optional[str] = None
+    parent_run_id: Optional[str] = None
+    subgraph_node: Optional[str] = None
     ledger: RouteLedger = field(init=False)
     _events: List[Dict[str, Any]] = field(default_factory=list, repr=False)
 
@@ -54,6 +56,8 @@ class RouteTracker:
         route_via: Optional[str] = None,
         super_step: Optional[int] = None,
         skipped: bool = False,
+        parent_run_id: Optional[str] = None,
+        subgraph_node: Optional[str] = None,
     ) -> LedgerStep:
         step = LedgerStep(
             node=node,
@@ -64,6 +68,8 @@ class RouteTracker:
             cache_hit=cache_hit,
             cache_score=cache_score,
             grounding_score=grounding_score,
+            parent_run_id=parent_run_id or self.parent_run_id,
+            subgraph_node=subgraph_node or self.subgraph_node,
         )
         self.ledger.add_step(step)
 
@@ -107,6 +113,32 @@ class RouteTracker:
         }
         self._events.append(event)
         logger.debug("super_step %d active=%s", super_step, active)
+
+    def record_send_batch(
+        self,
+        *,
+        send_node: str,
+        super_step: int,
+        branches_requested: int,
+        branches_executed: int,
+    ) -> None:
+        event = {
+            "type": "send_batch",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "run_id": self.run_id,
+            "send_node": send_node,
+            "super_step": super_step,
+            "branches_requested": branches_requested,
+            "branches_executed": branches_executed,
+        }
+        self._events.append(event)
+        logger.info(
+            "send %s step=%d requested=%d executed=%d",
+            send_node,
+            super_step,
+            branches_requested,
+            branches_executed,
+        )
 
     def record_interrupt(self, *, node: str, super_step: int) -> None:
         event = {

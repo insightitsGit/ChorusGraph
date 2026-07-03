@@ -266,12 +266,11 @@ def test_p2_dynamic_interrupt_and_resume():
         config = {"configurable": {"thread_id": "dyn-interrupt-1"}}
 
         def ask(ctx: NodeContext) -> NodeUpdate:
-            if ctx.resume_value is not None:
-                return ctx.publish(
-                    artifact={"answer": ctx.resume_value, "done": True},
-                    category_slug="general",
-                )
-            ctx.interrupt({"question": "approve?"})
+            answer = ctx.interrupt({"question": "approve?"})
+            return ctx.publish(
+                artifact={"answer": answer, "done": True},
+                category_slug="general",
+            )
 
         g = Graph()
         g.add_node("ask", ask)

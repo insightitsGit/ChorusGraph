@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import inspect
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from prismlang import PrismProjector
 
@@ -12,7 +12,15 @@ from chorusgraph.core.bus import ResonanceBus
 from chorusgraph.core.channels import ChannelState, NodeUpdate, publish_update
 from chorusgraph.core.envelope import compact_json
 
-NodeFn = Callable[["NodeContext"], NodeUpdate]
+NodeFn = Callable[["NodeContext"], Union["NodeUpdate", "Command"]]
+
+
+@dataclass
+class Command:
+    """LangGraph-compatible node return — state update plus optional routing override."""
+
+    update: Optional[Dict[str, Any] | NodeUpdate] = None
+    goto: Optional[str | List[str]] = None
 
 
 class NodeInterrupt(Exception):
@@ -60,17 +68,26 @@ class NodeContext:
     projector: Optional[PrismProjector] = None
     on_emit: Optional[Callable[[Any], None]] = field(default=None, repr=False)
     resume_value: Any = None
+    branch_id: Optional[str] = None
+    branch_payload: Optional[Dict[str, Any]] = None
+    run_config: Optional[Dict[str, Any]] = None
+    parent_run_id: Optional[str] = None
 
     def read(self) -> Dict[str, Any]:
-        return self.state.view()
+        view = self.state.view()
+        if self.branch_payload:
+            return {**view, **self.branch_payload}
+        return view
 
     def emit(self, chunk: Any) -> None:
         """Push a token/chunk into the live ``messages`` stream (if streaming)."""
         if self.on_emit is not None:
             self.on_emit(chunk)
 
-    def interrupt(self, payload: Any) -> None:
-        """Halt the graph mid-node for human-in-the-loop; payload is persisted for resume."""
+    def interrupt(self, payload: Any) -> Any:
+        """Halt mid-node; on resume the same call returns the human-provided value."""
+        if self.resume_value is not None:
+            return self.resume_value
         raise NodeInterrupt(payload)
 
     def publish(
@@ -100,7 +117,7 @@ class NodeContext:
             artifact=artifact,
             vector=vector,
             category_slug=slug,
-            rule_chain=chain,
+            rule_chain=chain + ([f"branch:{self.branch_id}"] if self.branch_id else []),
             turn_id=self.super_step,
         )
 
@@ -129,4 +146,4 @@ def dict_node_adapter(fn: Callable[[Dict[str, Any]], Dict[str, Any]], *, hop: st
     return wrapped
 
 
-__all__ = ["NodeContext", "NodeFn", "NodeInterrupt", "dict_node_adapter", "is_native_node", "native_node"]
+__all__ = ["Command", "NodeContext", "NodeFn", "NodeInterrupt", "dict_node_adapter", "is_native_node", "native_node"]

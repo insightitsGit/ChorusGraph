@@ -7,7 +7,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, Iterator, List, Optional, Set
 
-from chorusgraph.core.channels import ChannelState
+from chorusgraph.core.channels import ChannelState, NodeUpdate
+from chorusgraph.core.pending_writes import PendingWriteStore, node_update_to_dict, pending_store_for_backend
 
 
 @dataclass
@@ -85,6 +86,54 @@ class EngineCheckpointer:
     """
 
     backend: Any
+    _pending: Optional[PendingWriteStore] = field(default=None, repr=False)
+
+    def __post_init__(self) -> None:
+        if self._pending is None:
+            self._pending = pending_store_for_backend(self.backend)
+
+    def put_writes(
+        self,
+        config: Dict[str, Any],
+        super_step: int,
+        node_id: str,
+        update: NodeUpdate,
+    ) -> None:
+        if self._pending is not None:
+            self._pending.put(config, super_step, node_id, update)
+        if hasattr(self.backend, "put_writes"):
+            task_id = f"{super_step}:{node_id}"
+            self.backend.put_writes(config, [("node_update", node_update_to_dict(update))], task_id)
+
+    async def aput_writes(
+        self,
+        config: Dict[str, Any],
+        super_step: int,
+        node_id: str,
+        update: NodeUpdate,
+    ) -> None:
+        self.put_writes(config, super_step, node_id, update)
+        if hasattr(self.backend, "aput_writes"):
+            task_id = f"{super_step}:{node_id}"
+            await self.backend.aput_writes(
+                config,
+                [("node_update", node_update_to_dict(update))],
+                task_id,
+            )
+
+    def get_pending_writes(self, config: Dict[str, Any], super_step: int) -> Dict[str, NodeUpdate]:
+        if self._pending is None:
+            return {}
+        return self._pending.list_for_step(config, super_step)
+
+    def clear_pending_writes(self, config: Dict[str, Any], super_step: int) -> None:
+        if self._pending is not None:
+            self._pending.clear_step(config, super_step)
+
+    def has_pending_writes(self, config: Dict[str, Any], super_step: int) -> bool:
+        if self._pending is None:
+            return False
+        return self._pending.has_step(config, super_step)
 
     def put(
         self,
