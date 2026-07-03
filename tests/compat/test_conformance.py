@@ -130,6 +130,42 @@ def pattern_functional_api():
     return build_graph(func_entry, tasks={}).compile()
 
 
+def pattern_langgraph_send_edge():
+    """T4 — LangGraph conditional edge returning Send objects."""
+    from typing import TypedDict
+
+    from langgraph.graph import END as LG_END, START as LG_START, StateGraph
+    from langgraph.types import Send as LGSend
+
+    from chorusgraph.compat.langgraph import compile_state_graph
+
+    class State(TypedDict, total=False):
+        items: list[str]
+        branch_outputs: list[dict]
+        n: int
+        i: int
+
+    def map_edge(state: dict):
+        return [LGSend("branch", {"i": x}) for x in state.get("items") or []]
+
+    def branch(state: dict):
+        return {"i": state.get("i")}
+
+    def reduce_node(state: dict):
+        outputs = state.get("branch_outputs") or []
+        return {"n": len(outputs)}
+
+    sg = StateGraph(State)
+    sg.add_node("map", lambda _s: {})
+    sg.add_node("branch", branch)
+    sg.add_node("reduce", reduce_node)
+    sg.add_edge(LG_START, "map")
+    sg.add_conditional_edges("map", map_edge, ["branch"])
+    sg.add_edge("branch", "reduce")
+    sg.add_edge("reduce", LG_END)
+    return compile_state_graph(sg)
+
+
 PATTERNS = [
     ("react", pattern_react),
     ("supervisor", pattern_supervisor),
@@ -137,6 +173,7 @@ PATTERNS = [
     ("subgraph", pattern_subgraph),
     ("interrupt", pattern_interrupt),
     ("functional_api", pattern_functional_api),
+    ("langgraph_send_edge", pattern_langgraph_send_edge),
     ("react_v2", pattern_react),
     ("supervisor_v2", pattern_supervisor),
     ("send_v2", pattern_map_reduce_send),

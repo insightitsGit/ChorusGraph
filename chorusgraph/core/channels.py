@@ -32,6 +32,10 @@ APPEND_LIST_SCALAR_KEYS: frozenset[str] = frozenset(
     }
 )
 
+# When parallel Send branches apply scalar updates sequentially, the last branch
+# (by sorted branch_id) wins. Append-list keys accumulate all branch contributions.
+BRANCH_SCALAR_COLLISION_RULE = "last_by_sorted_branch_id"
+
 # Only these keys from the latest envelope artifact overlay view(); scalars win otherwise.
 _ENVELOPE_OVERLAY_KEYS: frozenset[str] = frozenset(
     {"route", "response", "score", "raw_output", "category_slug", "cached_response"}

@@ -122,8 +122,8 @@ the in-runtime Resonance bus never crosses a container boundary directly.
 | Agents are… | Communication path |
 |---|---|
 | same process | Resonance `InProcessBroadcast` |
-| same cluster, different machine | Resonance `RedisBroadcast` + CHORUS transport |
-| different container / trust domain | **PrismAPI** + `BoundaryTranslator` |
+| same cluster, different machine | Resonance `RedisBroadcast` + CHORUS transport (`prism.cluster.transport`) — **wired** (Improve-2 T5–T6) |
+| different container / trust domain | **PrismAPI** (`prism.api` consumer/provider) + boundary re-projection — **wired** (Improve-2 T7) |
 
 ---
 

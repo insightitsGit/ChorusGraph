@@ -161,12 +161,16 @@ emits super-step + Resonance-routing events. Tests: interrupt→edit→resume; e
 ## 5. Follow-on phases (scheduled here so nothing is missing)
 
 ### P5 — Distribution (multi-machine, same cluster)
+
+> **Absorbed into [handoffImprove2.md](handoffImprove2.md)** (2026-07-03). See Improve-2 T5–T6 for RedisBroadcast + CHORUS mesh wiring and loopback tests.
+
 `RedisBroadcast` for the bus + **CHORUS mesh transport** (`prism.cluster.transport`, with
 `prism.cluster.node`/`health`) for cross-machine envelopes. Scheduler stays location-transparent.
-Exit: the same graph runs across 2 processes/machines; envelopes ship as CHORUS tensors; results
-identical to single-runtime.
 
 ### P6 — Federation (cross-container multi-agent) — **PrismAPI, local open-source, not blocked**
+
+> **Absorbed into [handoffImprove2.md](handoffImprove2.md)** (2026-07-03). See Improve-2 T7–T8 for PrismAPI federation + Send-over-transport + measured loopback proof.
+
 Federate over **PrismAPI** (`prism.api` — `provider`/`consumer`/`auth`/`schema`, plus `mcp` for
 MCP-exposed agents), with `prism.bridge.vector` (and `prismlang.BoundaryTranslator.translate`)
 re-projecting envelopes at the container boundary. PrismAPI's contract — *providers embed once, agents

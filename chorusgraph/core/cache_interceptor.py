@@ -27,10 +27,18 @@ class CacheRuntime:
     cache: Any
     sidecar: "SidecarStore"
     coarse_threshold: float = 0.88
-    verify_threshold: float = 0.95
+    verify_threshold: Optional[float] = None
+    measured_thresholds: Optional[Any] = None
     tenant_id: str = "default"
     registry: Any = field(default_factory=default_registry)
     backend: Optional[CacheBackend] = None
+
+    def verify_threshold_for(self, category_slug: str) -> float:
+        if self.verify_threshold is not None:
+            return self.verify_threshold
+        if self.measured_thresholds is not None:
+            return self.measured_thresholds.verify_for(category_slug)
+        return 0.95
 
     def resolve_backend(self) -> CacheBackend:
         if self.backend is not None:
@@ -98,7 +106,7 @@ class CacheInterceptor:
             section,
             self._runtime.resolve_backend(),
             coarse_threshold=self._runtime.coarse_threshold,
-            verify_threshold=self._runtime.verify_threshold,
+            verify_threshold=self._runtime.verify_threshold_for(spec.category_slug),
             profile=profile,
             scope_id=sid,
             fingerprint_key=fp_key,

@@ -30,12 +30,16 @@ class PrismAPISpine:
     """
     Federated retrieval / remote subgraph over CHORUS (PrismAPI).
 
-    Maps to built-in ``remote`` node kind in DESIGN §7.1.
+    Wired to ``prism.api.consumer.PrismAPIClient`` (loopback or HTTP) when
+    ``client`` is provided.  Boundary re-projection uses ``boundary_translator``
+    (typically ``PrismProjector`` at the tenant edge).
     """
 
     tenant_id: str
     client: Any = None
+    boundary_translator: Any = None
     _calls: List[RemoteQuery] = field(default_factory=list)
+    remote_embed_calls: int = 0
 
     @property
     def mode(self) -> TransportMode:
@@ -57,6 +61,24 @@ class PrismAPISpine:
             metadata=dict(metadata or {}),
         )
         self._calls.append(query)
+
+        if self.client is not None and hasattr(self.client, "query"):
+            raw = self.client.query(query_text, top_k=int(metadata.get("top_k", 10) if metadata else 10))
+            chunks = []
+            for sem, side in getattr(raw, "results", []) or []:
+                chunks.append(
+                    {
+                        "doc_id": getattr(sem, "doc_id", ""),
+                        "vector": list(getattr(sem, "vector", []) or []),
+                        "fields": dict(getattr(side, "fields", {}) or {}),
+                    }
+                )
+            return RemoteResponse(
+                provider_id=provider_id,
+                kb_context=chunks,
+                category_slug=category_slug,
+                metadata={"request_id": getattr(raw, "request_id", "")},
+            )
 
         if self.client is not None and hasattr(self.client, "federated_retrieve"):
             raw = self.client.federated_retrieve(query)
@@ -83,7 +105,7 @@ class PrismAPISpine:
         }
 
     def route_envelope(self, encoded: Dict[str, Any]) -> Dict[str, Any]:
-        """Contract-only envelope routing (in-memory round-trip)."""
+        """Route a boundary envelope through PrismAPI (vector-only on remote side)."""
         self._calls.append(
             RemoteQuery(
                 provider_id="subgraph",
@@ -93,12 +115,43 @@ class PrismAPISpine:
                 metadata={"encoded": encoded},
             )
         )
+        vector = list(encoded.get("vector_64") or [0.0] * 64)
+        if self.boundary_translator is not None and hasattr(self.boundary_translator, "project"):
+            import numpy as np
+
+            try:
+                env = self.boundary_translator.project(np.asarray(vector, dtype=np.float32))
+                vector = [float(x) for x in env.vector]
+            except Exception:
+                pass
+
+        if self.client is not None and hasattr(self.client, "query_vector"):
+            import numpy as np
+
+            self.client.query_vector(np.asarray(vector, dtype=np.float32), top_k=1)
+            embedder = getattr(self.client, "_embedder", None)
+            if embedder is not None and hasattr(embedder, "call_count"):
+                self.remote_embed_calls = int(getattr(embedder, "call_count", 0))
+
         return {
             "envelope_id": encoded.get("envelope_id"),
-            "vector_64": list(encoded.get("vector_64") or [0.0] * 64),
+            "vector_64": vector,
             "artifact_ref": encoded.get("artifact_ref"),
             "metadata": {"routed_via": self.mode.value, "stub": self.client is None},
         }
+
+    def route_batch(self, batch: Any) -> Dict[str, Any]:
+        """Accept a ChorusBatchFrame metadata record for federation accounting."""
+        self._calls.append(
+            RemoteQuery(
+                provider_id="send_batch",
+                query_text=f"batch:{getattr(batch, 'shape', ())}",
+                category_slug="subgraph",
+                tenant_id=self.tenant_id,
+                metadata={"batch": True},
+            )
+        )
+        return {"routed_via": self.mode.value, "batch_shape": getattr(batch, "shape", ())}
 
 
 __all__ = ["PrismAPISpine", "RemoteQuery", "RemoteResponse"]

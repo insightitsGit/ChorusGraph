@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from chorusgraph.transport.chorus import ChorusFrame, ChorusSpine
+from chorusgraph.transport.chorus import ChorusBatchFrame, ChorusFrame, ChorusSpine
 from chorusgraph.transport.modes import TransportMode
 
 
@@ -23,14 +23,17 @@ class TransportRouter:
 
     - same process → Resonance InProcessBroadcast
     - same cluster → RedisBroadcast + CHORUS
-    - cross-container → PrismAPI + BoundaryTranslator
+    - cross-container → PrismAPI + boundary re-projection
     """
 
     tenant_id: str
     mode: TransportMode = TransportMode.INPROC
     chorus: Optional[ChorusSpine] = None
     prismapi_client: Any = None
+    remote_batch_handler: Any = None
     _deliveries: List[Dict[str, Any]] = field(default_factory=list)
+    batch_deliveries: int = 0
+    wire_bytes: int = 0
 
     @classmethod
     def for_agents(cls, tenant_id: str, *, local: bool, same_cluster: bool) -> "TransportRouter":
@@ -100,6 +103,34 @@ class TransportRouter:
             return record
 
         return {"transport": self.mode.value, "skipped": True}
+
+    def deliver_batch(
+        self,
+        batch: ChorusBatchFrame,
+        *,
+        from_hop: str,
+        to_hop: str,
+    ) -> Dict[str, Any]:
+        """Route one ChorusBatchFrame for Send-over-transport (must be 1 RTT per fan-out)."""
+        if self.mode == TransportMode.INPROC:
+            record = {
+                "transport": self.mode.value,
+                "from": from_hop,
+                "to": to_hop,
+                "batch_shape": batch.shape,
+                "wire_bytes": len(batch.to_bytes()),
+            }
+            self._deliveries.append(record)
+            self.batch_deliveries += 1
+            self.wire_bytes += int(record["wire_bytes"])
+            return record
+
+        assert self.chorus is not None
+        result = self.chorus.deliver_batch(batch, from_hop=from_hop, to_hop=to_hop)
+        self._deliveries.append(result)
+        self.batch_deliveries += 1
+        self.wire_bytes += int(result.get("wire_bytes") or 0)
+        return result
 
     @property
     def deliveries(self) -> List[Dict[str, Any]]:

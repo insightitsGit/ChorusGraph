@@ -89,7 +89,7 @@ Receiver hydrates envelope into local session store before running the target no
 
 **When:** Researcher in pod A → Writer in pod B; bandwidth/latency win (179 ms p50 transatlantic, 4.45× bandwidth vs JSON).
 
-**Code:** `chorusgraph/transport/chorus.py` (client interface; production uses `CHORUS/chorus_fabric/`)
+**Code:** `chorusgraph/transport/chorus.py` — wired to `prism.cluster.transport.ClusterTransport`; `ChorusBatchFrame` is the wire unit (Improve-2 T6).
 
 ### 3.3 `chorus_federated` — different tenant / network
 
@@ -99,7 +99,7 @@ response lands in `kb_context` with provider `category_slug`.
 
 **When:** Legal KB on Tenant B, consumer graph on Tenant A.
 
-**Code:** `chorusgraph/transport/prismapi.py`
+**Code:** `chorusgraph/transport/prismapi.py` — wired to `prism.api.consumer.PrismAPIClient` loopback/HTTP (Improve-2 T7).
 
 ### 3.4 Spine selection flow
 

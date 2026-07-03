@@ -129,6 +129,11 @@ class SendBatch:
     join_activated: bool = False
     branch_start_ms: float = 0.0
     fan_results: List[Optional[Dict[str, Any]]] = field(default_factory=list)
+    parent_snapshot: Any = None
+    remote_subgraph_spec: Any = None
+    remote_executed: bool = False
+    resumed_branch_ids: set[str] = field(default_factory=set)
+    remote_branch_outputs: Optional[List[Dict[str, Any]]] = None
 
 
 def join_threshold(spec: JoinSpec, total: int) -> int:

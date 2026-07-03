@@ -573,6 +573,7 @@ class CompiledGraph:
             "completed": list(batch.completed.keys()),
             "join_activated": batch.join_activated,
             "branch_start_ms": batch.branch_start_ms,
+            "parent_snapshot": batch.parent_snapshot.to_checkpoint_values() if batch.parent_snapshot else None,
         }
 
     def _send_batch_from_metadata(self, meta: Dict[str, Any]) -> SendBatch:
@@ -602,8 +603,100 @@ class CompiledGraph:
             fan_results=[None] * int(meta.get("branches_requested") or 0),
             join_activated=bool(meta.get("join_activated")),
             branch_start_ms=float(meta.get("branch_start_ms") or 0.0),
+            parent_snapshot=(
+                ChannelState.from_checkpoint_values(meta["parent_snapshot"])
+                if meta.get("parent_snapshot")
+                else None
+            ),
         )
+        for bid in meta.get("completed") or []:
+            batch.resumed_branch_ids.add(str(bid))
         return batch
+
+    def _execute_remote_send_batch(
+        self,
+        state: ChannelState,
+        batch: SendBatch,
+        super_step: int,
+        *,
+        stream_mode: Optional[str],
+        tracker: RouteTracker,
+        config: Dict[str, Any],
+    ) -> Iterator[Any]:
+        from chorusgraph.core.subgraph_transport import invoke_remote_send_batch
+
+        spec = batch.remote_subgraph_spec
+        assert spec is not None
+        cache = None
+        if self.cache_interceptor is not None:
+            cache = self.cache_interceptor._runtime.cache
+        parent_run_id = config.get("_parent_run_id")
+        remote_handler = getattr(self.transport, "remote_batch_handler", None) if self.transport else None
+        started = time.perf_counter()
+        from chorusgraph.core.send import join_threshold
+
+        limit = join_threshold(batch.join_spec, batch.branches_executed)
+        tasks_to_run = batch.tasks[:limit]
+        outputs = invoke_remote_send_batch(
+            spec,
+            tasks_to_run,
+            config=config,
+            transport=self.transport,
+            parent_run_id=parent_run_id,
+            cache=cache,
+            remote_executor=remote_handler,
+        )
+        duration_ms = int((time.perf_counter() - started) * 1000)
+        for task, artifact in zip(tasks_to_run, outputs):
+            update = batch.completed.get(task.branch_id)
+            if update is None:
+                from chorusgraph.core.channels import publish_update
+
+                update = publish_update(
+                    hop=task.target,
+                    artifact=dict(artifact),
+                    vector=[0.0] * 64,
+                    category_slug="general",
+                    rule_chain=[f"remote_send:{spec.location}"],
+                    turn_id=super_step,
+                )
+            batch.completed[task.branch_id] = update
+            self._fan_back_branch_result(batch, task, update)
+            tracker.record_step(
+                node=task.target,
+                edge_taken=batch.join_node,
+                route_via=f"remote_{spec.location}",
+                rule_chain=list(update.rule_chain or []),
+                duration_ms=duration_ms,
+                super_step=super_step,
+            )
+        batch.remote_executed = True
+        batch.remote_branch_outputs = [dict(a) for a in outputs]
+        self._apply_send_batch_to_state(state, batch)
+        batch.join_activated = True
+        if stream_mode == "values":
+            yield state.view()
+        self._step_next_active = {batch.join_node}
+
+    async def _execute_remote_send_batch_async(
+        self,
+        state: ChannelState,
+        batch: SendBatch,
+        super_step: int,
+        *,
+        stream_mode: Optional[str],
+        tracker: RouteTracker,
+        config: Dict[str, Any],
+    ) -> AsyncIterator[Any]:
+        for item in self._execute_remote_send_batch(
+            state,
+            batch,
+            super_step,
+            stream_mode=stream_mode,
+            tracker=tracker,
+            config=config,
+        ):
+            yield item
 
     def _schedule_send_batch(
         self,
@@ -612,6 +705,7 @@ class CompiledGraph:
         sends: List[Send],
         super_step: int,
         tracker: RouteTracker,
+        state: Optional[ChannelState] = None,
     ) -> None:
         if len(sends) > self.config.max_branches:
             raise ValueError(
@@ -638,6 +732,12 @@ class CompiledGraph:
             branches_requested=len(sends),
             branches_executed=len(tasks),
         )
+        remote_spec = None
+        target_fn = self.ir.nodes.get(sends[0].target)
+        if target_fn is not None:
+            remote_spec = getattr(target_fn, "_subgraph_spec", None)
+            if remote_spec is not None and getattr(remote_spec, "location", "local") == "local":
+                remote_spec = None
         self._send_batch = SendBatch(
             send_node=send_node,
             super_step=super_step,
@@ -649,6 +749,8 @@ class CompiledGraph:
             branches_executed=len(tasks),
             fan_results=[None] * len(sends),
             branch_start_ms=self.config.clock_ms(),
+            parent_snapshot=state.snapshot() if state is not None else None,
+            remote_subgraph_spec=remote_spec,
         )
 
     def _fan_back_branch_result(self, batch: SendBatch, task: Any, update: NodeUpdate) -> None:
@@ -663,6 +765,9 @@ class CompiledGraph:
             batch.fan_results[req_idx] = dict(artifact)
 
     def _apply_send_batch_to_state(self, state: ChannelState, batch: SendBatch) -> None:
+        if batch.remote_branch_outputs is not None:
+            state._scalars["branch_outputs"] = list(batch.remote_branch_outputs)
+            return
         outputs = [dict(r) if r is not None else {} for r in batch.fan_results]
         state._scalars["branch_outputs"] = outputs
 
@@ -679,7 +784,17 @@ class CompiledGraph:
         pending = [t for t in batch.tasks if t.branch_id not in batch.completed]
         if not pending:
             return
-        snapshot = state.snapshot()
+        if batch.remote_subgraph_spec is not None and not batch.remote_executed:
+            yield from self._execute_remote_send_batch(
+                state,
+                batch,
+                super_step,
+                stream_mode=stream_mode,
+                tracker=tracker,
+                config=config,
+            )
+            return
+        snapshot = batch.parent_snapshot if batch.parent_snapshot is not None else state.snapshot()
         pending_writes = self._load_pending_writes(config, super_step)
         task = sorted(pending, key=lambda t: t.branch_id)[0]
         pending_id = self._branch_pending_id(task.target, task.branch_id)
@@ -687,6 +802,10 @@ class CompiledGraph:
 
         started = time.perf_counter()
         if pending_id in pending_writes:
+            update = pending_writes[pending_id]
+        elif task.branch_id in batch.resumed_branch_ids:
+            if pending_id not in pending_writes:
+                return
             update = pending_writes[pending_id]
         else:
             try:
@@ -786,7 +905,18 @@ class CompiledGraph:
         pending = [t for t in batch.tasks if t.branch_id not in batch.completed]
         if not pending:
             return
-        snapshot = state.snapshot()
+        if batch.remote_subgraph_spec is not None and not batch.remote_executed:
+            async for item in self._execute_remote_send_batch_async(
+                state,
+                batch,
+                super_step,
+                stream_mode=stream_mode,
+                tracker=tracker,
+                config=config,
+            ):
+                yield item
+            return
+        snapshot = batch.parent_snapshot if batch.parent_snapshot is not None else state.snapshot()
         pending_writes = self._load_pending_writes(config, super_step)
         task = sorted(pending, key=lambda t: t.branch_id)[0]
         pending_id = self._branch_pending_id(task.target, task.branch_id)
@@ -794,6 +924,10 @@ class CompiledGraph:
 
         started = time.perf_counter()
         if pending_id in pending_writes:
+            update = pending_writes[pending_id]
+        elif task.branch_id in batch.resumed_branch_ids:
+            if pending_id not in pending_writes:
+                return
             update = pending_writes[pending_id]
         else:
             update, _, sends = await self._ainvoke_node(
@@ -900,7 +1034,13 @@ class CompiledGraph:
             view = state.view()
             route_via: Optional[str] = None
             if sends:
-                self._schedule_send_batch(send_node=node_id, sends=sends, super_step=super_step, tracker=tracker)
+                self._schedule_send_batch(
+                    send_node=node_id,
+                    sends=sends,
+                    super_step=super_step,
+                    tracker=tracker,
+                    state=state,
+                )
                 succs: Set[str] = set()
             elif command_goto is not None:
                 succs = set(command_goto)

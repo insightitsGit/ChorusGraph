@@ -72,6 +72,37 @@ def test_stack_with_cache_swap():
     assert stack.resolve_cache().name == "redis"
 
 
+def test_stack_default_thresholds_from_measured(monkeypatch):
+    from chorusgraph.cache_gate import thresholds as th_mod
+
+    monkeypatch.setattr(th_mod, "COARSE_THRESHOLD", 0.77)
+    stack = ChorusStack.defaults(tenant_id="thresh-test")
+    runtime = stack.to_cache_runtime()
+    assert runtime.coarse_threshold == 0.77
+    assert runtime.verify_threshold_for("fx_rates") == 0.95
+
+
+def test_stack_explicit_thresholds_override():
+    stack = ChorusStack.defaults(tenant_id="t", coarse_threshold=0.5, verify_threshold=0.6)
+    runtime = stack.to_cache_runtime()
+    assert runtime.coarse_threshold == 0.5
+    assert runtime.verify_threshold_for("fx_rates") == 0.6
+
+
+def test_with_cache_preserves_all_fields():
+    import dataclasses
+
+    stack = ChorusStack.defaults(tenant_id="field-test", enable_memory=False)
+    redis = RedisCacheBackend(tenant_id="field-test")
+    swapped = stack.with_cache(redis)
+    for fld in dataclasses.fields(ChorusStack):
+        if fld.name in ("cache", "_cache_runtime"):
+            continue
+        assert getattr(swapped, fld.name) == getattr(stack, fld.name)
+    assert swapped.resolve_cache().name == "redis"
+    assert swapped._cache_runtime is None
+
+
 def test_finance_runtime_uses_stack():
     from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
 

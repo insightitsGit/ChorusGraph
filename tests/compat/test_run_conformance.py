@@ -11,6 +11,10 @@ from tests.compat.test_conformance import PATTERNS
 def test_conformance_pattern_compiles_and_runs(name, builder):
     compiled = builder()
     cfg = {"configurable": {"thread_id": f"compat-{name}"}}
+    if name == "langgraph_send_edge":
+        out = compiled.invoke({"items": ["a", "b", "c"]}, config=cfg)
+        assert out.get("n") == 3
+        return
     if name == "interrupt":
         out = compiled.invoke({}, config=cfg)
         assert out.get("__interrupt__") is True

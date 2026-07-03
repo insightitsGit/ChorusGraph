@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any, Optional
 
 from chorusgraph.cache_gate.sidecar import SidecarStore
+from chorusgraph.cache_gate.thresholds import CacheThresholds, measured_thresholds
 from chorusgraph.compose.adapters.prism_cache import PrismCacheBackend
 from chorusgraph.compose.defaults import (
     default_checkpointer,
@@ -43,19 +44,25 @@ class ChorusStack:
     checkpointer: Optional[EngineCheckpointer] = None
     ledger: Optional[LedgerSink] = None
     tools: Optional[ToolBackend] = None
-    coarse_threshold: float = 0.88
-    verify_threshold: float = 0.95
+    coarse_threshold: Optional[float] = None
+    verify_threshold: Optional[float] = None
     enable_memory: bool = True
     cortex_cache_dir: str = ".chorusgraph/cortex"
     checkpoint_root: str = ".chorusgraph/checkpoints"
     ledger_path: str = ":memory:"
     sidecar_path: str = ":memory:"
     _cache_runtime: Optional[Any] = field(default=None, repr=False)
+    _measured_thresholds: Optional[CacheThresholds] = field(default=None, repr=False)
 
     @classmethod
     def defaults(cls, *, tenant_id: str = "default", **kwargs: Any) -> "ChorusStack":
         """Full Prism stack — ready to run without extra wiring."""
         return cls(tenant_id=tenant_id, **kwargs)
+
+    def resolve_measured_thresholds(self) -> CacheThresholds:
+        if self._measured_thresholds is None:
+            self._measured_thresholds = measured_thresholds()
+        return self._measured_thresholds
 
     def resolve_sidecar(self) -> SidecarStore:
         if self.sidecar is None:
@@ -101,6 +108,8 @@ class ChorusStack:
             return self._cache_runtime
         from chorusgraph.core.cache_interceptor import CacheRuntime
 
+        thresholds = self.resolve_measured_thresholds()
+        coarse = self.coarse_threshold if self.coarse_threshold is not None else thresholds.coarse
         backend = self.resolve_cache()
         sidecar = self.resolve_sidecar()
         if isinstance(backend, PrismCacheBackend):
@@ -110,8 +119,9 @@ class ChorusStack:
         self._cache_runtime = CacheRuntime(
             cache=cache,
             sidecar=sidecar,
-            coarse_threshold=self.coarse_threshold,
+            coarse_threshold=coarse,
             verify_threshold=self.verify_threshold,
+            measured_thresholds=thresholds if self.verify_threshold is None else None,
             tenant_id=self.tenant_id,
             registry=default_registry(),
             backend=backend,
@@ -120,22 +130,7 @@ class ChorusStack:
 
     def with_cache(self, backend: CacheBackend) -> "ChorusStack":
         """Return a copy with cache backend replaced (e.g. Redis)."""
-        return ChorusStack(
-            tenant_id=self.tenant_id,
-            cache=backend,
-            sidecar=self.sidecar,
-            memory=self.memory,
-            checkpointer=self.checkpointer,
-            ledger=self.ledger,
-            tools=self.tools,
-            coarse_threshold=self.coarse_threshold,
-            verify_threshold=self.verify_threshold,
-            enable_memory=self.enable_memory,
-            cortex_cache_dir=self.cortex_cache_dir,
-            checkpoint_root=self.checkpoint_root,
-            ledger_path=self.ledger_path,
-            sidecar_path=self.sidecar_path,
-        )
+        return replace(self, cache=backend, _cache_runtime=None)
 
 
 __all__ = ["ChorusStack"]

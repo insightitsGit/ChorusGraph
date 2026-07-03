@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import tempfile
 from pathlib import Path
+from typing import Any, Dict
 
 import pytest
 
@@ -183,3 +184,75 @@ def test_max_branches_raises():
     compiled.config.max_branches = 2
     with pytest.raises(ValueError, match="max_branches"):
         compiled.invoke({"items": ["a", "b", "c"]}, config={"configurable": {"thread_id": "max"}})
+
+
+def test_branch_same_key_isolation_and_scalar_collision():
+    """T3 — parallel branches: append accumulates; scalar last-by-sorted-branch-id wins."""
+    from chorusgraph.core.channels import APPEND_LIST_SCALAR_KEYS, BRANCH_SCALAR_COLLISION_RULE
+
+    assert "hop_metrics" in APPEND_LIST_SCALAR_KEYS
+    assert BRANCH_SCALAR_COLLISION_RULE == "last_by_sorted_branch_id"
+
+    branch_reads: dict[str, dict[str, Any]] = {}
+
+    @native_node
+    def collision_worker(ctx: NodeContext):
+        item = ctx.read().get("item", "?")
+        bid = ctx.branch_id or "main"
+        base = ctx.state.view()
+        branch_reads[bid] = {
+            "base_shared_tag": base.get("shared_tag"),
+            "item": item,
+            "read_item": ctx.read().get("item"),
+        }
+        return ctx.publish(
+            artifact={
+                "item": item,
+                "shared_tag": item,
+                "hop_metrics": [{"branch": bid, "item": item}],
+            }
+        )
+
+    @native_node
+    def collision_reduce(ctx: NodeContext):
+        outputs = ctx.read().get("branch_outputs") or []
+        tags = [o.get("shared_tag") for o in outputs]
+        metrics = ctx.read().get("hop_metrics") or []
+        return ctx.publish(
+            artifact={
+                "tags": sorted(tags),
+                "metric_count": len(metrics),
+                "shared_tag": ctx.read().get("shared_tag"),
+            }
+        )
+
+    g = Graph()
+    g.add_node("map", map_runtime)
+    g.add_node("worker", collision_worker)
+    g.add_node("reduce", collision_reduce, join="all")
+    g.add_edge(START, "map")
+    g.add_edge("worker", "reduce")
+    g.add_edge("reduce", END)
+
+    items = ["a", "c", "b"]
+    run_tags: list[str] = []
+
+    def _run(tid: str):
+        branch_reads.clear()
+        compiled, _ = _compile(g)
+        out = compiled.invoke({"items": items}, config={"configurable": {"thread_id": tid}})
+        run_tags.append(out.get("shared_tag"))
+        return out
+
+    out1 = _run("iso-1")
+    out2 = _run("iso-2")
+
+    assert out1["tags"] == ["a", "b", "c"]
+    assert out1["metric_count"] == 3
+    assert out1["shared_tag"] == "b"
+    assert out1["shared_tag"] == out2["shared_tag"]
+
+    for bid, snap in branch_reads.items():
+        assert snap["base_shared_tag"] is None
+        assert snap["read_item"] == snap["item"]
+
