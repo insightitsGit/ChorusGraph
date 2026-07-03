@@ -29,7 +29,9 @@ __all__ = [
     "WorkloadTask",
     "estimate_min_tasks_for_slug",
     "generate_workload",
+    "message_matches_canonical",
     "repeat_model_for_band",
+    "validate_workload_messages",
     "workload_stats",
 ]
 
@@ -77,6 +79,38 @@ class WorkloadTask:
     canonical_id: Optional[str] = None
     memory_cortex_group: Optional[str] = None
     cross_session_recall: bool = False
+
+
+def message_matches_canonical(message: str, canonical_id: str) -> bool:
+    """True when ``message`` is one of the phrases for ``canonical_id``."""
+    phrases = CANONICAL_QUERIES.get(canonical_id)
+    if not phrases:
+        return False
+    return message in phrases
+
+
+def validate_workload_messages(tasks: List[WorkloadTask]) -> None:
+    """
+    Assert every FX/compound task message derives from its canonical phrase list.
+
+    Memory tasks use free-form seed/recall text and are excluded.
+    """
+    mismatches: List[str] = []
+    for task in tasks:
+        if task.variant.startswith("memory_"):
+            continue
+        if not task.canonical_id:
+            mismatches.append(f"{task.task_id}: missing canonical_id")
+            continue
+        if not message_matches_canonical(task.message, task.canonical_id):
+            mismatches.append(
+                f"{task.task_id} variant={task.variant} canonical_id={task.canonical_id!r} "
+                f"message={task.message!r}"
+            )
+    if mismatches:
+        raise AssertionError(
+            "workload message/canonical_id misalignment:\n  " + "\n  ".join(mismatches)
+        )
 
 
 def estimate_min_tasks_for_slug(*, min_hits: int = 300, repeat_rate: float = 0.40) -> int:
@@ -189,8 +223,9 @@ def generate_workload(
                 else:
                     variant = "novel"
                     other = rng.choice([c for c in canonical_ids if c != session_canonical])
-                    message = CANONICAL_QUERIES[other][0]
                     session_canonical = other
+                    phrases = CANONICAL_QUERIES[session_canonical]
+                    message = phrases[0]
                 fx_pos += 1
             slug = "compound_savings" if session_canonical.startswith("compound_") else "fx_rates"
             canonical = session_canonical
@@ -211,6 +246,7 @@ def generate_workload(
 
         session_idx += 1
 
+    validate_workload_messages(tasks)
     return tasks
 
 

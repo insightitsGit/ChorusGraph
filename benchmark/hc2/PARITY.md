@@ -42,17 +42,15 @@ PIPELINE_AGENTS: dict[int, List[str]] = {
 
 HL2 uses plain `WRITER_SYSTEM` with analysis/guidelines/interactions — **no safety prerequisite** — so it succeeds more often on the same cases.
 
-### 2. Cache replay skips the full pipeline (repeat band)
+### 2. Cache replay routing (H21+)
 
-On cache hit, `route_after_cache_hc2` jumps **cache_gate → writer**, skipping intake→…→safety.
+On cache hit with **facts only** (archetype C):
 
-| Variant | HC2 cache hit | HC2 success |
-|---------|---------------|-------------|
-| exact_repeat | **100%** | **27.3%** |
-| paraphrase | **100%** | 55.6% |
-| novel | 25% | 50.0% |
+- **Never** replay writer response (`cached_response_from_state` → `None`).
+- **Skip** fact hops (intake/retrieve/drug_check) — prefilled from global cache.
+- **Enter at first judgment hop** for depth: depth 6 → `safety` → writer; depth 4 → `analyze` → writer; depth 2 → writer (HL2-style prompt).
 
-**10 paired cases:** HL2 succeeded, HC2 failed — **all 10 were cache hits** on repeat/paraphrase. Cached `hop_artifacts` often lack `safety` (seeded from depth-2/4 runs), so the writer refuses even though HL2 ran the full cold path.
+Pre-H21 skip-to-writer caused 0 LLM calls but **27% success on exact_repeat** (missing safety). Full-pipeline-on-hit (H21 interim) fixed safety but cost **4.5 LLM calls/hit**. Depth-aware routing targets ~2 calls/hit at depth 6 with fresh safety+writer.
 
 ### 3. Cross-depth cache pollution (secondary)
 

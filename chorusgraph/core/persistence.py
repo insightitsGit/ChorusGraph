@@ -115,11 +115,14 @@ class EngineCheckpointer:
         self.put_writes(config, super_step, node_id, update)
         if hasattr(self.backend, "aput_writes"):
             task_id = f"{super_step}:{node_id}"
-            await self.backend.aput_writes(
-                config,
-                [("node_update", node_update_to_dict(update))],
-                task_id,
-            )
+            try:
+                await self.backend.aput_writes(
+                    config,
+                    [("node_update", node_update_to_dict(update))],
+                    task_id,
+                )
+            except NotImplementedError:
+                pass
 
     def get_pending_writes(self, config: Dict[str, Any], super_step: int) -> Dict[str, NodeUpdate]:
         if self._pending is None:
@@ -296,11 +299,17 @@ def async_json_file_checkpointer(root: str = ".chorusgraph/checkpoints") -> Engi
     return EngineCheckpointer(AsyncJsonFileCheckpointer(root))
 
 
-def postgres_checkpointer(conn_string: str) -> EngineCheckpointer:
+def postgres_checkpointer(
+    conn_string: str,
+    *,
+    pending_writes_root: str | None = None,
+) -> EngineCheckpointer:
     """Postgres-backed checkpointer (P2 mandate) — requires ``CHORUSGRAPH_PG_DSN`` at runtime."""
     from prismlang import AsyncPostgresCheckpointer
 
-    return EngineCheckpointer(AsyncPostgresCheckpointer(conn_string))
+    backend = AsyncPostgresCheckpointer(conn_string)
+    pending = pending_store_for_backend(backend, root=pending_writes_root)
+    return EngineCheckpointer(backend, _pending=pending)
 
 
 __all__ = [

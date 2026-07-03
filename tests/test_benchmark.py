@@ -9,7 +9,7 @@ import pytest
 
 from benchmark.measure import ComparisonReport, TaskMeasurement
 from benchmark.thresholds import H4_DEMO_COARSE, H4_DEMO_VERIFY, measured_thresholds
-from benchmark.workload import REPEAT_BANDS, REPEAT_MODEL, generate_workload, repeat_model_for_band, workload_stats
+from benchmark.workload import REPEAT_BANDS, REPEAT_MODEL, generate_workload, repeat_model_for_band, validate_workload_messages, workload_stats
 
 
 def test_measured_thresholds_not_h4_demo():
@@ -119,6 +119,21 @@ def test_workload_repeat_model_distribution():
     model = repeat_model_for_band(40)
     for variant in model:
         assert stats[variant] >= 1
+
+
+def test_workload_message_matches_canonical_phrases():
+    """Repeat/paraphrase messages must derive from their canonical_id phrase list."""
+    tasks = generate_workload(500, seed=99, repeat_band_pct=40, include_memory_tasks=True)
+    validate_workload_messages(tasks)
+    repeats = [t for t in tasks if t.variant in ("exact_repeat", "paraphrase")]
+    assert repeats, "need repeat variants to validate alignment"
+    for task in repeats:
+        assert task.canonical_id is not None
+        from benchmark.workload import message_matches_canonical
+
+        assert message_matches_canonical(task.message, task.canonical_id), (
+            f"{task.task_id} {task.variant} canonical={task.canonical_id!r} message={task.message!r}"
+        )
 
 
 def test_workload_sessions_group_repeats():

@@ -162,13 +162,15 @@ def test_container_d_cache_hit_prefills_facts_runs_pipeline():
         }
     )
     hops = [h.hop for h in result.get("hop_metrics") or []]
-    assert "intake" in hops
+    assert "intake" not in hops
+    assert "retrieve" not in hops
+    assert "safety" in hops
     assert "writer" in hops
     assert result.get("cache_hit") is True
     assert result.get("cache_facts") is True
     assert result.get("retrieved")
     assert result.get("response")
-    assert stub.usage.llm_calls > 0
+    assert 0 < stub.usage.llm_calls < 6
 
 
 def test_container_d_envelope_hops_and_bounded_handoff():

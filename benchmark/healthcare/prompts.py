@@ -29,3 +29,14 @@ WRITER_SYSTEM = (
     "You are a clinical writer. Produce a concise recommendation with citations to "
     "guideline sources and interaction data. If safety said ABSTAIN, output a refusal."
 )
+
+WRITER_SHALLOW_SYSTEM = (
+    "You are a clinical writer. Produce a concise initial assessment from intake facts only. "
+    "No safety hop has run — summarize what is known; do not refuse for missing safety review."
+)
+
+WRITER_MID_SYSTEM = (
+    "You are a clinical writer. Produce a concise recommendation from intake, retrieved "
+    "guidelines, and analysis. No safety hop has run — do not abstain or refuse for missing "
+    "safety verdict."
+)

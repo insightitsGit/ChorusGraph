@@ -3,10 +3,16 @@
 from __future__ import annotations
 
 import json
+import logging
+import os
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 from chorusgraph.core.channels import NodeUpdate
+
+logger = logging.getLogger(__name__)
+
+DEFAULT_PENDING_WRITES_ROOT = ".chorusgraph/checkpoints"
 
 
 class MidStepAbort(Exception):
@@ -87,11 +93,30 @@ class PendingWriteStore:
         return step_dir.is_dir() and any(step_dir.glob("*.json"))
 
 
-def pending_store_for_backend(backend: Any) -> Optional[PendingWriteStore]:
-    root = getattr(backend, "root", None)
-    if root is None:
-        return None
-    return PendingWriteStore(root)
+def pending_store_for_backend(
+    backend: Any,
+    *,
+    root: str | Path | None = None,
+) -> Optional[PendingWriteStore]:
+    """
+    File-backed pending writes for backends without native ``put_writes``.
+
+    JsonFile backends use their checkpoint root; Postgres uses
+    ``CHORUSGRAPH_PENDING_WRITES_ROOT`` or ``.chorusgraph/checkpoints``.
+    """
+    store_root = root or getattr(backend, "root", None) or getattr(backend, "_path", None)
+    if store_root is None:
+        cls_name = type(backend).__name__
+        if "Postgres" in cls_name:
+            store_root = os.environ.get("CHORUSGRAPH_PENDING_WRITES_ROOT", DEFAULT_PENDING_WRITES_ROOT)
+            logger.warning(
+                "%s.aput_writes is not implemented upstream — pending writes use file store at %s",
+                cls_name,
+                store_root,
+            )
+        else:
+            return None
+    return PendingWriteStore(store_root)
 
 
 __all__ = [

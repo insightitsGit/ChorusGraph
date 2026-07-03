@@ -19,6 +19,8 @@ from benchmark.healthcare.prompts import (
     INTAKE_SYSTEM,
     RETRIEVE_SYSTEM,
     SAFETY_SYSTEM,
+    WRITER_MID_SYSTEM,
+    WRITER_SHALLOW_SYSTEM,
     WRITER_SYSTEM,
 )
 from benchmark.healthcare.tools import check_drug_interactions, retrieve_guidelines
@@ -148,11 +150,25 @@ def _make_nodes(gemini: InstrumentedGeminiClient) -> Dict[str, Any]:
         if state.get("abstained"):
             response = "ABSTAIN: insufficient grounded evidence for a definitive recommendation."
         else:
-            response = gemini.generate(
-                WRITER_SYSTEM,
-                f"Analysis:\n{state.get('analysis')}\n\nGuidelines:\n{state.get('retrieved')}\n\n"
-                f"Interactions:\n{state.get('interactions')}",
-            )
+            case = state["case"]
+            depth = int(case.pipeline_depth)
+            if depth == 2:
+                response = gemini.generate(
+                    WRITER_SHALLOW_SYSTEM,
+                    f"Intake:\n{state.get('intake_summary')}\n",
+                )
+            elif depth == 4:
+                response = gemini.generate(
+                    WRITER_MID_SYSTEM,
+                    f"Intake:\n{state.get('intake_summary')}\n\n"
+                    f"Analysis:\n{state.get('analysis')}\n\nGuidelines:\n{state.get('retrieved')}\n",
+                )
+            else:
+                response = gemini.generate(
+                    WRITER_SYSTEM,
+                    f"Analysis:\n{state.get('analysis')}\n\nGuidelines:\n{state.get('retrieved')}\n\n"
+                    f"Interactions:\n{state.get('interactions')}\n\nSafety:\n{state.get('safety_verdict')}",
+                )
         return {"response": response, **_record_hop(state, "writer", started, gemini)}
 
     return {

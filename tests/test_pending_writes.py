@@ -8,8 +8,8 @@ from pathlib import Path
 from chorusgraph.core import END, Graph, START
 from chorusgraph.core.channels import NodeUpdate, publish_update
 from chorusgraph.core.node import NodeContext
-from chorusgraph.core.pending_writes import MidStepAbort, PendingWriteStore, node_update_from_dict, node_update_to_dict
-from chorusgraph.core.persistence import json_file_checkpointer
+from chorusgraph.core.pending_writes import MidStepAbort, PendingWriteStore, node_update_from_dict, node_update_to_dict, pending_store_for_backend
+from chorusgraph.core.persistence import EngineCheckpointer, json_file_checkpointer
 
 
 def test_pending_write_store_round_trip():
@@ -149,3 +149,35 @@ def test_clean_run_matches_resume_run():
 
         for key in ("a", "b", "c", "split"):
             assert clean_out.get(key) == resume_out.get(key)
+
+
+def test_postgres_checkpointer_uses_file_pending_writes(tmp_path):
+    """AsyncPostgresCheckpointer.aput_writes is NotImplemented — file store is authoritative."""
+
+    class _FakePostgresBackend:
+        def put_writes(self, config, writes, task_id):
+            pass
+
+        async def aput_writes(self, config, writes, task_id, task_path=""):
+            raise NotImplementedError
+
+    backend = _FakePostgresBackend()
+    store_root = tmp_path / "pg_pending"
+    cp = EngineCheckpointer(backend, _pending=pending_store_for_backend(backend, root=store_root))
+    config = {"configurable": {"thread_id": "pg-thread"}}
+    update = publish_update(
+        hop="n1",
+        artifact={"k": "v"},
+        vector=[0.0] * 64,
+        category_slug="general",
+        rule_chain=["n1"],
+        turn_id=0,
+    )
+    cp.put_writes(config, 1, "n1", update)
+    pending = cp.get_pending_writes(config, 1)
+    assert "n1" in pending
+
+    import asyncio
+
+    asyncio.run(cp.aput_writes(config, 1, "n1", update))
+    assert cp.get_pending_writes(config, 1)["n1"].artifacts == update.artifacts

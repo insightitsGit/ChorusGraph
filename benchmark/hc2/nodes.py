@@ -23,10 +23,15 @@ from benchmark.hc2.cache_helpers import (
     cache_fingerprint_key,
     cache_query_key,
     cache_seed_phrases,
+    first_judgment_hop_after_cache,
     gate_clinical,
     seed_healthcare_cache,
 )
-from benchmark.healthcare.prompts import WRITER_SYSTEM as HL2_WRITER_SYSTEM
+from benchmark.healthcare.prompts import (
+    WRITER_MID_SYSTEM as HL2_WRITER_MID_SYSTEM,
+    WRITER_SHALLOW_SYSTEM as HL2_WRITER_SHALLOW_SYSTEM,
+    WRITER_SYSTEM as HL2_WRITER_SYSTEM,
+)
 from benchmark.hc2.prompts import (
     ANALYZE_D_SYSTEM,
     DRUG_D_SYSTEM,
@@ -34,6 +39,8 @@ from benchmark.hc2.prompts import (
     RETRIEVE_D_SYSTEM,
     SAFETY_D_SYSTEM,
     WRITER_D_SYSTEM,
+    WRITER_MID_D_SYSTEM,
+    WRITER_SHALLOW_D_SYSTEM,
 )
 from benchmark.hc2.state import HealthcareVectorState
 from benchmark.hc2.trace import trace_event
@@ -72,20 +79,28 @@ def _hop_trace(
     )
 
 
-def route_after_cache_hc2(state: HealthcareVectorState, *, first_agent: str) -> str:
-    """H21: cache hit restores facts only — always run pipeline (never skip to writer)."""
+def route_after_cache_hc2(state: HealthcareVectorState, *, agents: List[str]) -> str:
+    """
+    Facts cache hit → skip to first judgment hop for pipeline depth (not writer replay).
+
+    Miss → cold path from first agent (intake).
+    """
     case_id, session_id = _trace_ids(state)
+    if state.get("cache_hit") and state.get("cache_facts"):
+        route = first_judgment_hop_after_cache(state, agents)
+    else:
+        route = agents[0]
     trace_event(
         "route_after_cache",
         case_id=case_id,
         session_id=session_id,
-        route=first_agent,
+        route=route,
         cache_hit=state.get("cache_hit"),
         cache_decision=state.get("cache_decision"),
         has_retrieved=bool(state.get("retrieved")),
         cache_facts=bool(state.get("cache_facts")),
     )
-    return first_agent
+    return route
 
 
 def _envelope_update(
@@ -262,35 +277,80 @@ def make_hc2_nodes(gemini: InstrumentedGeminiClient, runtime: FinanceRuntime) ->
         retrieved = list(state.get("retrieved") or [])
         interactions = list(state.get("interactions") or [])
 
-        if depth < 6:
+        if depth == 2:
+            intake = state.get("intake_summary") or hop_artifacts.get("intake") or {}
+            user = f"Intake:\n{intake}\n"
+            system = WRITER_SHALLOW_D_SYSTEM
+            mode = "depth2_intake"
+        elif depth == 4:
+            user = (
+                f"Intake:\n{hop_artifacts.get('intake', {})}\n\n"
+                f"Analysis:\n{state.get('analysis') or hop_artifacts.get('analyze', {})}\n\n"
+                f"Guidelines:\n{retrieved}\n"
+            )
+            system = WRITER_MID_D_SYSTEM
+            mode = "depth4_mid"
+        elif depth < 6:
             user = (
                 f"Analysis:\n{state.get('analysis') or hop_artifacts.get('analyze', {})}\n\n"
                 f"Guidelines:\n{retrieved}\n\nInteractions:\n{interactions}\n"
             )
-            trace_event(
-                "writer_prompt",
-                case_id=case_id,
-                session_id=session_id,
-                hop="writer",
-                mode="hl2_style",
-                depth=depth,
-            )
-            response = gemini.generate(HL2_WRITER_SYSTEM, user)
+            system = HL2_WRITER_MID_SYSTEM
+            mode = "hl2_style"
         else:
             user = writer_handoff_plain(
                 hop_artifacts=hop_artifacts,
                 retrieved=retrieved,
                 abstained=abstained,
             )
+            system = WRITER_D_SYSTEM
+            mode = "cache_hit_plain" if cache_hit else "plain_handoff"
             trace_event(
                 "writer_prompt",
                 case_id=case_id,
                 session_id=session_id,
                 hop="writer",
-                mode="cache_hit_plain" if cache_hit else "plain_handoff",
+                mode=mode,
                 depth=depth,
             )
-            response = gemini.generate(WRITER_D_SYSTEM, user)
+            response = gemini.generate(system, user)
+            if runtime.cache is not None:
+                fp = cache_fingerprint_key(state, case)
+                seed_healthcare_cache(
+                    runtime,
+                    cache_query_key(case),
+                    build_cache_payload(state, response=response),
+                    extra_queries=cache_seed_phrases(case),
+                    pipeline_depth=case.pipeline_depth,
+                    session_id=session_id,
+                    fingerprint_key=fp,
+                    trace_fn=lambda event, **kw: trace_event(event, case_id=case_id, session_id=session_id, **kw),
+                )
+
+            artifact = {"response": response[:500], "from_cache": False}
+            out = {
+                "response": response,
+                **_envelope_update(
+                    runtime,
+                    "writer",
+                    artifact,
+                    state=state,
+                    skip_embed=False,
+                ),
+                **_record_hop(state, "writer", started, gemini),
+            }
+            _hop_trace(state, "writer", started, gemini, response_len=len(response))
+            return out
+
+        trace_event(
+            "writer_prompt",
+            case_id=case_id,
+            session_id=session_id,
+            hop="writer",
+            mode=mode,
+            depth=depth,
+        )
+        response = gemini.generate(system, user)
 
         if runtime.cache is not None:
             fp = cache_fingerprint_key(state, case)

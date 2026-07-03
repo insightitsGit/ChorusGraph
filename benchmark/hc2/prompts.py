@@ -32,3 +32,13 @@ WRITER_D_SYSTEM = (
     "Clinical writer. Use upstream safety verdict + hop_input facts, cited_ids, drug_summary. "
     "Produce a concise cited recommendation. If upstream.verdict is ABSTAIN, refuse briefly."
 )
+
+WRITER_SHALLOW_D_SYSTEM = (
+    "Clinical writer. Use hop_input intake facts only. "
+    "Produce a concise initial assessment — no safety hop has run; do not refuse."
+)
+
+WRITER_MID_D_SYSTEM = (
+    "Clinical writer. Use upstream intake + retrieve + analyze artifacts. "
+    "Produce a concise cited recommendation — no safety hop has run; do not abstain."
+)

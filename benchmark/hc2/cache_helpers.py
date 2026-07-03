@@ -123,6 +123,24 @@ def cached_response_from_state(state: Dict[str, Any]) -> Optional[str]:
     return None
 
 
+def first_judgment_hop_after_cache(state: Dict[str, Any], agents: List[str]) -> str:
+    """
+    After a facts cache hit, skip retrieval hops and enter at the first judgment hop.
+
+    CACHE_PROFILES archetype C: cache mid-pipeline facts; analyze/safety/writer stay fresh.
+    Depth 6 always runs safety (never writer-only skip that caused pre-H21 failures).
+    """
+    case = state.get("case")
+    depth = int(getattr(case, "pipeline_depth", 0) or 0)
+    if depth >= 6 and "safety" in agents:
+        return "safety"
+    if depth >= 4 and "analyze" in agents:
+        return "analyze"
+    if "writer" in agents:
+        return "writer"
+    return agents[0]
+
+
 def apply_cache_payload(update: Dict[str, Any], payload: Dict[str, Any]) -> Dict[str, Any]:
     """Merge cached clinical facts — never replay writer response."""
     if not isinstance(payload, dict):
@@ -148,6 +166,7 @@ __all__ = [
     "cache_query_key",
     "cache_seed_phrases",
     "cached_response_from_state",
+    "first_judgment_hop_after_cache",
     "gate_clinical",
     "seed_healthcare_cache",
 ]

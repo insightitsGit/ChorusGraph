@@ -129,11 +129,11 @@ def build_healthcare_graph_hc2(
 
     graph.add_edge(START, "vector_ingress")
     graph.add_edge("vector_ingress", "cache_gate")
-    first_agent = agents[0]
+    cache_routes = {name: name for name in agents}
     graph.add_conditional_edges(
         "cache_gate",
-        lambda state: route_after_cache_hc2(state, first_agent=first_agent),
-        {first_agent: first_agent},
+        lambda state, _agents=agents: route_after_cache_hc2(state, agents=_agents),
+        cache_routes,
     )
     for i in range(len(agents) - 1):
         graph.add_edge(agents[i], agents[i + 1])

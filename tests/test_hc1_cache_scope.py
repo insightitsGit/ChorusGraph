@@ -9,7 +9,7 @@ import pytest
 
 from benchmark.healthcare.fingerprint import clinical_fingerprint
 from benchmark.healthcare_workload import HealthcareCase, generate_healthcare_workload
-from benchmark.hc1.runner import HC1Runner
+from benchmark.hc1.runner import HC1Runner, build_healthcare_graph_hc1
 from benchmark.shared.healthcare_cache import gate_clinical, seed_clinical_cache_entry
 from benchmark.shared.instrumented_gemini import LlmUsage
 from chorusgraph.sections.profiles import default_registry
@@ -56,7 +56,15 @@ class _HC1OfflineGemini:
 def _make_runner(monkeypatch) -> HC1Runner:
     HC1Runner._shared_runtime = None
     monkeypatch.setattr("benchmark.hc1.runner.InstrumentedGeminiClient", _HC1OfflineGemini)
-    return HC1Runner()
+    runner = HC1Runner()
+    compiled, _, _ = build_healthcare_graph_hc1(
+        runtime=runner._runtime,
+        gemini=runner._gemini,
+        coarse_threshold=runner._thresholds.coarse,
+        verify_threshold=runner._thresholds.verify_for("clinical_judgment"),
+    )
+    assert compiled is not None, "must exercise real build_healthcare_graph_hc1 graph"
+    return runner
 
 
 def test_hc1_two_pass_repeat_hit_rate_and_reduced_llm(monkeypatch):
