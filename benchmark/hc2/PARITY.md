@@ -17,7 +17,7 @@ HC2 wins on latency/cost but **loses on success** — mostly because of how cach
 
 | Mechanism | Where | HC2? | Improves success? |
 |-----------|-------|------|-------------------|
-| **Resonance bus routing** (`bus.subscribers_for_slug` → `route_via=resonance`) | `chorusgraph/core/ir.py` | **No** — HC2 uses **LangGraph** `StateGraph`, linear edges | Only in native `core.Graph` (HC1) |
+| **Resonance bus routing** (`bus.subscribers_for_slug` → `route_via=resonance`) | `chorusgraph/core/ir.py` | **No** — HC2 uses native `core.Graph`, linear edges | Only when Resonance routing is wired |
 | **Cache semantic match** (`cache._resonance.query`) | `chorusgraph/cache_gate/` | Yes — finds similar cached payloads | **Latency only**; can **hurt** success on bad replay |
 | **resonance_rerank** | `chorusgraph/nodes/retrieve.py` | Not wired in healthcare | N/A |
 | **Envelope projector** | HC2 `_envelope_update` | Yes — 64-d vectors for handoffs | Structure/logging, not routing |
@@ -70,4 +70,4 @@ HC2 uses `INTAKE_D_SYSTEM` … `WRITER_D_SYSTEM` with `parse_json_object`. Malfo
 
 ## Fair comparison note
 
-HC2 is **not** a pure ChorusGraph native scenario today — it still uses LangGraph `StateGraph` (same as FC2). Success comparison to HL2 should treat cache + D-prompts as the intentional delta, not engine scheduling.
+HC2 is a **native ChorusGraph** scenario (`chorusgraph.core.Graph` + envelope handoffs). Success comparison to HL2 should treat cache + D-prompts as the intentional delta, not engine scheduling.

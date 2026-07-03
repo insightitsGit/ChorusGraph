@@ -19,6 +19,7 @@ from benchmark.healthcare_workload import HealthcareCase, generate_healthcare_wo
 from benchmark.measure import TaskMeasurement
 from benchmark.multiagent_measure import MultiAgentMeasurement
 from benchmark.scenarios import ScenarioId, make_runner
+from benchmark.wiring import BenchmarkWiringError, verify_benchmark_wiring
 from benchmark.workload import WorkloadTask, generate_workload
 
 FINANCE_SINGLE = ("FL1", "FC1")
@@ -179,6 +180,13 @@ def main(argv: Optional[List[str]] = None) -> None:
     print(f"Running scenarios: {selected} ({args.tasks} tasks each, seed={args.seed})")
     configure(cache_enabled=not args.no_cache)
     install_benchmark_cache_policy()
+    try:
+        wiring_ok = verify_benchmark_wiring()
+        for line in wiring_ok:
+            print(f"  wiring OK: {line}")
+    except BenchmarkWiringError as exc:
+        print(f"Benchmark wiring check failed: {exc}", file=sys.stderr)
+        raise SystemExit(3)
     if args.no_cache:
         print("Cache: DISABLED (honest cold-path — expect 0% cache hits on C scenarios)")
 

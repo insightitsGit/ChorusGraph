@@ -5,8 +5,6 @@ from __future__ import annotations
 import time
 from typing import Any, Dict, List, Optional
 
-from langgraph.graph import END, START, StateGraph
-
 from benchmark.hl2.runner import _record_hop
 from benchmark.hc2.cache_helpers import (
     apply_cache_payload,
@@ -18,14 +16,19 @@ from benchmark.hc2.nodes import make_hc2_nodes, route_after_cache_hc2
 from benchmark.hc2.runtime import make_healthcare_envelope_runtime
 from benchmark.hc2.trace import clear_trace, trace_event, trace_path
 from benchmark.healthcare_workload import PIPELINE_AGENTS, HealthcareCase
-from benchmark.multiagent_measure import MultiAgentMeasurement, score_healthcare_answer, totals_from_hops
+from benchmark.multiagent_measure import MultiAgentMeasurement, hop_names, score_healthcare_answer, totals_from_hops
 from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient
 from benchmark.thresholds import measured_thresholds
+from chorusgraph.core import END, Graph, START
+from chorusgraph.core.node import dict_node_adapter
 from chorusgraph.examples.finance_agent.nodes import make_vector_ingress_handler
 from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
 from chorusgraph.transforms.projector import raw_from_state, vector_64_from_state
 
 from benchmark.hc2.state import HealthcareVectorState
+
+HC2_GRAPH_ID = "healthcare-hc2"
+HC2_TENANT_ID = "benchmark-healthcare-hc2"
 
 
 def _make_healthcare_cache_gate_handler(
@@ -82,7 +85,7 @@ def build_healthcare_graph_hc2(
         verify_threshold=thresholds.verify_for("clinical_guidelines"),
     )
 
-    graph = StateGraph(HealthcareVectorState)
+    graph = Graph(tenant_id=HC2_TENANT_ID, graph_id=HC2_GRAPH_ID)
 
     def vector_ingress_node(state: HealthcareVectorState) -> Dict[str, Any]:
         started = time.perf_counter()
@@ -114,18 +117,13 @@ def build_healthcare_graph_hc2(
         )
         return out
 
-    graph.add_node("vector_ingress", vector_ingress_node)
-    graph.add_node("cache_gate", cache_gate_node)
+    graph.add_node(
+        "vector_ingress",
+        dict_node_adapter(vector_ingress_node, hop="vector_ingress"),
+    )
+    graph.add_node("cache_gate", dict_node_adapter(cache_gate_node, hop="cache_gate"))
     for name in agents:
-        fn = nodes[name]
-        if name == "writer":
-
-            def writer_entry(state: HealthcareVectorState, _fn=fn) -> Dict[str, Any]:
-                return _fn(state)
-
-            graph.add_node(name, writer_entry)
-        else:
-            graph.add_node(name, fn)
+        graph.add_node(name, dict_node_adapter(nodes[name], hop=name))
 
     graph.add_edge(START, "vector_ingress")
     graph.add_edge("vector_ingress", "cache_gate")
@@ -220,7 +218,7 @@ class HC2Runner:
                 llm_calls=llm_calls,
                 tokens_in=tokens_in,
                 task_success=success,
-                hops=[h.hop for h in hop_metrics],
+                hops=hop_names(hop_metrics),
                 embed_count=embed_count,
             )
             return MultiAgentMeasurement(

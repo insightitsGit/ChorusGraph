@@ -9,6 +9,7 @@ from benchmark.fc2.nodes import build_finance_graph_fc2, route_after_cache_fc2
 from benchmark.fc2.runner import FC2Runner
 from benchmark.fc2.trace import clear_trace, trace_path
 from benchmark.finance_multiagent_shared import heuristic_tool_plan
+from benchmark.multiagent_measure import hop_names
 from benchmark.workload import WorkloadTask, generate_workload
 
 
@@ -75,7 +76,7 @@ def test_container_e_graph_runs_fx_task():
             "hop_metrics": [],
         }
     )
-    hops = [h.hop for h in result.get("hop_metrics") or []]
+    hops = hop_names(result.get("hop_metrics") or [])
     assert hops == ["researcher", "tool", "writer", "validator"]
     assert int(len(result.get("tool_calls") or [])) >= 1
     assert result.get("response")
@@ -136,7 +137,7 @@ def test_container_f_graph_cache_hit_path_offline():
             "cache_seed_phrases": [],
         }
     )
-    hops = [h.hop for h in result.get("hop_metrics") or []]
+    hops = hop_names(result.get("hop_metrics") or [])
     assert "researcher" not in hops
     assert "tool" not in hops
     assert hops == ["vector_ingress", "cache_gate", "writer", "validator"]

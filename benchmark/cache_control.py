@@ -61,9 +61,12 @@ def install_benchmark_cache_policy() -> None:
 
     if not cache_benchmark_enabled():
         try:
+            from benchmark.hc1.runner import HC1Runner
             from benchmark.hc2 import runner as hc2_runner
 
+            HC1Runner._shared_runtime = None
             hc2_runner.HC2Runner._shared_runtime = None
+            hc2_runner.HC2Runner._graphs = {}  # type: ignore[attr-defined]
         except ImportError:
             pass
 

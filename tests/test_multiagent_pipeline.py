@@ -7,6 +7,7 @@ from unittest.mock import patch
 from benchmark.hl2.runner import HL2Runner, build_healthcare_graph_hl2
 from benchmark.healthcare.tools import check_drug_interactions, retrieve_guidelines
 from benchmark.healthcare_workload import HealthcareCase, PIPELINE_AGENTS
+from benchmark.multiagent_measure import hop_names
 from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient
 
 
@@ -81,7 +82,7 @@ def test_container_c_depth6_calls_tools_and_hands_off():
 
     assert result.get("response")
     assert int(result.get("tool_calls") or 0) >= 2
-    hops = [h.hop for h in result.get("hop_metrics") or []]
+    hops = hop_names(result.get("hop_metrics") or [])
     assert hops == ["intake", "retrieve", "analyze", "drug_check", "safety", "writer"]
     assert result.get("retrieved")
     assert result.get("interactions") is not None
@@ -161,7 +162,7 @@ def test_container_d_cache_hit_prefills_facts_runs_pipeline():
             "cache_seed_phrases": [],
         }
     )
-    hops = [h.hop for h in result.get("hop_metrics") or []]
+    hops = hop_names(result.get("hop_metrics") or [])
     assert "intake" not in hops
     assert "retrieve" not in hops
     assert "safety" in hops
@@ -200,7 +201,7 @@ def test_container_d_envelope_hops_and_bounded_handoff():
             "cache_seed_phrases": [],
         }
     )
-    hops = [h.hop for h in result.get("hop_metrics") or []]
+    hops = hop_names(result.get("hop_metrics") or [])
     assert "intake" in hops
     assert "retrieve" in hops
     assert result.get("hop_artifacts", {}).get("intake")

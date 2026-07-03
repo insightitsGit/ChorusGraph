@@ -1,15 +1,15 @@
-"""Finance agent graphs for execution patterns."""
+"""Finance agent graphs for execution patterns — native ChorusGraph engine (FC1)."""
 
 from __future__ import annotations
 
-import operator
-from typing import Annotated, Any, Dict, List, Optional, TypedDict
+from typing import Any, Dict, List, Optional, TypedDict
 
-from langgraph.checkpoint.base import BaseCheckpointSaver
-from langgraph.graph import END, START, StateGraph
 from prismlang import PrismEnvelope
 
 from chorusgraph.agents.policy import PlanPolicy
+from chorusgraph.core import END, Graph, START
+from chorusgraph.core.node import dict_node_adapter
+from chorusgraph.core.persistence import EngineCheckpointer
 from chorusgraph.examples.finance_agent.nodes import (
     make_cache_gate_handler,
     make_compound_tool_handler,
@@ -58,41 +58,67 @@ class PatternState(TypedDict, total=False):
     memory_vector_64: Optional[List[float]]
     memory_subgraph_hash: Optional[str]
     memory_evidence: Optional[List[Dict[str, Any]]]
-    rule_chain: Annotated[List[str], operator.add]
-    prism_sequence: Annotated[List[PrismEnvelope], operator.add]
+    rule_chain: List[str]
+    prism_sequence: List[PrismEnvelope]
 
 
 def _add_common_nodes(
-    graph: StateGraph,
+    graph: Graph,
     runtime: FinanceRuntime,
     *,
     coarse_threshold: float = 0.82,
     verify_threshold: float = 0.85,
 ) -> None:
-    graph.add_node("vector_ingress", make_vector_ingress_handler(runtime))
+    graph.add_node(
+        "vector_ingress",
+        dict_node_adapter(make_vector_ingress_handler(runtime), hop="vector_ingress"),
+    )
     graph.add_node(
         "cache_gate",
-        make_cache_gate_handler(runtime, coarse_threshold=coarse_threshold, verify_threshold=verify_threshold),
+        dict_node_adapter(
+            make_cache_gate_handler(
+                runtime,
+                coarse_threshold=coarse_threshold,
+                verify_threshold=verify_threshold,
+            ),
+            hop="cache_gate",
+        ),
     )
-    graph.add_node("writer", make_pattern_writer_handler(runtime))
+    graph.add_node(
+        "writer",
+        dict_node_adapter(make_pattern_writer_handler(runtime), hop="writer"),
+    )
     graph.add_edge("vector_ingress", "cache_gate")
+
 
 def build_react_graph(
     runtime: Optional[FinanceRuntime] = None,
     *,
-    checkpointer: Optional[BaseCheckpointSaver] = None,
+    checkpointer: Optional[EngineCheckpointer] = None,
     policy: Optional[PlanPolicy] = None,
     coarse_threshold: float = 0.82,
     verify_threshold: float = 0.85,
 ):
     runtime = runtime or FinanceRuntime()
-    graph = StateGraph(PatternState)
+    graph = Graph(tenant_id=TENANT_ID, graph_id=GRAPH_ID)
     _add_common_nodes(
         graph, runtime, coarse_threshold=coarse_threshold, verify_threshold=verify_threshold,
     )
-    graph.add_node("react_agent", make_react_agent_handler(runtime, policy=policy))
-    graph.add_node("compound_tool", make_compound_tool_handler(runtime))
-    graph.add_node("validator", make_reflection_validator_handler(runtime, policy=PlanPolicy(max_reflection_passes=1)))
+    graph.add_node(
+        "react_agent",
+        dict_node_adapter(make_react_agent_handler(runtime, policy=policy), hop="react_agent"),
+    )
+    graph.add_node(
+        "compound_tool",
+        dict_node_adapter(make_compound_tool_handler(runtime), hop="compound_tool"),
+    )
+    graph.add_node(
+        "validator",
+        dict_node_adapter(
+            make_reflection_validator_handler(runtime, policy=PlanPolicy(max_reflection_passes=1)),
+            hop="validator",
+        ),
+    )
 
     graph.add_edge(START, "vector_ingress")
     graph.add_conditional_edges(
@@ -110,14 +136,20 @@ def build_react_graph(
 def build_reflection_graph(
     runtime: Optional[FinanceRuntime] = None,
     *,
-    checkpointer: Optional[BaseCheckpointSaver] = None,
+    checkpointer: Optional[EngineCheckpointer] = None,
     policy: Optional[PlanPolicy] = None,
 ):
     runtime = runtime or FinanceRuntime()
-    graph = StateGraph(PatternState)
+    graph = Graph(tenant_id=TENANT_ID, graph_id=GRAPH_ID)
     _add_common_nodes(graph, runtime)
-    graph.add_node("plan_solve", make_plan_solve_handler(runtime, policy=PlanPolicy(max_steps=2)))
-    graph.add_node("validator", make_reflection_validator_handler(runtime, policy=policy))
+    graph.add_node(
+        "plan_solve",
+        dict_node_adapter(make_plan_solve_handler(runtime, policy=PlanPolicy(max_steps=2)), hop="plan_solve"),
+    )
+    graph.add_node(
+        "validator",
+        dict_node_adapter(make_reflection_validator_handler(runtime, policy=policy), hop="validator"),
+    )
 
     graph.add_edge(START, "vector_ingress")
     graph.add_edge("cache_gate", "plan_solve")
@@ -130,14 +162,23 @@ def build_reflection_graph(
 def build_plan_solve_graph(
     runtime: Optional[FinanceRuntime] = None,
     *,
-    checkpointer: Optional[BaseCheckpointSaver] = None,
+    checkpointer: Optional[EngineCheckpointer] = None,
     policy: Optional[PlanPolicy] = None,
 ):
     runtime = runtime or FinanceRuntime()
-    graph = StateGraph(PatternState)
+    graph = Graph(tenant_id=TENANT_ID, graph_id=GRAPH_ID)
     _add_common_nodes(graph, runtime)
-    graph.add_node("plan_solve", make_plan_solve_handler(runtime, policy=policy))
-    graph.add_node("validator", make_reflection_validator_handler(runtime, policy=PlanPolicy(max_reflection_passes=1)))
+    graph.add_node(
+        "plan_solve",
+        dict_node_adapter(make_plan_solve_handler(runtime, policy=policy), hop="plan_solve"),
+    )
+    graph.add_node(
+        "validator",
+        dict_node_adapter(
+            make_reflection_validator_handler(runtime, policy=PlanPolicy(max_reflection_passes=1)),
+            hop="validator",
+        ),
+    )
 
     graph.add_edge(START, "vector_ingress")
     graph.add_edge("cache_gate", "plan_solve")

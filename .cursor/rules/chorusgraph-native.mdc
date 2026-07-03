@@ -1,0 +1,26 @@
+---
+description: ChorusGraph means native engine only — never LangGraph on FC/HC paths
+alwaysApply: true
+---
+
+# ChorusGraph = native product (no LangGraph)
+
+Read `docs/TERMINOLOGY.md` before changing orchestration, benchmarks, or examples.
+
+## When the user or docs say "ChorusGraph"
+
+They mean the **complete native product**: `chorusgraph.core.Graph`, channel/envelope state, scheduler, cache gate, ledger, checkpoints, and the Prism stack — **not** LangGraph.
+
+## Hard rules
+
+1. **Never** add `langgraph` imports under `benchmark/fc*`, `benchmark/hc*`, or FC1 graph builders (`patterns_graph.py`).
+2. **Never** implement new ChorusGraph features on `StateGraph` — use `chorusgraph.core.Graph` and `NodeContext` / `dict_node_adapter` for legacy dict nodes.
+3. **LangGraph is only for baselines** `benchmark/fl*`, `benchmark/hl*` and legacy `wrap()` migration.
+4. FC* / HC* scenarios must compile with native `Graph.compile()` — verified by `tests/test_fc_hc_no_langgraph.py`.
+
+## Benchmark prefixes
+
+- **C** (FC, HC) = ChorusGraph native
+- **L** (FL, HL) = LangGraph baseline
+
+If unsure, check `benchmark/SCENARIOS.md` and the decision tree in `docs/TERMINOLOGY.md`.

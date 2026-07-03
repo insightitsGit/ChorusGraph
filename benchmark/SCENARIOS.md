@@ -1,15 +1,17 @@
 # MVP Scenario Matrix
 
+> **Terminology:** **ChorusGraph** (FC*, HC*) = native `chorusgraph.core.Graph` + full Prism stack — **never LangGraph**. **LangGraph** (FL*, HL*) = baseline comparison only. Policy: [`docs/TERMINOLOGY.md`](../docs/TERMINOLOGY.md) · enforced by `tests/test_fc_hc_no_langgraph.py`.
+
 | ID | Domain | Mode | Framework | Path |
 |---|---|---|---|---|
-| **FL1** | Finance | Single-agent | LangGraph | `benchmark/fl1/` |
-| **FC1** | Finance | Single-agent | ChorusGraph | `benchmark/fc1/` |
-| **FL2** | Finance | Multi-agent | LangGraph | `benchmark/fl2/` |
-| **FC2** | Finance | Multi-agent | ChorusGraph | `benchmark/fc2/` |
-| **HL1** | Healthcare | Single-agent | LangGraph | `benchmark/hl1/` |
-| **HC1** | Healthcare | Single-agent | ChorusGraph | `benchmark/hc1/` |
-| **HL2** | Healthcare | Multi-agent | LangGraph | `benchmark/hl2/` |
-| **HC2** | Healthcare | Multi-agent | ChorusGraph | `benchmark/hc2/` |
+| **FL1** | Finance | Single-agent | LangGraph baseline | `benchmark/fl1/` |
+| **FC1** | Finance | Single-agent | **ChorusGraph native** | `benchmark/fc1/` |
+| **FL2** | Finance | Multi-agent | LangGraph baseline | `benchmark/fl2/` |
+| **FC2** | Finance | Multi-agent | **ChorusGraph native** | `benchmark/fc2/` |
+| **HL1** | Healthcare | Single-agent | LangGraph baseline | `benchmark/hl1/` |
+| **HC1** | Healthcare | Single-agent | **ChorusGraph native** | `benchmark/hc1/` |
+| **HL2** | Healthcare | Multi-agent | LangGraph baseline | `benchmark/hl2/` |
+| **HC2** | Healthcare | Multi-agent | **ChorusGraph native** | `benchmark/hc2/` |
 
 Legacy containers A–F were renamed to this matrix (old dirs removed).
 

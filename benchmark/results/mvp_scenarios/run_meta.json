@@ -1,0 +1,46 @@
+{
+  "timestamp": "2026-07-03T20:48:17.523994+00:00",
+  "scenarios": [
+    "HC2"
+  ],
+  "n_tasks": 1,
+  "seed": 42,
+  "repeat_band_pct": 40,
+  "cache_enabled": true,
+  "summary": {
+    "HC2": {
+      "n": 1,
+      "avg_latency_ms": 3764,
+      "avg_llm_calls": 2,
+      "avg_tokens_in": 116,
+      "task_success_rate": 0.0,
+      "abstain_rate": 0.0,
+      "cache_hit_rate": 0.0
+    }
+  },
+  "comparison": {
+    "groups": {},
+    "pairs": [
+      {
+        "langgraph": "FL1",
+        "chorusgraph": "FC1",
+        "group_key": "finance_single"
+      },
+      {
+        "langgraph": "FL2",
+        "chorusgraph": "FC2",
+        "group_key": "finance_multi"
+      },
+      {
+        "langgraph": "HL1",
+        "chorusgraph": "HC1",
+        "group_key": "healthcare_single"
+      },
+      {
+        "langgraph": "HL2",
+        "chorusgraph": "HC2",
+        "group_key": "healthcare_multi"
+      }
+    ]
+  }
+}

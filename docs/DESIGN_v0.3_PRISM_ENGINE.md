@@ -10,9 +10,11 @@
 
 **ChorusGraph is the orchestration runtime for the entire Prism family.**
 
-LangGraph is a migration shim only (benchmark baselines A/C/E, legacy hubs). The native engine
-(`chorusgraph/graph` + `chorusgraph/runtime`) schedules nodes; **every hop and every edge** is
-wired to a Prism primitive by policy — not ad-hoc JSON in a checkpointer.
+When documentation or conversation says **ChorusGraph**, it means the **native engine and full product stack** (`chorusgraph.core`), not LangGraph. See [`TERMINOLOGY.md`](TERMINOLOGY.md).
+
+**Composition:** attach the full Prism product via [`ChorusStack`](COMPOSE.md) — defaults wire cache, memory, checkpoint, ledger, and tools; individual backends (e.g. Redis cache) are swappable without changing the engine.
+
+LangGraph is a **comparison baseline only** (benchmark FL*, HL*) and a **legacy migration shim** (`wrap()`). It must not orchestrate FC*, HC*, or new product graphs.
 
 One tenant-seeded **64-d vector substrate** (PrismLang JL projection) connects:
 

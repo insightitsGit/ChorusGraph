@@ -7,7 +7,8 @@ import time
 from pathlib import Path
 from typing import Annotated, Any, Dict, List, Optional
 
-from langgraph.graph import END, START, StateGraph
+from chorusgraph.core import END, Graph, START
+from chorusgraph.core.node import dict_node_adapter
 from prismlang import PrismEnvelope
 
 from benchmark.fl2.prompts import RESEARCHER_SYSTEM
@@ -428,7 +429,7 @@ def build_finance_graph_fc2(
         verify_threshold=thresholds.verify_for("fx_rates"),
     )
 
-    graph = StateGraph(FinanceVectorState)
+    graph = Graph(tenant_id=TENANT_ID, graph_id="finance-fc2")
 
     def vector_ingress_node(state: FinanceVectorState) -> Dict[str, Any]:
         started = time.perf_counter()
@@ -482,10 +483,13 @@ def build_finance_graph_fc2(
         )
         return out
 
-    graph.add_node("vector_ingress", vector_ingress_node)
-    graph.add_node("cache_gate", cache_gate_node)
+    graph.add_node(
+        "vector_ingress",
+        dict_node_adapter(vector_ingress_node, hop="vector_ingress"),
+    )
+    graph.add_node("cache_gate", dict_node_adapter(cache_gate_node, hop="cache_gate"))
     for name in ("researcher", "tool", "writer", "validator"):
-        graph.add_node(name, nodes[name])
+        graph.add_node(name, dict_node_adapter(nodes[name], hop=name))
 
     graph.add_edge(START, "vector_ingress")
     graph.add_edge("vector_ingress", "cache_gate")

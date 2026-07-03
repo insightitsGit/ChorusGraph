@@ -5,6 +5,7 @@ __version__ = "0.11.0"
 from chorusgraph.adapter import RunnableWithLedger, wrap
 from chorusgraph.cache_gate import Decision, DecisionKind, SidecarStore, gate, seed_cache_entry
 from chorusgraph.checkpoint import PrismCheckpointer, create_checkpointer, sqlite_checkpointer
+from chorusgraph.compose import ChorusStack, RedisCacheBackend
 from chorusgraph.core import END, START, CompiledGraph, Graph, NodeContext, NodeFn
 from chorusgraph.transport import TransportMode, publish_hop
 from chorusgraph.ledger import (
@@ -25,6 +26,7 @@ __all__ = [
     "CachePolicy",
     "CompiledGraph",
     "CortexMemoryService",
+    "ChorusStack",
     "Decision",
     "DecisionKind",
     "END",
@@ -35,6 +37,7 @@ __all__ = [
     "LedgerStep",
     "TransportMode",
     "PrismCheckpointer",
+    "RedisCacheBackend",
     "RouteLedger",
     "RunnableWithLedger",
     "Section",

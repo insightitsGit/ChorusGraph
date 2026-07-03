@@ -78,6 +78,7 @@ class CompiledGraph:
     ledger_sink: Optional[LedgerSink] = None
     cache_interceptor: Optional[CacheInterceptor] = None
     transport: Optional[TransportRouter] = None
+    stack: Optional[Any] = None
     _native: bool = True
 
     last_ledger: Optional[Any] = None

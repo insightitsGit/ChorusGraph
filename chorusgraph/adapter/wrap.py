@@ -145,6 +145,12 @@ class RunnableWithLedger:
         if getattr(self._graph, "_native", False):
             result = self._graph.invoke(input, **kwargs)
             self.last_ledger = self._graph.last_ledger
+            if self.last_ledger and result.get("agent_trace"):
+                ts = datetime.now(timezone.utc)
+                for node_name in ("react_agent", "plan_solve", "validator"):
+                    if any(s.node == node_name for s in self.last_ledger.steps):
+                        _append_agent_trace_steps(self.last_ledger, node_name, result, timestamp=ts)
+                        break
             return result
         return self._run_legacy(input, kwargs, async_mode=False)
 

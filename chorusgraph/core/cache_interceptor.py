@@ -10,14 +10,13 @@ import numpy as np
 from chorusgraph.cache_gate.decision import Decision
 from chorusgraph.cache_gate.gate import gate
 from chorusgraph.cache_gate.scope import scope_id as make_scope_id
+from chorusgraph.compose.ports import CacheBackend, is_cache_backend
 from chorusgraph.core.channels import NodeUpdate, publish_update
 from chorusgraph.sections.models import CachePolicy, CacheProfile, Section
 from chorusgraph.sections.profiles import default_registry
 from chorusgraph.transforms.projector import raw_from_state, vector_64_from_state
 
 if TYPE_CHECKING:
-    from prism.cache import PrismCache
-
     from chorusgraph.cache_gate.sidecar import SidecarStore
 
 
@@ -25,12 +24,22 @@ if TYPE_CHECKING:
 class CacheRuntime:
     """Cache + sidecar bundle for node-entry gate evaluation."""
 
-    cache: "PrismCache"
+    cache: Any
     sidecar: "SidecarStore"
     coarse_threshold: float = 0.88
     verify_threshold: float = 0.95
     tenant_id: str = "default"
     registry: Any = field(default_factory=default_registry)
+    backend: Optional[CacheBackend] = None
+
+    def resolve_backend(self) -> CacheBackend:
+        if self.backend is not None:
+            return self.backend
+        if isinstance(self.cache, CacheBackend) or is_cache_backend(self.cache):
+            return self.cache
+        from chorusgraph.compose.adapters.prism_cache import PrismCacheBackend
+
+        return PrismCacheBackend(self.cache, self.sidecar)
 
 
 @dataclass
@@ -87,8 +96,7 @@ class CacheInterceptor:
         decision = gate(
             query,
             section,
-            self._runtime.cache,
-            self._runtime.sidecar,
+            self._runtime.resolve_backend(),
             coarse_threshold=self._runtime.coarse_threshold,
             verify_threshold=self._runtime.verify_threshold,
             profile=profile,

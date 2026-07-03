@@ -1,8 +1,10 @@
 # ChorusGraph
 
-**A LangGraph-compatible agent runtime with semantic cache, taxonomy RAG, auditable memory, and CHORUS-native transport built in — not bolted on.**
+**Native agent runtime with semantic cache, taxonomy RAG, auditable memory, and CHORUS transport — Prism-family orchestration without the integration tax.**
 
-Status: **Design phase.** No runtime code yet. See [`docs/DESIGN_v0.2.md`](docs/DESIGN_v0.2.md) for the ground-truthed product design.
+> **Terminology:** **ChorusGraph** = native engine (`chorusgraph.core`) + full product stack. **Not LangGraph.** See [`docs/TERMINOLOGY.md`](docs/TERMINOLOGY.md) and [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md).
+
+Status: **Active implementation.** Engine in `chorusgraph/core/`; benchmarks in `benchmark/`. Design history: [`docs/DESIGN_v0.2.md`](docs/DESIGN_v0.2.md), [`docs/DESIGN_v0.3_PRISM_ENGINE.md`](docs/DESIGN_v0.3_PRISM_ENGINE.md).
 
 ---
 
@@ -28,7 +30,7 @@ The Prism family is strong in the engine room and empty at the developer-facing 
 
 ## Guiding principles
 
-- **Adapter-first.** Run existing LangGraph `StateGraph`s with Prism checkpoint + cache before building a native engine. Prove value, then earn the engine.
+- **ChorusGraph is native.** Product and FC*/HC* benchmarks run on `chorusgraph.core.Graph`. LangGraph is for FL*/HL* baselines only ([`docs/TERMINOLOGY.md`](docs/TERMINOLOGY.md)).
 - **Safe cache before fast cache.** The skip-the-LLM decision uses a two-stage gate (coarse 64-d recall → full-precision verify); generative outputs are never replayed verbatim. See `DESIGN_v0.2.md` §8.
 - **Measure, don't assert.** Cost/latency targets are experiments (hit rate `h`, overhead `o`, per-slug false-positive budget), not marketing numbers.
 
@@ -38,4 +40,4 @@ Productizes integration already dogfooded in production in `InsightitsAIAgent/me
 
 ---
 
-*Insight IT Solutions · design only · no implementation committed.*
+*Insight IT Solutions · native runtime in `chorusgraph/core/` · see [`docs/TERMINOLOGY.md`](docs/TERMINOLOGY.md)*

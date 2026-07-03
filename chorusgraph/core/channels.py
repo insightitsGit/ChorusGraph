@@ -28,6 +28,7 @@ APPEND_LIST_SCALAR_KEYS: frozenset[str] = frozenset(
         "pipeline_trace",
         "tool_calls",
         "agent_trace",
+        "vector_hops",
     }
 )
 
@@ -158,38 +159,57 @@ class ChannelState:
             self.rule_chain = reducers["rule_chain"](self.rule_chain, update.rule_chain)
 
         for env in update.envelopes:
-            self.prism_sequence = reducers["prism_sequence"](self.prism_sequence, [env])
-            self.latest_envelope_id = env.get("envelope_id")
+            env_dict = env if isinstance(env, dict) else {
+                "envelope_id": getattr(env, "envelope_id", None),
+                "vector": list(getattr(env, "vector", []) or []),
+                "agent_id": getattr(env, "agent_id", None),
+                "category_slug": getattr(env, "category_slug", "general"),
+                "rule_chain": list(getattr(env, "rule_chain", []) or []),
+                "turn_id": getattr(env, "turn_id", 0),
+            }
+            self.prism_sequence = reducers["prism_sequence"](self.prism_sequence, [env_dict])
+            self.latest_envelope_id = env_dict.get("envelope_id")
 
         for env_id, artifact in update.artifacts.items():
             store_artifact(self._artifacts, env_id, artifact)
 
+        # Merge scalar/list fields from every artifact payload. dict_node_adapter may
+        # attach an extra prism_sequence envelope whose id is not the publish primary.
+        for artifact in update.artifacts.values():
+            for key, value in artifact.items():
+                if key in APPEND_LIST_SCALAR_KEYS and isinstance(value, list):
+                    existing = self._scalars.get(key)
+                    if isinstance(existing, list):
+                        self._scalars[key] = existing + value
+                    else:
+                        self._scalars[key] = list(value)
+                elif isinstance(value, dict):
+                    self._scalars[key] = dict(value)
+                elif isinstance(value, list):
+                    self._scalars[key] = list(value)
+                elif isinstance(value, (str, int, float, bool)) or value is None:
+                    self._scalars[key] = value
+
         primary = update.primary
         if primary:
-            env_id = primary.get("envelope_id")
-            if env_id and env_id in update.artifacts:
-                artifact = update.artifacts[env_id]
-                for key, value in artifact.items():
-                    if key in APPEND_LIST_SCALAR_KEYS and isinstance(value, list):
-                        existing = self._scalars.get(key)
-                        if isinstance(existing, list):
-                            self._scalars[key] = existing + value
-                        else:
-                            self._scalars[key] = list(value)
-                    elif isinstance(value, dict):
-                        self._scalars[key] = dict(value)
-                    elif isinstance(value, list):
-                        self._scalars[key] = list(value)
-                    elif isinstance(value, (str, int, float, bool)) or value is None:
-                        self._scalars[key] = value
+            if isinstance(primary, dict):
+                primary_dict = primary
+            else:
+                primary_dict = {
+                    "envelope_id": getattr(primary, "envelope_id", None),
+                    "vector": getattr(primary, "vector", None),
+                    "agent_id": getattr(primary, "agent_id", None),
+                }
 
+            vec = primary_dict.get("vector")
+            vector_dim = len(list(vec)) if vec is not None else 0
             self.vector_hops = reducers.get("vector_hops", operator.add)(
                 self.vector_hops,
                 [
                     {
-                        "hop": primary.get("agent_id"),
-                        "vector_dim": len(primary.get("vector") or []),
-                        "envelope_id": primary.get("envelope_id"),
+                        "hop": primary_dict.get("agent_id"),
+                        "vector_dim": vector_dim,
+                        "envelope_id": primary_dict.get("envelope_id"),
                     }
                 ],
             )

@@ -129,18 +129,41 @@ def dict_node_adapter(fn: Callable[[Dict[str, Any]], Dict[str, Any]], *, hop: st
     Prefer native ``NodeFn`` returning ``NodeUpdate`` for new graphs.
     """
 
+    def _envelope_item(raw: Any) -> Dict[str, Any]:
+        if isinstance(raw, dict):
+            return raw
+        if hasattr(raw, "__dataclass_fields__"):
+            from dataclasses import asdict
+
+            return asdict(raw)
+        return {
+            "envelope_id": getattr(raw, "envelope_id", None),
+            "vector": list(getattr(raw, "vector", []) or []),
+            "agent_id": getattr(raw, "agent_id", hop),
+            "category_slug": getattr(raw, "category_slug", "general"),
+            "rule_chain": list(getattr(raw, "rule_chain", []) or []),
+            "turn_id": getattr(raw, "turn_id", 0),
+        }
+
     def wrapped(ctx: NodeContext) -> NodeUpdate:
         result = fn(ctx.read())
         artifact = dict(result)
         raw = artifact.pop("prism_sequence", None)
         artifact.pop("rule_chain", None)
+        hop_metrics = artifact.get("hop_metrics")
+        if hop_metrics:
+            from dataclasses import asdict
+
+            artifact["hop_metrics"] = [
+                asdict(m) if hasattr(m, "__dataclass_fields__") else m for m in hop_metrics
+            ]
         update = ctx.publish(
             artifact=artifact,
             rule_chain=list(result.get("rule_chain") or []),
             category_slug=str(result.get("route") or result.get("category_slug") or hop),
         )
         if raw:
-            update.envelopes.extend(list(raw))
+            update.envelopes.extend(_envelope_item(env) for env in raw)
         return update
 
     return wrapped

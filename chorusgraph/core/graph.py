@@ -188,9 +188,38 @@ class Graph:
         ledger_sink: Optional[LedgerSink] = None,
         cache_runtime: Optional[CacheRuntime] = None,
         transport: Optional[TransportRouter] = None,
+        stack: Optional[Any] = None,
     ) -> CompiledGraph:
         if not self._entry:
             raise ValueError("Graph has no START edge — use add_edge(START, first_node)")
+
+        from chorusgraph.compose.stack import ChorusStack
+
+        product_stack: Optional[ChorusStack] = stack
+        if product_stack is None:
+            product_stack = ChorusStack.defaults(tenant_id=self._tenant_id)
+        elif product_stack.tenant_id != self._tenant_id:
+            product_stack = ChorusStack(
+                tenant_id=self._tenant_id,
+                cache=product_stack.cache,
+                sidecar=product_stack.sidecar,
+                memory=product_stack.memory,
+                checkpointer=product_stack.checkpointer,
+                ledger=product_stack.ledger,
+                tools=product_stack.tools,
+                coarse_threshold=product_stack.coarse_threshold,
+                verify_threshold=product_stack.verify_threshold,
+                enable_memory=product_stack.enable_memory,
+                cortex_cache_dir=product_stack.cortex_cache_dir,
+                checkpoint_root=product_stack.checkpoint_root,
+                ledger_path=product_stack.ledger_path,
+                sidecar_path=product_stack.sidecar_path,
+            )
+
+        checkpointer = checkpointer
+        ledger_sink = ledger_sink
+        if cache_runtime is None and self._node_cache:
+            cache_runtime = product_stack.to_cache_runtime()
 
         bus = ResonanceBus()
         for node_id, slug in self._node_categories.items():
@@ -225,6 +254,7 @@ class Graph:
             ledger_sink=ledger_sink,
             cache_interceptor=cache_interceptor,
             transport=transport or TransportRouter(tenant_id=self._tenant_id),
+            stack=product_stack,
         )
 
 

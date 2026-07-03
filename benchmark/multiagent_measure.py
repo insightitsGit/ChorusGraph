@@ -46,12 +46,27 @@ class MultiAgentMeasurement:
         return d
 
 
-def totals_from_hops(hop_metrics: List[HopMetric]) -> tuple[int, int, int]:
+def hop_names(hop_metrics: List[Any]) -> List[str]:
+    names: List[str] = []
+    for h in hop_metrics:
+        if isinstance(h, dict):
+            names.append(str(h.get("hop") or ""))
+        else:
+            names.append(str(getattr(h, "hop", "") or ""))
+    return names
+
+
+def totals_from_hops(hop_metrics: List[Any]) -> tuple[int, int, int]:
     """Sum llm_calls, tokens_in, tokens_out across all hops."""
+    def _val(h: Any, key: str) -> int:
+        if isinstance(h, dict):
+            return int(h.get(key) or 0)
+        return int(getattr(h, key, 0) or 0)
+
     return (
-        sum(h.llm_calls for h in hop_metrics),
-        sum(h.tokens_in for h in hop_metrics),
-        sum(h.tokens_out for h in hop_metrics),
+        sum(_val(h, "llm_calls") for h in hop_metrics),
+        sum(_val(h, "tokens_in") for h in hop_metrics),
+        sum(_val(h, "tokens_out") for h in hop_metrics),
     )
 
 

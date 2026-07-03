@@ -152,7 +152,7 @@ def recall_direct(
     return _entry_to_candidate(cache, meta, score=1.0)
 
 
-def seed_cache_entry(
+def _seed_prism_cache_entry(
     cache: PrismCache,
     sidecar: SidecarStore,
     *,
@@ -203,6 +203,49 @@ def seed_cache_entry(
         valid_until=valid_until,
     )
     return packet_id
+
+
+def seed_cache_entry(
+    cache: Any,
+    sidecar: "SidecarStore | None",
+    *,
+    query: str,
+    value: Any,
+    category_slug: str,
+    cache_policy: str,
+    profile: Optional[CacheProfile] = None,
+    scope_id: str = "global",
+    fingerprint_key: str = "",
+    now: Optional[float] = None,
+) -> str:
+    """Populate cache via ``CacheBackend`` (Prism default or external)."""
+    from chorusgraph.compose.ports import is_cache_backend
+
+    if is_cache_backend(cache):
+        return cache.seed(
+            query=query,
+            value=value,
+            category_slug=category_slug,
+            cache_policy=cache_policy,
+            profile=profile,
+            scope_id=scope_id,
+            fingerprint_key=fingerprint_key,
+            now=now,
+        )
+    if sidecar is None:
+        raise TypeError("sidecar is required when cache is a PrismCache instance")
+    return _seed_prism_cache_entry(
+        cache,
+        sidecar,
+        query=query,
+        value=value,
+        category_slug=category_slug,
+        cache_policy=cache_policy,
+        profile=profile,
+        scope_id=scope_id,
+        fingerprint_key=fingerprint_key,
+        now=now,
+    )
 
 
 __all__ = ["CacheCandidate", "recall", "recall_direct", "seed_cache_entry"]

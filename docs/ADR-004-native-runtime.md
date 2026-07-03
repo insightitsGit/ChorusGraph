@@ -1,20 +1,22 @@
 # ADR-004: Native Graph Runtime
 
-**Status:** Superseded by `chorusgraph/core/` (handoff H20, 2026-07-02)  
+**Status:** Accepted · implemented in `chorusgraph/core/` (handoff H20+, 2026-07-02)  
 **Supersedes:** DESIGN v0.2 §5 “adapter-first only” as the *sole* execution path  
 **Date:** 2026-07-02
+
+> **Terminology:** **ChorusGraph** = native engine below. LangGraph is **not** ChorusGraph — only for FL*/HL* baselines and legacy `wrap()`. See [`TERMINOLOGY.md`](TERMINOLOGY.md).
 
 > **Note:** The phase-1 packages `chorusgraph/graph/`, `chorusgraph/runtime/`, and
 > `chorusgraph/engine/` were removed in H20. Use `chorusgraph.core.Graph` — envelope channels,
 > Resonance bus routing, BSP scheduler, and native checkpointing. LangGraph remains available
-> via `wrap()` for migration benchmarks only.
+> via `wrap()` for migration benchmarks only (FL*, HL*).
 
 ## Context
 
-ChorusGraph was shipped as a LangGraph adapter (`wrap()` + Prism hooks). The product design
-(DESIGN v0.2 §4–§5) describes a full runtime — graph compiler, scheduler, built-in nodes — but
-deferred the native engine to Phase 5. Benchmark containers C/D/E/F still compile LangGraph
-`StateGraph` graphs, which makes Chorus look like “LangGraph + cache” instead of a replacement.
+ChorusGraph was initially shipped as a LangGraph adapter (`wrap()` + Prism hooks). The product
+design (DESIGN v0.2 §4–§5) describes a full runtime — graph compiler, scheduler, built-in nodes.
+Benchmark **ChorusGraph scenarios (FC*, HC*)** must compile native `Graph` graphs; LangGraph is
+reserved for **baseline scenarios (FL*, HL*)** only.
 
 ## Decision
 
@@ -55,11 +57,13 @@ Node contract: `(state: dict) -> dict` partial update. No LangGraph import requi
 ## Migration order
 
 1. ✅ Demo graph (`chorusgraph/examples/demo_graph.py`)
-2. Finance agent graphs (`graph.py`, `patterns_graph.py`)
-3. Benchmark Chorus containers (B, D, F)
+2. ✅ Finance agent graphs (`patterns_graph.py` — FC1 native; `graph.py` legacy demo only)
+3. ✅ Benchmark Chorus scenarios (FC1, FC2, HC1, HC2) — **no LangGraph**
 4. LangGraph import adapter (optional `Graph.from_langgraph()` — not yet built)
 
-Baselines A/C/E stay on LangGraph intentionally (fair comparison).
+Baselines FL1, FL2, HL1, HL2 stay on LangGraph intentionally (fair comparison).
+
+Enforcement: `tests/test_fc_hc_no_langgraph.py` + [`TERMINOLOGY.md`](TERMINOLOGY.md).
 
 ## Still missing (Phase 2+)
 
@@ -79,8 +83,9 @@ PrismAPI, Resonance, RAG, Cortex, Mesh).
 
 ## Consequences
 
-- New graphs should use `chorusgraph.graph.Graph`, not `langgraph.StateGraph`.
-- `pyproject.toml` keeps `langgraph` as optional dependency for baselines + checkpoint compat until Phase 2.
+- **ChorusGraph paths (FC*, HC*, product graphs)** use `chorusgraph.core.Graph` — never `langgraph.StateGraph`.
+- **LangGraph baselines (FL*, HL*)** use `StateGraph` for paired comparison only.
+- `pyproject.toml` keeps `langgraph` as optional dependency for baselines + checkpoint compat.
 - Route Ledger adapter works unchanged — native engine emits the same debug stream shape.
 
 ## Verification

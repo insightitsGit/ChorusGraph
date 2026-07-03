@@ -35,6 +35,6 @@ Re-run the 40-task benchmark to measure cache hit rate and latency vs HL1. On th
 | ReAct loop | ✓ | ✓ | ✓ | ✓ |
 | Same prompts | ✓ | ✓ | ✓ | ✓ |
 | Semantic cache | ✗ | ✓ | ✗ | ✓ |
-| Native engine | ✗ | patterns_graph* | ✗ | **core.Graph** |
+| Native engine | ✗ | **core.Graph** | ✗ | **core.Graph** |
 
-\*FC1 still uses `patterns_graph` (LangGraph shim) — migration to pure `core.Graph` is planned (P7).
+FC1 graph: `chorusgraph/examples/finance_agent/patterns_graph.py` (native, no LangGraph). See [`docs/TERMINOLOGY.md`](../../docs/TERMINOLOGY.md).

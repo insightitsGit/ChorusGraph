@@ -1,8 +1,10 @@
-# Container F — ChorusGraph finance multi-agent
+# FC2 — ChorusGraph finance multi-agent (native engine)
+
+**ChorusGraph native** — `chorusgraph.core.Graph` only (no LangGraph). Policy: [`docs/TERMINOLOGY.md`](../../docs/TERMINOLOGY.md).
 
 **Reference doc:** [`docs/FINANCE_MULTIAGENT_CHORUS.md`](../../docs/FINANCE_MULTIAGENT_CHORUS.md)
 
-Fair comparison pair: **E vs F** (same workload as A/B).
+Fair comparison pair: **FL2 vs FC2** (same workload).
 
 ## Quick topology
 

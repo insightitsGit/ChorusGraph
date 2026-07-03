@@ -14,6 +14,19 @@ from chorusgraph.ledger.sink import LedgerSink, SqliteLedgerSink
 logger = logging.getLogger("chorusgraph.route")
 
 
+def _stringify_rule_chain(chain: Optional[List[Any]]) -> List[str]:
+    out: List[str] = []
+    for item in chain or []:
+        if isinstance(item, str):
+            out.append(item)
+        elif isinstance(item, dict):
+            step = item.get("step")
+            out.append(str(step) if step else str(item))
+        else:
+            out.append(str(item))
+    return out
+
+
 @dataclass
 class RouteTracker:
     """
@@ -59,11 +72,12 @@ class RouteTracker:
         parent_run_id: Optional[str] = None,
         subgraph_node: Optional[str] = None,
     ) -> LedgerStep:
+        chain = _stringify_rule_chain(rule_chain)
         step = LedgerStep(
             node=node,
             edge_taken=edge_taken,
             route_via=route_via,
-            rule_chain=list(rule_chain or []),
+            rule_chain=chain,
             duration_ms=duration_ms,
             cache_hit=cache_hit,
             cache_score=cache_score,
@@ -82,7 +96,7 @@ class RouteTracker:
             "node": node,
             "edge_taken": edge_taken,
             "route_via": route_via,
-            "rule_chain": list(rule_chain or []),
+            "rule_chain": chain,
             "duration_ms": duration_ms,
             "cache_hit": cache_hit,
             "cache_score": cache_score,
@@ -98,7 +112,7 @@ class RouteTracker:
             node,
             edge_taken,
             duration_ms,
-            rule_chain,
+            chain,
             cache_hit,
         )
         return step
