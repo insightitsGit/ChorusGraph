@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+from benchmark.benchmark_flags import get_flags
 from chorusgraph.examples.finance_agent.gemini_client import GeminiClient
 
 # Gemini 2.5 Flash list pricing (USD per 1M tokens) — for cost_usd estimates only.
@@ -61,7 +62,7 @@ class InstrumentedGeminiClient:
         from google.genai import types
 
         prompt = self._inner._build_prompt(system, user, history)
-        cfg = types.GenerateContentConfig(temperature=0.2, max_output_tokens=1024)
+        cfg = types.GenerateContentConfig(temperature=get_flags().temperature, max_output_tokens=1024)
         response = self._client.models.generate_content(model=self.model, contents=prompt, config=cfg)
         prompt_t, out_t = _usage_from_response(response)
         self.usage.record(prompt_tokens=prompt_t, output_tokens=out_t)

@@ -158,6 +158,16 @@ def main(argv: Optional[List[str]] = None) -> None:
         help="Disable semantic cache on ChorusGraph scenarios (FC*/HC*) — 0%% hit rate, full LLM path",
     )
     parser.add_argument(
+        "--temperature",
+        type=float,
+        default=None,
+        help=(
+            "Gemini sampling temperature for both L and C scenarios (default: 0.2, production-like). "
+            "Pass 0.0 for deterministic pre/post comparisons — at 0.2, two runs of byte-identical code "
+            "were observed to disagree on 36/40 answer texts, which makes small deltas unreadable."
+        ),
+    )
+    parser.add_argument(
         "--compare",
         action="store_true",
         default=True,
@@ -209,7 +219,9 @@ def main(argv: Optional[List[str]] = None) -> None:
 
     print(f"Running scenarios: {selected} ({n_tasks} tasks each, seed={args.seed}, tier={tier or 'custom'})")
     print("  Framework: FL/HL = LangGraph baseline | FC/HC = ChorusGraph native + ChorusStack + CacheProfile")
-    configure(cache_enabled=not args.no_cache)
+    flags = configure(cache_enabled=not args.no_cache, temperature=args.temperature)
+    if args.temperature is not None:
+        print(f"  Temperature: {flags.temperature} (deterministic mode — applies to both L and C scenarios)")
     install_benchmark_cache_policy()
     try:
         wiring_ok = verify_benchmark_wiring()
@@ -240,6 +252,7 @@ def main(argv: Optional[List[str]] = None) -> None:
         "seed": args.seed,
         "repeat_band_pct": repeat_band,
         "cache_enabled": not args.no_cache,
+        "temperature": flags.temperature,
         "cache_profiles": _cache_profile_disclosure(),
         "summary": summary,
     }

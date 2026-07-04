@@ -59,3 +59,34 @@ def test_install_noop_when_cache_enabled():
     configure(cache_enabled=True)
     install_benchmark_cache_policy()
     assert cache_benchmark_enabled() is True
+
+
+def test_temperature_defaults_to_production_value():
+    from benchmark.benchmark_flags import get_flags
+
+    assert get_flags().temperature == 0.2
+
+
+def test_configure_temperature_reaches_gemini_call_config():
+    """Deterministic-comparison mode: --temperature 0.0 must reach the actual API call config,
+    not just the flags dataclass — this is the fix for HL2's 70%->60% no-code-change swing."""
+    configure(temperature=0.0)
+
+    from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient
+
+    client = InstrumentedGeminiClient.__new__(InstrumentedGeminiClient)
+    client.usage = __import__("benchmark.shared.instrumented_gemini", fromlist=["LlmUsage"]).LlmUsage()
+    inner = MagicMock()
+    inner._build_prompt.return_value = "prompt"
+    client._inner = inner
+    client._client = MagicMock()
+    client.model = "gemini-test"
+    response = MagicMock()
+    response.text = "ok"
+    response.usage_metadata = None
+    client._client.models.generate_content.return_value = response
+
+    client.generate("system", "user")
+
+    _, kwargs = client._client.models.generate_content.call_args
+    assert kwargs["config"].temperature == 0.0
