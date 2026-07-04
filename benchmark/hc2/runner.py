@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 
 from benchmark.hl2.runner import _record_hop
 from benchmark.healthcare.cache_gate import gate_healthcare_case
-from benchmark.hc2.cache_helpers import apply_cache_payload, cache_query_key
+from benchmark.hc2.cache_helpers import apply_cache_payload, cache_query_key, cache_seed_phrases
 from benchmark.hc2.nodes import make_hc2_nodes, route_after_cache_hc2
 from benchmark.hc2.runtime import make_healthcare_envelope_runtime
 from benchmark.hc2.trace import clear_trace, trace_event, trace_path
