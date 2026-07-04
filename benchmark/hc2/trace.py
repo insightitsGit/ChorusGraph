@@ -49,3 +49,34 @@ def trace_event(
 def clear_trace() -> None:
     if _TRACE_PATH.exists():
         _TRACE_PATH.unlink()
+
+
+def trace_core_route_ledger(
+    compiled: Any,
+    *,
+    case_id: str = "",
+    session_id: str = "",
+) -> None:
+    """Export RouteTracker steps from the core engine into the HC2 JSONL trace."""
+    tracker = getattr(compiled, "last_tracker", None)
+    if tracker is None:
+        return
+    steps = []
+    for step in getattr(getattr(tracker, "ledger", None), "steps", []) or []:
+        steps.append(
+            {
+                "node": step.node,
+                "edge_taken": step.edge_taken,
+                "duration_ms": step.duration_ms,
+                "cache_hit": step.cache_hit,
+                "cache_score": step.cache_score,
+            }
+        )
+    if steps:
+        trace_event(
+            "core_route_ledger",
+            case_id=case_id,
+            session_id=session_id,
+            run_id=getattr(tracker, "run_id", ""),
+            steps=steps,
+        )

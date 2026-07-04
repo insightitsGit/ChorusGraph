@@ -6,6 +6,7 @@ TIER="${BENCHMARK_TIER:-}"
 SEED="${BENCHMARK_SEED:-42}"
 BAND="${BENCHMARK_REPEAT_BAND:-40}"
 SCENARIOS="${BENCHMARK_SCENARIOS:-all}"
+TEMP="${BENCHMARK_TEMPERATURE:-}"
 OUT_DIR="${BENCHMARK_OUTPUT_DIR:-/results/mvp_scenarios}"
 RUN_ID="${BENCHMARK_RUN_ID:-$(date -u +%Y%m%d_%H%M%S)}"
 
@@ -23,14 +24,19 @@ echo "  scenarios: $SCENARIOS"
 echo "  tier:      ${TIER:-custom}"
 echo "  tasks:     $TASKS"
 echo "  seed:      $SEED"
-echo "  band:      $BAND"
+  echo "  band:      $BAND"
 NO_CACHE="${BENCHMARK_NO_CACHE:-0}"
 CACHE_ARGS=()
 if [[ "$NO_CACHE" == "1" || "$NO_CACHE" == "true" ]]; then
   CACHE_ARGS+=(--no-cache)
 fi
+TEMP_ARGS=()
+if [[ -n "$TEMP" ]]; then
+  TEMP_ARGS+=(--temperature "$TEMP")
+fi
 
 echo "  cache:     $([[ ${#CACHE_ARGS[@]} -gt 0 ]] && echo disabled || echo enabled)"
+echo "  temp:      ${TEMP:-default}"
 echo "=============================================="
 
 python -m benchmark.run_scenarios \
@@ -40,7 +46,8 @@ python -m benchmark.run_scenarios \
   --seed "$SEED" \
   --repeat-band "$BAND" \
   --output-dir "$OUT_DIR" \
-  "${CACHE_ARGS[@]}"
+  "${CACHE_ARGS[@]}" \
+  "${TEMP_ARGS[@]}"
 
 echo ""
 echo "=============================================="

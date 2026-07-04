@@ -192,11 +192,23 @@ def retrieve_handoff_plain(
     )
 
 
-def analyze_handoff_plain(hop_artifacts: Dict[str, Dict[str, Any]]) -> str:
+def analyze_handoff_plain(
+    hop_artifacts: Dict[str, Dict[str, Any]],
+    *,
+    retrieved: Optional[List[Dict[str, Any]]] = None,
+) -> str:
+    retrieve = dict(hop_artifacts.get("retrieve") or {})
+    if not retrieve.get("cited_ids") and retrieved:
+        retrieve = {
+            **retrieve,
+            "cited_ids": [str(d.get("id") or "") for d in retrieved if d.get("id")],
+            "summary": retrieve.get("summary") or "",
+        }
     return compact_json(
         {
             "intake": compact_intake(hop_artifacts.get("intake")),
-            "retrieve": compact_retrieve(hop_artifacts.get("retrieve")),
+            "retrieve": compact_retrieve(retrieve),
+            "retrieved_docs": bounded_docs(list(retrieved or [])),
         }
     )
 
@@ -213,8 +225,18 @@ def drug_handoff_plain(
     )
 
 
-def safety_handoff_plain(hop_artifacts: Dict[str, Dict[str, Any]]) -> str:
-    retrieve = hop_artifacts.get("retrieve")
+def safety_handoff_plain(
+    hop_artifacts: Dict[str, Dict[str, Any]],
+    *,
+    retrieved: Optional[List[Dict[str, Any]]] = None,
+) -> str:
+    retrieve = dict(hop_artifacts.get("retrieve") or {})
+    if not retrieve.get("cited_ids") and retrieved:
+        retrieve = {
+            **retrieve,
+            "cited_ids": [str(d.get("id") or "") for d in retrieved if d.get("id")],
+            "summary": retrieve.get("summary") or "",
+        }
     return compact_json(
         {
             "facts": compact_intake(hop_artifacts.get("intake")),

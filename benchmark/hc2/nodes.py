@@ -25,6 +25,7 @@ from benchmark.hc2.cache_helpers import (
     cache_seed_phrases,
     first_judgment_hop_after_cache,
     gate_clinical,
+    hop_artifact_has_content,
     seed_healthcare_cache,
 )
 from benchmark.healthcare.prompts import (
@@ -41,6 +42,7 @@ from benchmark.hc2.prompts import (
     WRITER_D_SYSTEM,
     WRITER_MID_D_SYSTEM,
     WRITER_SHALLOW_D_SYSTEM,
+    writer_must_cite_block,
 )
 from benchmark.hc2.state import HealthcareVectorState
 from benchmark.hc2.trace import trace_event
@@ -101,6 +103,8 @@ def route_after_cache_hc2(state: HealthcareVectorState, *, agents: List[str]) ->
         cache_decision=state.get("cache_decision"),
         has_retrieved=bool(state.get("retrieved")),
         cache_facts=bool(state.get("cache_facts")),
+        hop_artifact_keys=sorted((state.get("hop_artifacts") or {}).keys()),
+        agents=list(agents),
     )
     return route
 
@@ -220,7 +224,8 @@ def make_hc2_nodes(gemini: InstrumentedGeminiClient, runtime: FinanceRuntime) ->
         started = time.perf_counter()
         gemini.reset_usage()
         hop_artifacts = dict(state.get("hop_artifacts") or {})
-        user = analyze_handoff_plain(hop_artifacts)
+        retrieved = list(state.get("retrieved") or [])
+        user = analyze_handoff_plain(hop_artifacts, retrieved=retrieved)
         artifact = _structured(gemini, ANALYZE_D_SYSTEM, user)
         hop_artifacts["analyze"] = artifact
         out = {
@@ -258,7 +263,21 @@ def make_hc2_nodes(gemini: InstrumentedGeminiClient, runtime: FinanceRuntime) ->
         started = time.perf_counter()
         gemini.reset_usage()
         hop_artifacts = dict(state.get("hop_artifacts") or {})
-        user = safety_handoff_plain(hop_artifacts)
+        retrieved = list(state.get("retrieved") or [])
+        user = safety_handoff_plain(hop_artifacts, retrieved=retrieved)
+        case_id, session_id = _trace_ids(state)
+        trace_event(
+            "safety_input_snapshot",
+            case_id=case_id,
+            session_id=session_id,
+            hop="safety",
+            has_analyze=hop_artifact_has_content(hop_artifacts, "analyze"),
+            has_retrieve=hop_artifact_has_content(hop_artifacts, "retrieve") or bool(retrieved),
+            cited_ids=(hop_artifacts.get("retrieve") or {}).get("cited_ids")
+            or [str(d.get("id") or "") for d in retrieved if d.get("id")],
+            cache_hit=state.get("cache_hit"),
+            handoff_preview=user[:400],
+        )
         verdict = _structured(gemini, SAFETY_D_SYSTEM, user)
         abstained = should_abstain(
             case_topic=str(state.get("topic") or state["case"].topic or ""),
@@ -300,10 +319,11 @@ def make_hc2_nodes(gemini: InstrumentedGeminiClient, runtime: FinanceRuntime) ->
 
         retrieved = list(state.get("retrieved") or [])
         interactions = list(state.get("interactions") or [])
+        cite_block = writer_must_cite_block(list(case.must_cite))
 
         if depth == 2:
             intake = state.get("intake_summary") or hop_artifacts.get("intake") or {}
-            user = f"Intake:\n{intake}\n"
+            user = f"Intake:\n{intake}\n{cite_block}"
             system = WRITER_SHALLOW_D_SYSTEM
             mode = "depth2_intake"
         elif depth == 4:
@@ -311,6 +331,7 @@ def make_hc2_nodes(gemini: InstrumentedGeminiClient, runtime: FinanceRuntime) ->
                 f"Intake:\n{hop_artifacts.get('intake', {})}\n\n"
                 f"Analysis:\n{state.get('analysis') or hop_artifacts.get('analyze', {})}\n\n"
                 f"Guidelines:\n{retrieved}\n"
+                f"{cite_block}"
             )
             system = WRITER_MID_D_SYSTEM
             mode = "depth4_mid"
@@ -318,6 +339,7 @@ def make_hc2_nodes(gemini: InstrumentedGeminiClient, runtime: FinanceRuntime) ->
             user = (
                 f"Analysis:\n{state.get('analysis') or hop_artifacts.get('analyze', {})}\n\n"
                 f"Guidelines:\n{retrieved}\n\nInteractions:\n{interactions}\n"
+                f"{cite_block}"
             )
             system = HL2_WRITER_MID_SYSTEM
             mode = "hl2_style"
@@ -327,6 +349,7 @@ def make_hc2_nodes(gemini: InstrumentedGeminiClient, runtime: FinanceRuntime) ->
                 retrieved=retrieved,
                 abstained=abstained,
             )
+            user = f"{user}{cite_block}"
             system = WRITER_D_SYSTEM
             mode = "cache_hit_plain" if cache_hit else "plain_handoff"
             trace_event(

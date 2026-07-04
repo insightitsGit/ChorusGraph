@@ -69,9 +69,22 @@ def verify_benchmark_wiring() -> List[str]:
         {"case": case6, "cache_hit": True, "cache_facts": True},
         PIPELINE_AGENTS[6],
     )
-    if hop6 != "safety":
-        raise BenchmarkWiringError(f"depth-6 cache hit must route to safety, got {hop6!r}")
-    ok.append("HC2: depth-6 cache hit routes to safety (not writer-only)")
+    if hop6 != "analyze":
+        raise BenchmarkWiringError(f"depth-6 cache hit must route to analyze (fresh judgment), got {hop6!r}")
+    hop6_with_analyze = first_judgment_hop_after_cache(
+        {
+            "case": case6,
+            "cache_hit": True,
+            "cache_facts": True,
+            "hop_artifacts": {"analyze": {"reasoning": "ok"}},
+        },
+        PIPELINE_AGENTS[6],
+    )
+    if hop6_with_analyze != "safety":
+        raise BenchmarkWiringError(
+            f"depth-6 cache hit with analyze present must route to safety, got {hop6_with_analyze!r}"
+        )
+    ok.append("HC2: depth-6 cache hit routes analyze then safety (not writer-only)")
 
     reg = default_registry()
     for slug in ("fx_rates", "clinical_retrieval", "clinical_judgment"):

@@ -42,19 +42,18 @@ PIPELINE_AGENTS: dict[int, List[str]] = {
 
 HL2 uses plain `WRITER_SYSTEM` with analysis/guidelines/interactions — **no safety prerequisite** — so it succeeds more often on the same cases.
 
-### 2. Cache replay routing (H21+)
+### 2. Cache replay routing (Bug-1 fix, 2026-07-04)
 
 On cache hit with **facts only** (archetype C):
 
 - **Never** replay writer response (`cached_response_from_state` → `None`).
 - **Skip** fact hops (intake/retrieve/drug_check) — prefilled from global cache.
-- **Enter at first judgment hop** for depth: depth 6 → `safety` → writer; depth 4 → `analyze` → writer; depth 2 → writer (HL2-style prompt).
+- **Enter at first judgment hop:** depth 6 → **`analyze` → drug_check → safety → writer** (analyze is never cached; old code incorrectly jumped to `safety` first).
+- Semantic gate uses `cache_query_key(case)`; **`cache_payload_sufficient`** rejects hits whose cached facts lack `retrieve` for depth ≥ 4 (blocks intake-only d2 seeds from satisfying d4/d6).
 
-Pre-H21 skip-to-writer caused 0 LLM calls but **27% success on exact_repeat** (missing safety). Full-pipeline-on-hit (H21 interim) fixed safety but cost **4.5 LLM calls/hit**. Depth-aware routing targets ~2 calls/hit at depth 6 with fresh safety+writer.
+### 3. Cross-depth cache pollution — mitigated
 
-### 3. Cross-depth cache pollution (secondary)
-
-`healthcare_cache_query_keys` seeds **plain paraphrases without `[pipeline_depth=N]`** in addition to depth-suffixed keys. Semantic gate can match a shallow-depth payload when a deeper pipeline runs.
+Gate lookup and seeding use depth-suffixed keys only. Plain `topic:canonical` keys are no longer seeded for semantic slug. Payload sufficiency check rejects intake-only hits at depth 6.
 
 ### 4. Structured JSON handoffs vs HL2 prose
 

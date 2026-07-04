@@ -7,10 +7,15 @@ from typing import Any, Dict, List, Optional
 
 from benchmark.hl2.runner import _record_hop
 from benchmark.healthcare.cache_gate import gate_healthcare_case
-from benchmark.hc2.cache_helpers import apply_cache_payload, cache_query_key, cache_seed_phrases
+from benchmark.hc2.cache_helpers import (
+    apply_cache_payload,
+    cache_payload_sufficient,
+    cache_query_key,
+    cache_seed_phrases,
+)
 from benchmark.hc2.nodes import make_hc2_nodes, route_after_cache_hc2
 from benchmark.hc2.runtime import make_healthcare_envelope_runtime
-from benchmark.hc2.trace import clear_trace, trace_event, trace_path
+from benchmark.hc2.trace import clear_trace, trace_core_route_ledger, trace_event, trace_path
 from benchmark.healthcare_workload import PIPELINE_AGENTS, HealthcareCase
 from benchmark.multiagent_measure import MultiAgentMeasurement, hop_names, score_healthcare_answer, totals_from_hops
 from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient
@@ -53,9 +58,20 @@ def _make_healthcare_cache_gate_handler(
             "cache_coarse_score": decision.coarse_score,
             "cache_verify_score": decision.verify_score,
             "cache_decision": decision.kind.value,
+            "cache_candidate_query": decision.candidate_query,
         }
         if decision.is_hit and decision.value:
-            update = apply_cache_payload(update, decision.value)
+            if not cache_payload_sufficient(decision.value, case.pipeline_depth):
+                update = {
+                    "cache_hit": False,
+                    "cache_score": decision.verify_score or decision.coarse_score,
+                    "cache_coarse_score": decision.coarse_score,
+                    "cache_verify_score": decision.verify_score,
+                    "cache_decision": "miss_insufficient_payload",
+                    "cache_reject_reason": "insufficient_payload_for_depth",
+                }
+            else:
+                update = apply_cache_payload(update, decision.value)
         return update
 
     return cache_gate_node
@@ -109,7 +125,11 @@ def build_healthcare_graph_hc2(
             hop="cache_gate",
             cache_hit=update.get("cache_hit"),
             cache_decision=update.get("cache_decision"),
+            cache_coarse_score=update.get("cache_coarse_score"),
+            cache_verify_score=update.get("cache_verify_score"),
+            cache_candidate_query=update.get("cache_candidate_query"),
             has_cached_response=bool(update.get("cached_response")),
+            cached_hop_keys=sorted((update.get("hop_artifacts") or {}).keys()) if update.get("cache_hit") else [],
         )
         return out
 
@@ -190,6 +210,11 @@ class HC2Runner:
                     "cache_seed_phrases": cache_seed_phrases(case),
                 }
             )
+            trace_core_route_ledger(
+                compiled,
+                case_id=case.case_id,
+                session_id=case.session_id,
+            )
             latency = int((time.perf_counter() - started) * 1000)
             hop_metrics = list(result.get("hop_metrics") or [])
             llm_calls, tokens_in, tokens_out = totals_from_hops(hop_metrics)
@@ -203,6 +228,10 @@ class HC2Runner:
                 expected_abstain=case.expected_abstain,
                 abstained=abstained,
             )
+            missing_cite = []
+            if not success and not abstained and case.must_cite:
+                low = answer.lower()
+                missing_cite = [t for t in case.must_cite if t.lower() not in low]
             trace_event(
                 "case_end",
                 case_id=case.case_id,
@@ -216,6 +245,8 @@ class HC2Runner:
                 task_success=success,
                 hops=hop_names(hop_metrics),
                 embed_count=embed_count,
+                missing_cite_terms=missing_cite or None,
+                abstained=abstained,
             )
             return MultiAgentMeasurement(
                 case_id=case.case_id,

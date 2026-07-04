@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from benchmark.healthcare.fingerprint import clinical_fingerprint_from_case
-from benchmark.hc2.cache_helpers import cache_query_key
+from benchmark.hc2.cache_helpers import cache_payload_sufficient, cache_query_key
 from benchmark.shared.healthcare_cache import CLINICAL_RETRIEVAL_SLUG, gate_clinical
 from benchmark.healthcare_workload import HealthcareCase
 from chorusgraph.sections.profiles import default_registry

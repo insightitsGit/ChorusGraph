@@ -24,6 +24,39 @@ def cache_query_key(case: HealthcareCase) -> str:
     return f"{case.topic}:{case.canonical_id or case.case_id}"
 
 
+def cache_semantic_gate_query(case: HealthcareCase) -> str:
+    """Depth-scoped semantic gate key — prevents d6 hits on intake-only d2 seeds."""
+    return cache_query_key_from_parts(cache_query_key(case), case.pipeline_depth)
+
+
+def hop_artifact_has_content(hop_artifacts: Dict[str, Any], key: str) -> bool:
+    """True when a hop artifact carries usable content (empty JSON dict does not count)."""
+    art = hop_artifacts.get(key)
+    if not isinstance(art, dict) or not art:
+        return False
+    if key == "analyze":
+        return bool(str(art.get("reasoning") or "").strip())
+    if key == "retrieve":
+        return bool(art.get("cited_ids") or str(art.get("summary") or "").strip())
+    if key == "intake":
+        return bool(str(art.get("facts") or "").strip())
+    return bool(art)
+
+
+def cache_payload_sufficient(payload: Dict[str, Any], pipeline_depth: int) -> bool:
+    """Reject semantic hits whose cached facts cannot support the current pipeline depth."""
+    facts = facts_only_payload(payload) if isinstance(payload, dict) else {}
+    hop = facts.get("hop_artifacts") or {}
+    retrieved = facts.get("retrieved") or []
+    has_retrieve = bool(hop.get("retrieve") or retrieved)
+    has_intake = bool(hop.get("intake"))
+    if pipeline_depth >= 4:
+        return has_retrieve
+    if pipeline_depth >= 2:
+        return has_intake
+    return True
+
+
 def cache_fingerprint_key(state: Dict[str, Any], case: HealthcareCase) -> str:
     hop = dict(state.get("hop_artifacts") or {})
     intake = hop.get("intake") or {
@@ -98,12 +131,18 @@ def seed_healthcare_cache(
     safety = payload.get("safety_verdict")
     facts = facts_only_payload(payload)
 
-    queries = [message] if message else []
+    queries: List[str] = []
+    if message:
+        queries.append(message)
+    depth_key = cache_query_key_from_parts(message, pipeline_depth)
+    if depth_key and depth_key not in queries:
+        queries.append(depth_key)
     for phrase in extra_queries or []:
         if phrase and phrase not in queries:
             queries.append(phrase)
-    if cache_query_key_from_parts(message, pipeline_depth) not in queries:
-        queries.append(f"{message}\n[pipeline_depth={pipeline_depth}]")
+        depth_key = cache_query_key_from_parts(phrase, pipeline_depth)
+        if depth_key not in queries:
+            queries.append(depth_key)
 
     for query_key in queries:
         seed_clinical_cache_entry(
@@ -162,15 +201,19 @@ def cached_response_from_state(state: Dict[str, Any]) -> Optional[str]:
 
 def first_judgment_hop_after_cache(state: Dict[str, Any], agents: List[str]) -> str:
     """
-    After a facts cache hit, skip retrieval hops and enter at the first judgment hop.
+    After a facts cache hit, skip fact hops and enter at the first judgment hop to (re)run.
 
-    CACHE_PROFILES archetype C: cache mid-pipeline facts; analyze/safety/writer stay fresh.
-    Depth 6 always runs safety (never writer-only skip that caused pre-H21 failures).
+    Archetype C: cached facts = intake/retrieve/drug_check only; analyze/safety/writer stay fresh.
     """
     case = state.get("case")
     depth = int(getattr(case, "pipeline_depth", 0) or 0)
-    if depth >= 6 and "safety" in agents:
-        return "safety"
+    hop = dict(state.get("hop_artifacts") or {})
+
+    if depth >= 6:
+        if "analyze" in agents and not hop_artifact_has_content(hop, "analyze"):
+            return "analyze"
+        if "safety" in agents:
+            return "safety"
     if depth >= 4 and "analyze" in agents:
         return "analyze"
     if "writer" in agents:
@@ -201,8 +244,11 @@ __all__ = [
     "build_cache_payload",
     "cache_fingerprint_key",
     "cache_fingerprint_key_gate",
+    "cache_payload_sufficient",
     "cache_query_key",
+    "cache_semantic_gate_query",
     "cache_seed_phrases",
+    "hop_artifact_has_content",
     "cached_response_from_state",
     "first_judgment_hop_after_cache",
     "gate_clinical",

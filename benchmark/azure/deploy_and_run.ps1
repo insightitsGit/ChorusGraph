@@ -15,6 +15,7 @@ param(
     [int]$Seed = 42,
     [int]$RepeatBand = 40,
     [string]$Scenarios = "all",
+    [string]$Temperature = "0.0",
     [string]$StorageAccount = "stinsightitsprod01",
     [string]$StorageResourceGroup = "rg-insightits-prod",
     [string]$BlobContainer = "benchmark-results",
@@ -53,7 +54,7 @@ Write-Host "    ACR:       $loginServer"
 Write-Host "    Image:     $image"
 Write-Host "    Container: $ContainerName ($ResourceGroup)"
 Write-Host "    Run ID:    $runId"
-Write-Host "    Scenarios: $Scenarios | Tier: $(if ($Tier) { $Tier } else { 'custom' }) | Tasks: $Tasks | Seed: $Seed"
+Write-Host "    Scenarios: $Scenarios | Tier: $(if ($Tier) { $Tier } else { 'custom' }) | Tasks: $Tasks | Seed: $Seed | Temp: $Temperature"
 
 if (-not $SkipBuild) {
     Write-Host "`n==> Building image in ACR (az acr build)..."
@@ -129,6 +130,7 @@ az container create `
         "BENCHMARK_TASKS=$Tasks" `
         "BENCHMARK_SEED=$Seed" `
         "BENCHMARK_REPEAT_BAND=$RepeatBand" `
+        "BENCHMARK_TEMPERATURE=$Temperature" `
         "BENCHMARK_BLOB_CONTAINER=$BlobContainer" `
         "BENCHMARK_OUTPUT_DIR=/results/mvp_scenarios" `
     -o json | Out-Null
