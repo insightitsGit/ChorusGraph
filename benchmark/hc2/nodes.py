@@ -44,7 +44,9 @@ from benchmark.hc2.prompts import (
 )
 from benchmark.hc2.state import HealthcareVectorState
 from benchmark.hc2.trace import trace_event
-from benchmark.healthcare.tools import check_drug_interactions, retrieve_guidelines
+from benchmark.healthcare.prismrag_mapping import assign_clinical_category
+from benchmark.healthcare.retrieval import make_healthcare_retrieve_handler
+from benchmark.healthcare.tools import check_drug_interactions
 from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient
 from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
 from chorusgraph.transforms.projector import project_from_raw, project_text, raw_from_state
@@ -146,6 +148,8 @@ def _structured(gemini: InstrumentedGeminiClient, system: str, user: str) -> Dic
 
 
 def make_hc2_nodes(gemini: InstrumentedGeminiClient, runtime: FinanceRuntime) -> Dict[str, Any]:
+    retrieve_core = make_healthcare_retrieve_handler(runtime, topic="clinical_guidelines", top_k=6)
+
     def intake_node(state: HealthcareVectorState) -> Dict[str, Any]:
         started = time.perf_counter()
         gemini.reset_usage()
@@ -175,11 +179,31 @@ def make_hc2_nodes(gemini: InstrumentedGeminiClient, runtime: FinanceRuntime) ->
         case = state["case"]
         hop_artifacts = dict(state.get("hop_artifacts") or {})
         topic = str(state.get("topic") or case.topic or "")
-        docs = retrieve_guidelines(topic, case.presentation)
+        retrieve_update = retrieve_core(
+            {
+                "message": case.presentation,
+                "query": case.presentation,
+                "topic": topic,
+                "category_slug": topic,
+                "query_vector_64": state.get("query_vector_64"),
+            }
+        )
+        docs = list(retrieve_update.get("retrieved") or [])
         user = retrieve_handoff_plain(hop_artifacts, docs)
         artifact = _structured(gemini, RETRIEVE_D_SYSTEM, user)
         if not artifact.get("cited_ids"):
             artifact["cited_ids"] = [str(d.get("id") or "") for d in docs if d.get("id")]
+        cats = sorted(
+            {
+                str(d.get("category_slug") or d.get("prismrag_category") or "")
+                for d in docs
+                if d.get("category_slug") or d.get("prismrag_category")
+            }
+        )
+        if cats:
+            artifact["category_slugs"] = cats
+        elif assign_clinical_category(f"{topic} {case.presentation}"):
+            artifact["category_slugs"] = [assign_clinical_category(f"{topic} {case.presentation}")]
         artifact["summary"] = str(artifact.get("summary") or "")
         hop_artifacts["retrieve"] = artifact
         out = {
@@ -324,6 +348,7 @@ def make_hc2_nodes(gemini: InstrumentedGeminiClient, runtime: FinanceRuntime) ->
                     pipeline_depth=case.pipeline_depth,
                     session_id=session_id,
                     fingerprint_key=fp,
+                    case=case,
                     trace_fn=lambda event, **kw: trace_event(event, case_id=case_id, session_id=session_id, **kw),
                 )
 
@@ -362,6 +387,7 @@ def make_hc2_nodes(gemini: InstrumentedGeminiClient, runtime: FinanceRuntime) ->
                 pipeline_depth=case.pipeline_depth,
                 session_id=session_id,
                 fingerprint_key=fp,
+                case=case,
                 trace_fn=lambda event, **kw: trace_event(event, case_id=case_id, session_id=session_id, **kw),
             )
 

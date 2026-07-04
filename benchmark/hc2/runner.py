@@ -6,12 +6,8 @@ import time
 from typing import Any, Dict, List, Optional
 
 from benchmark.hl2.runner import _record_hop
-from benchmark.hc2.cache_helpers import (
-    apply_cache_payload,
-    cache_query_key,
-    cache_seed_phrases,
-    gate_clinical,
-)
+from benchmark.healthcare.cache_gate import gate_healthcare_case
+from benchmark.hc2.cache_helpers import apply_cache_payload, cache_query_key
 from benchmark.hc2.nodes import make_hc2_nodes, route_after_cache_hc2
 from benchmark.hc2.runtime import make_healthcare_envelope_runtime
 from benchmark.hc2.trace import clear_trace, trace_event, trace_path
@@ -40,13 +36,12 @@ def _make_healthcare_cache_gate_handler(
     """Clinical cache gate — CacheProfile global facts (H21)."""
 
     def cache_gate_node(state: HealthcareVectorState) -> Dict[str, Any]:
-        message = state.get("message") or ""
         case = state.get("case")
-        session_id = getattr(case, "session_id", "") if case else ""
-        decision = gate_clinical(
+        if case is None:
+            return {"cache_hit": False, "cache_decision": "miss"}
+        decision = gate_healthcare_case(
             runtime,
-            query=message,
-            session_id=session_id,
+            case,
             coarse_threshold=coarse_threshold,
             verify_threshold=verify_threshold,
             raw_embedding_384=raw_from_state(state),
@@ -103,6 +98,7 @@ def build_healthcare_graph_hc2(
     def cache_gate_node(state: HealthcareVectorState) -> Dict[str, Any]:
         started = time.perf_counter()
         gemini.reset_usage()
+        case = state["case"]
         update = cache_gate_base(state)
         out = {**update, **_record_hop(state, "cache_gate", started, gemini)}
         case = state.get("case")

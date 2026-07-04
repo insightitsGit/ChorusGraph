@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from benchmark.healthcare.cases import CASES, PARAPHRASES
-from benchmark.healthcare.fingerprint import clinical_fingerprint
+from benchmark.healthcare.fingerprint import clinical_fingerprint, clinical_fingerprint_from_case
 from benchmark.healthcare_workload import HealthcareCase
 from benchmark.shared.corpus_seed import healthcare_seed_phrases
 from benchmark.shared.healthcare_cache import (
@@ -31,7 +31,27 @@ def cache_fingerprint_key(state: Dict[str, Any], case: HealthcareCase) -> str:
         "topic": case.topic,
         "facts": case.presentation[:200],
     }
-    return clinical_fingerprint(intake, pipeline_depth=case.pipeline_depth, drugs=case.drugs, topic=case.topic)
+    retrieved = list(state.get("retrieved") or [])
+    if hop.get("retrieve") and not hop["retrieve"].get("cited_ids"):
+        hop = dict(hop)
+        hop["retrieve"] = {
+            **hop["retrieve"],
+            "cited_ids": [str(d.get("id") or "") for d in retrieved if d.get("id")],
+        }
+    return clinical_fingerprint(
+        intake,
+        pipeline_depth=case.pipeline_depth,
+        drugs=case.drugs,
+        topic=case.topic,
+        hop_artifacts=hop,
+        retrieved=retrieved,
+        gate_phase=False,
+    )
+
+
+def cache_fingerprint_key_gate(case: HealthcareCase) -> str:
+    """Gate-time fingerprint (case metadata only)."""
+    return clinical_fingerprint_from_case(case)
 
 
 def cache_seed_phrases(case: HealthcareCase) -> List[str]:
@@ -68,6 +88,7 @@ def seed_healthcare_cache(
     pipeline_depth: Optional[int] = None,
     session_id: Optional[str] = None,
     fingerprint_key: str = "",
+    case: Optional[HealthcareCase] = None,
     trace_fn: Optional[Any] = None,
 ) -> None:
     if pipeline_depth is None:
@@ -103,7 +124,7 @@ def seed_healthcare_cache(
             runtime,
             query=fingerprint_key,
             payload=facts,
-            category_slug=CLINICAL_RETRIEVAL_SLUG,
+            category_slug="clinical_judgment",
             profile=default_registry().get("clinical_judgment"),
             session_id=session_id,
             fingerprint_key=fingerprint_key,
@@ -112,6 +133,22 @@ def seed_healthcare_cache(
             safety_verdict=safety,
             trace_fn=trace_fn,
         )
+        if case is not None:
+            gate_fp = clinical_fingerprint_from_case(case)
+            if gate_fp != fingerprint_key:
+                seed_clinical_cache_entry(
+                    runtime,
+                    query=gate_fp,
+                    payload=facts,
+                    category_slug="clinical_judgment",
+                    profile=default_registry().get("clinical_judgment"),
+                    session_id=session_id,
+                    fingerprint_key=gate_fp,
+                    response=response,
+                    abstained=abstained,
+                    safety_verdict=safety,
+                    trace_fn=trace_fn,
+                )
 
 
 def cache_query_key_from_parts(presentation: str, pipeline_depth: int) -> str:
@@ -163,6 +200,7 @@ __all__ = [
     "apply_cache_payload",
     "build_cache_payload",
     "cache_fingerprint_key",
+    "cache_fingerprint_key_gate",
     "cache_query_key",
     "cache_seed_phrases",
     "cached_response_from_state",

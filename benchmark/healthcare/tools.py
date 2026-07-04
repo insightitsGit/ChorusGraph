@@ -8,7 +8,10 @@ from benchmark.healthcare.kb import DRUG_INTERACTIONS, GUIDELINES
 
 
 def retrieve_guidelines(topic: str, query: str, *, top_k: int = 3) -> List[Dict[str, Any]]:
-    """Keyword retrieval over bundled guideline corpus (stand-in for pgvector KB)."""
+    """Keyword retrieval over bundled guideline corpus (LangGraph HL1/HL2 baseline only).
+
+    ChorusGraph HC1/HC2 use ``benchmark.healthcare.retrieval.vector_retrieve_fn`` instead.
+    """
     q = f"{topic} {query}".lower()
     scored: List[tuple[int, dict]] = []
     for doc in GUIDELINES:

@@ -53,9 +53,12 @@ class CacheProfile(BaseModel):
 ```
 
 - `keying="semantic"` — today's behavior: 64-d coarse → 384-d verify on the raw text.
-- `keying="fingerprint"` — key = normalized **structured equivalence key**, not free text. For clinical:
-  `{sorted(drugs), topic/condition, binned labs, pipeline_depth}` (the intake artifact already extracts
-  this). Semantic asks *"do these sound alike?"*; the fingerprint asks *"is this the same decision?"*
+- `keying="fingerprint"` — key = normalized **structured equivalence key**, not free text. For clinical
+  (depth-banded, measured in `benchmark/healthcare/fingerprint.py`):
+  - depth ≤ 2: `{sorted(drugs), topic, binned_labs, pipeline_depth}`
+  - depth ≥ 4: + `{cited_ids_signature, category_slugs_signature}` (PrismRAG taxonomy from vector retrieve)
+  - depth ≥ 6: + `{interaction_severity_signature}` from `drug_check`
+  Gate lookup uses case-level fields; seed uses full hop artifacts after retrieve/drug_check.
 - `keying="exact"` — normalized-string equality only.
 - `ttl_s` — entries carry `valid_from`/`valid_until`; the gate treats expired entries as misses. Maps
   naturally onto Cortex's bitemporal model.

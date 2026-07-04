@@ -7,8 +7,11 @@ import time
 from typing import Any, Dict, List, Optional, Tuple
 
 from benchmark.healthcare.abstain import should_abstain
-from benchmark.healthcare.tools import check_drug_interactions, retrieve_guidelines
+from benchmark.healthcare.cache_gate import gate_healthcare_case
+from benchmark.healthcare.retrieval import vector_retrieve_fn
+from benchmark.healthcare.tools import check_drug_interactions
 from benchmark.healthcare_workload import HealthcareCase
+from benchmark.multiagent_measure import MultiAgentMeasurement, score_healthcare_answer
 from benchmark.hc1.cache_helpers import (
     CLINICAL_SLUG,
     apply_cache_payload,
@@ -17,9 +20,7 @@ from benchmark.hc1.cache_helpers import (
     cache_seed_phrases,
 )
 from benchmark.hc1.runtime import GRAPH_ID, HC1_TENANT_ID, make_healthcare_hc1_runtime
-from benchmark.hc2.cache_helpers import seed_healthcare_cache
-from benchmark.multiagent_measure import MultiAgentMeasurement, score_healthcare_answer
-from benchmark.shared.healthcare_cache import gate_clinical
+from benchmark.hc2.cache_helpers import cache_fingerprint_key, seed_healthcare_cache
 from benchmark.shared.healthcare_react import HEALTHCARE_REACT_SYSTEM, HEALTHCARE_WRITER_SYSTEM
 from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient
 from benchmark.thresholds import measured_thresholds
@@ -60,10 +61,9 @@ def build_healthcare_graph_hc1(
     def cache_gate(ctx: NodeContext) -> NodeUpdate:
         view = _read_view(ctx)
         case: HealthcareCase = view["case"]
-        decision = gate_clinical(
+        decision = gate_healthcare_case(
             runtime,
-            query=cache_query_key(case),
-            session_id=case.session_id,
+            case,
             coarse_threshold=coarse_threshold,
             verify_threshold=verify_threshold,
         )
@@ -129,7 +129,7 @@ def build_healthcare_graph_hc1(
         else:
             topic = args.get("topic") or case.topic
             query = args.get("query") or case.presentation
-            result = retrieve_guidelines(str(topic), str(query))
+            result = vector_retrieve_fn(str(topic), str(query))
             artifact["retrieved"] = list(view.get("retrieved") or []) + list(result)
             obs = json.dumps(result)
         scratch = (view.get("scratchpad") or "") + f"\nAction: {tool_name}\nObservation: {obs}\n"
@@ -150,6 +150,16 @@ def build_healthcare_graph_hc1(
             retrieved_docs=retrieved,
             safety_verdict=safety,
         )
+        fp_state = {
+            "case": case,
+            "retrieved": retrieved,
+            "interactions": interactions,
+            "hop_artifacts": {
+                "intake": {"drugs": case.drugs, "topic": case.topic, "facts": case.presentation},
+                "retrieve": {"cited_ids": cited},
+                "drug_check": {"interactions": interactions},
+            },
+        }
         if abstained or case.expected_abstain:
             response = (
                 "I must abstain from a definitive clinical recommendation because "
@@ -163,6 +173,8 @@ def build_healthcare_graph_hc1(
                     extra_queries=cache_seed_phrases(case),
                     pipeline_depth=case.pipeline_depth,
                     session_id=case.session_id,
+                    fingerprint_key=cache_fingerprint_key(fp_state, case),
+                    case=case,
                 )
             return ctx.publish(
                 artifact={"response": response, "abstained": True, "raw_output": response},
@@ -182,6 +194,8 @@ def build_healthcare_graph_hc1(
                 extra_queries=cache_seed_phrases(case),
                 pipeline_depth=case.pipeline_depth,
                 session_id=case.session_id,
+                fingerprint_key=cache_fingerprint_key(fp_state, case),
+                case=case,
             )
         return ctx.publish(
             artifact={"response": response, "abstained": False, "raw_output": response},

@@ -27,6 +27,9 @@ gemini = ["google-genai>=1.0"]
 dev = [
     "pytest>=8.0",
 ]
+benchmark-healthcare = [
+    "chromadb>=0.4",
+]
 
 [project.scripts]
 chorusgraph-demo = "chorusgraph.examples.demo_graph:main"

@@ -97,6 +97,7 @@ def verify_benchmark_wiring() -> List[str]:
     from chorusgraph.examples.finance_agent.nodes import make_cache_gate_handler
     from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
     from benchmark.thresholds import measured_thresholds
+    from benchmark.healthcare_workload import HealthcareCase
 
     ok.extend(verify_framework_split())
     assert callable(make_cache_gate_handler)
@@ -112,6 +113,29 @@ def verify_benchmark_wiring() -> List[str]:
     if stack_rt.verify_threshold_for("fx_rates") != thresholds.verify_for("fx_rates"):
         raise BenchmarkWiringError("ChorusStack verify_for(fx_rates) != measured_thresholds")
     ok.append("ChorusStack: measured thresholds via to_cache_runtime()")
+
+    from benchmark.healthcare.retrieval import vector_retrieve_fn, make_healthcare_retrieve_handler
+    from benchmark.healthcare.cache_gate import gate_healthcare_case
+    from benchmark.healthcare.fingerprint import FINGERPRINT_DEPTH_CITED_IDS, clinical_fingerprint_from_case
+
+    assert callable(vector_retrieve_fn)
+    assert callable(make_healthcare_retrieve_handler)
+    assert callable(gate_healthcare_case)
+    ok.append("Healthcare: vector L2 retrieval + dual cache gate (fingerprint + semantic)")
+
+    case = HealthcareCase(
+        case_id="wiring-fp",
+        presentation="metformin eGFR 55",
+        expected_abstain=False,
+        must_cite=[],
+        drugs=["metformin"],
+        topic="diabetes",
+        pipeline_depth=6,
+    )
+    fp = clinical_fingerprint_from_case(case)
+    assert fp.startswith("fp:")
+    assert FINGERPRINT_DEPTH_CITED_IDS == 4
+    ok.append("Healthcare: depth-banded clinical fingerprint")
 
     return ok
 

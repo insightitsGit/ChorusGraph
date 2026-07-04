@@ -107,6 +107,14 @@ Profiles from [`docs/CACHE_PROFILES.md`](../docs/CACHE_PROFILES.md) and `chorusg
 
 HC1/HC2 use **facts-only cache** (retrieval, interactions) — writer judgment is never replayed. Quality-gated seeding blocks abstain/refusal chains from entering cache.
 
+## L2 retrieval (PrismRAG) — HC1/HC2 only
+
+ChorusGraph healthcare scenarios use real vector retrieval (`benchmark/healthcare/kb_vector.py` — Chroma + ONNX embedder) and optional `PrismRAGPatch` remap when `PRISMRAG_LICENSE_KEY` is set. Retrieval flows through `chorusgraph.nodes.retrieve.make_retrieve_handler` + PrismResonance rerank.
+
+**Fairness:** LangGraph baselines (HL1/HL2) keep keyword `retrieve_guidelines` unchanged — only the framework varies.
+
+Install vector deps: `pip install -e ".[benchmark-healthcare]"`. Optional PrismRAG: install `prismrag-patch` from `PrismRagLib` and set `PRISMRAG_LICENSE_KEY`.
+
 ## Route Ledger (ChorusGraph scenarios)
 
 FC1, FC2, HC1, HC2 emit native Route Ledger steps via `wrap()` — node, edge, `rule_chain`, cache_hit, duration_ms.
