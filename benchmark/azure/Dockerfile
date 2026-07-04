@@ -19,7 +19,7 @@ COPY benchmark ./benchmark
 COPY tests ./tests
 
 RUN pip install -U pip setuptools wheel \
-    && pip install -e ".[dev,gemini,cortex]" \
+    && pip install -e ".[dev,gemini,cortex,benchmark-healthcare]" \
     && pip install azure-storage-blob
 
 COPY benchmark/azure/entrypoint.sh /entrypoint.sh
