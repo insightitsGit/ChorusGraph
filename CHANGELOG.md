@@ -2,12 +2,17 @@
 
 All notable changes to ChorusGraph are documented here (semver).
 
-## [Unreleased] — Enterprise track (P1_Enterprice1)
+## [1.0.0] — 2026-07-05 — Enterprise track (P1_Enterprice1)
 
 ### Added
-- **E1:** Deterministic CI test tier — Frankfurter HTTP cassettes replay without network; live Gemini tests behind `pytest -m live`.
-- **E1:** GitHub Actions CI — ruff, mypy baseline, pytest + coverage floor (71%), CycloneDX SBOM artifact.
-- **E1:** `requirements-lock.txt` for reproducible installs; `docs/RELEASE.md` release process.
+- **E1–E4:** CI foundation, resilience, security, observability (see handoffbackE1–E4).
+- **E5:** Durable SqliteGraphStore, migrations, backup/restore, right-to-forget.
+- **E6:** Tenant isolation guards and resource limiter.
+- **E7:** Load/throughput harness (`python -m benchmark.load`).
+- **E8:** Product Dockerfile, docker-compose, k8s manifest, deploy docs.
+- **E9:** Frozen public API (`chorusgraph/public.py`), stability guarantee, API 1.0 docs.
+
+## [Unreleased]
 
 ### Changed
 - Canonical MVP benchmark pointer updated to Azure run `20260704_212111` (HC2 87.5% vs HL2 57.5%).
