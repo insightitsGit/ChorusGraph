@@ -46,6 +46,7 @@ class CortexMemoryService:
     cache_dir: str = ".chorusgraph/cortex"
     agent_id: str = "finance-agent"
     k: int = 8
+    durable_graph: bool = True
     _memory: Any = None
     _digester: Optional[AsyncDigester] = field(default=None, repr=False)
 
@@ -58,15 +59,24 @@ class CortexMemoryService:
             from chorusgraph.memory.cortex_compat import apply_cortex_compat_patches
 
             apply_cortex_compat_patches()
-            from prismcortex.adapters.prism import prism_memory
+            if self.durable_graph:
+                from chorusgraph.persistence.cortex_factory import create_durable_prism_memory
 
-            self._memory = prism_memory(
-                tenant_id=self.tenant_id,
-                cache_db=os.path.join(self.cache_dir, "prismlib.db"),
-                resonance_state=os.path.join(self.cache_dir, "resonance_state.db"),
-                resonance_onnx=os.path.join(self.cache_dir, "resonance_engine.onnx"),
-                k=self.k,
-            )
+                self._memory = create_durable_prism_memory(
+                    tenant_id=self.tenant_id,
+                    cache_dir=self.cache_dir,
+                    k=self.k,
+                )
+            else:
+                from prismcortex.adapters.prism import prism_memory
+
+                self._memory = prism_memory(
+                    tenant_id=self.tenant_id,
+                    cache_db=os.path.join(self.cache_dir, "prismlib.db"),
+                    resonance_state=os.path.join(self.cache_dir, "resonance_state.db"),
+                    resonance_onnx=os.path.join(self.cache_dir, "resonance_engine.onnx"),
+                    k=self.k,
+                )
         return self._memory
 
     @property
@@ -167,6 +177,10 @@ class CortexMemoryService:
     def schedule_sleep(self) -> None:
         """Consolidation pass — async, not on the hot path."""
         self.digester.submit_sleep()
+
+    def forget(self, source_id: str) -> dict:
+        """Right-to-forget — delegates to Cortex Memory.forget (graph + answer cache)."""
+        return self.ensure_memory().forget(source_id)
 
 
 def get_cortex_service(
