@@ -41,6 +41,9 @@ enterprise-ci = [
 benchmark-healthcare = [
     "chromadb>=0.4",
 ]
+retrieval = [
+    "chromadb>=0.4",
+]
 
 [project.scripts]
 chorusgraph-demo = "chorusgraph.examples.demo_graph:main"

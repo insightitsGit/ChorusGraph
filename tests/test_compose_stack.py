@@ -109,3 +109,57 @@ def test_finance_runtime_uses_stack():
     rt = FinanceRuntime(tenant_id="fr", enable_cortex=False)
     assert rt.stack is not None
     assert isinstance(rt.cache_backend, PrismCacheBackend)
+
+
+def test_chorus_stack_default_retrieval():
+    from chorusgraph.compose.adapters.keyword_retrieval import KeywordRetrievalBackend
+
+    stack = ChorusStack.defaults(tenant_id="retrieval-default")
+    backend = stack.resolve_retrieval()
+    assert isinstance(backend, KeywordRetrievalBackend)
+    assert backend.name == "keyword"
+
+
+def test_stack_with_retrieval_swap():
+    from chorusgraph.compose.adapters.keyword_retrieval import KeywordRetrievalBackend
+
+    custom = KeywordRetrievalBackend()
+    custom.index([{"id": "1", "topic": "t", "text": "hello world", "source": ""}])
+    stack = ChorusStack.defaults(tenant_id="retrieval-swap").with_retrieval(custom)
+    assert stack.resolve_retrieval() is custom
+    hits = stack.resolve_retrieval().retrieve("t", "hello", top_k=1)
+    assert hits and hits[0]["id"] == "1"
+
+
+def test_with_retrieval_preserves_all_fields():
+    import dataclasses
+
+    from chorusgraph.compose.adapters.keyword_retrieval import KeywordRetrievalBackend
+
+    stack = ChorusStack.defaults(tenant_id="retrieval-fields", enable_memory=False)
+    custom = KeywordRetrievalBackend()
+    swapped = stack.with_retrieval(custom)
+    for fld in dataclasses.fields(ChorusStack):
+        if fld.name == "retrieval":
+            continue
+        assert getattr(swapped, fld.name) == getattr(stack, fld.name)
+    assert swapped.resolve_retrieval() is custom
+
+
+def test_to_retrieve_handler_from_stack():
+    from chorusgraph.compose.adapters.keyword_retrieval import KeywordRetrievalBackend
+
+    corpus = [
+        {"id": "g1", "topic": "diabetes", "text": "metformin eGFR monitoring", "source": "kb"},
+    ]
+    backend = KeywordRetrievalBackend()
+    backend.index(corpus)
+    stack = ChorusStack.defaults(tenant_id="retrieve-handler").with_retrieval(backend)
+    handler = stack.to_retrieve_handler(topic="diabetes", top_k=2)
+    state = {
+        "message": "metformin eGFR",
+        "topic": "diabetes",
+    }
+    update = handler(state)
+    assert update.get("retrieved")
+    assert update.get("kb_context")

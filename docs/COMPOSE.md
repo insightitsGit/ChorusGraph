@@ -67,6 +67,7 @@ compiled = g.compile(stack=stack)
 | `checkpointer` | JSON file under `.chorusgraph/checkpoints/` |
 | `ledger` | In-memory SQLite ledger |
 | `tools` | Finance tool registry |
+| `retrieval` | `KeywordRetrievalBackend` (zero-deps keyword overlap) |
 
 ---
 
@@ -77,8 +78,11 @@ compiled = g.compile(stack=stack)
 | `CacheBackend` | `embed`, `project_64`, `recall`, `recall_direct`, `seed` |
 | `MemoryBackend` | `schedule_digest`, `recall_structured` |
 | `ToolBackend` | `get`, `list_names` |
+| `RetrievalBackend` | `retrieve`, `index` |
 
-Implement a port → pass instance on `ChorusStack(cache=...)`.
+See [`PLUGINS.md`](../docs/PLUGINS.md) for defaults and swap options in one place.
+
+Implement a port → pass instance on `ChorusStack(cache=...)` or `with_retrieval(...)`.
 
 Existing call sites (`gate()`, `seed_cache_entry()`) accept either a **`CacheBackend`**
 or legacy **`PrismCache` + `SidecarStore`** pair.

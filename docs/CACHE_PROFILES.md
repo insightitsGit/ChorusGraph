@@ -74,6 +74,10 @@ Domains are mixtures. The healthcare pipeline proves it:
 |---|---|---|
 | intake (extract facts) | — (cheap, deterministic) | `no_cache` |
 | retrieve (guidelines by topic) | **A** | semantic · ttl 30d · **global** · low risk |
+
+Retrieve hops source candidates from a swappable **`RetrievalBackend`** on `ChorusStack`
+(default: keyword overlap; swap: `PrismRAGRetrievalBackend` for Chroma + optional taxonomy remap).
+See [`PLUGINS.md`](PLUGINS.md).
 | drug_check (pair → severity) | **A** (pure function) | exact/fingerprint · no ttl · global · **should be deterministic, not LLM** |
 | analyze / safety (judgment) | **C** | `no_cache` |
 | writer (final recommendation) | **C/D** | fingerprint · **session/user scope** · high risk · quality-gated |

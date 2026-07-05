@@ -5,9 +5,10 @@ from __future__ import annotations
 from typing import Any, Optional
 
 from chorusgraph.cache_gate.sidecar import SidecarStore
+from chorusgraph.compose.adapters.keyword_retrieval import KeywordRetrievalBackend
 from chorusgraph.compose.adapters.memory import CortexMemoryBackend, default_memory_backend
 from chorusgraph.compose.adapters.prism_cache import PrismCacheBackend
-from chorusgraph.compose.ports import CacheBackend, MemoryBackend
+from chorusgraph.compose.ports import CacheBackend, MemoryBackend, RetrievalBackend
 from chorusgraph.ledger.sink import SqliteLedgerSink
 from chorusgraph.nodes.tool import ToolRegistry, default_finance_registry
 from chorusgraph.policy.embedder_guard import build_guarded_cache
@@ -41,11 +42,17 @@ def default_ledger_sink(path: str = ":memory:") -> SqliteLedgerSink:
     return SqliteLedgerSink(path)
 
 
+def default_retrieval_backend() -> KeywordRetrievalBackend:
+    """Zero-dependency keyword overlap — swap for ``PrismRAGRetrievalBackend`` when licensed."""
+    return KeywordRetrievalBackend()
+
+
 __all__ = [
     "default_checkpointer",
     "default_ledger_sink",
     "default_memory_backend",
     "default_prism_cache_backend",
+    "default_retrieval_backend",
     "default_sidecar",
     "default_tool_registry",
 ]

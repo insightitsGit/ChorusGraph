@@ -13,10 +13,11 @@ from chorusgraph.compose.defaults import (
     default_ledger_sink,
     default_memory_backend,
     default_prism_cache_backend,
+    default_retrieval_backend,
     default_sidecar,
     default_tool_registry,
 )
-from chorusgraph.compose.ports import CacheBackend, MemoryBackend, ToolBackend
+from chorusgraph.compose.ports import CacheBackend, MemoryBackend, RetrievalBackend, ToolBackend
 from chorusgraph.core.persistence import EngineCheckpointer
 from chorusgraph.ledger.sink import LedgerSink
 from chorusgraph.sections.profiles import default_registry
@@ -44,6 +45,7 @@ class ChorusStack:
     checkpointer: Optional[EngineCheckpointer] = None
     ledger: Optional[LedgerSink] = None
     tools: Optional[ToolBackend] = None
+    retrieval: Optional[RetrievalBackend] = None
     coarse_threshold: Optional[float] = None
     verify_threshold: Optional[float] = None
     enable_memory: bool = True
@@ -102,6 +104,11 @@ class ChorusStack:
             self.tools = default_tool_registry()
         return self.tools
 
+    def resolve_retrieval(self) -> RetrievalBackend:
+        if self.retrieval is None:
+            self.retrieval = default_retrieval_backend()
+        return self.retrieval
+
     def to_cache_runtime(self) -> Any:
         """Build ``CacheRuntime`` for node-entry cache interceptor."""
         if self._cache_runtime is not None:
@@ -131,6 +138,35 @@ class ChorusStack:
     def with_cache(self, backend: CacheBackend) -> "ChorusStack":
         """Return a copy with cache backend replaced (e.g. Redis)."""
         return replace(self, cache=backend, _cache_runtime=None)
+
+    def with_retrieval(self, backend: RetrievalBackend) -> "ChorusStack":
+        """Return a copy with retrieval backend replaced (e.g. PrismRAG)."""
+        return replace(self, retrieval=backend)
+
+    def to_retrieve_handler(
+        self,
+        *,
+        topic: str = "knowledge",
+        top_k: int = 6,
+        runtime: Any = None,
+    ) -> Any:
+        """Build retrieve node wired to ``resolve_retrieval()``."""
+        from chorusgraph.nodes.retrieve import RetrieveConfig, make_retrieve_handler
+
+        backend = self.resolve_retrieval()
+        cfg = RetrieveConfig(category_slug=topic, top_k=top_k)
+        cache = None
+        if runtime is not None:
+            cache = getattr(runtime, "cache", None)
+        if cache is None:
+            cache_backend = self.resolve_cache()
+            if isinstance(cache_backend, PrismCacheBackend):
+                cache = cache_backend.cache
+
+        def _retrieve_fn(t: str, q: str):
+            return list(backend.retrieve(t or topic, q, top_k=top_k))
+
+        return make_retrieve_handler(_retrieve_fn, cache=cache, config=cfg)
 
 
 __all__ = ["ChorusStack"]
