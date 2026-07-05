@@ -7,7 +7,8 @@ ChorusGraph uses **semver** (`MAJOR.MINOR.PATCH`) in `pyproject.toml`.
 1. All CI checks green on the release branch (deterministic `pytest`, ruff, mypy baseline, coverage ≥ floor).
 2. Update `CHANGELOG.md` — move `[Unreleased]` items under the new version + date.
 3. Bump `version` in `pyproject.toml`.
-4. Regenerate lockfile if dependencies changed:
+4. Verify pip install docs: [`docs/INSTALL.md`](INSTALL.md) (extras, PrismRAG plug-in guide).
+5. Regenerate lockfile if dependencies changed:
    ```powershell
    pip install -U pip pip-tools
    pip-compile pyproject.toml -o requirements-lock.txt --extra dev --extra gemini --extra benchmark-healthcare

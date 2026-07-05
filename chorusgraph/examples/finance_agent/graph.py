@@ -1,13 +1,12 @@
-"""Finance agent LangGraph assembly."""
+"""Finance agent — native ChorusGraph linear pipeline (researcher → tool → writer)."""
 
 from __future__ import annotations
 
-import operator
-from typing import Annotated, Any, Dict, List, Optional, TypedDict
+from typing import Any, Dict, List, Optional
 
-from langgraph.checkpoint.base import BaseCheckpointSaver
-from langgraph.graph import END, START, StateGraph
-from prismlang import PrismEnvelope
+from chorusgraph.core import END, Graph, START
+from chorusgraph.core.node import dict_node_adapter
+from chorusgraph.core.persistence import EngineCheckpointer
 
 from chorusgraph.examples.finance_agent.nodes import (
     make_cache_gate_handler,
@@ -25,56 +24,38 @@ TENANT_ID = "finance-tenant"
 GRAPH_ID = "finance-agent"
 
 
-class FinanceState(TypedDict, total=False):
-    tenant_id: str
-    turn_id: str
-    message: str
-    raw_embedding_384: Optional[List[float]]
-    query_vector_64: Optional[List[float]]
-    conversation_history: List[Dict[str, str]]
-    needs_tool: bool
-    tool_name: str
-    tool_args: Dict[str, Any]
-    tool_result: Optional[Dict[str, Any]]
-    tool_error: Optional[str]
-    tool_calls: List[Dict[str, Any]]
-    tool_skipped_reason: Optional[str]
-    cache_hit: Optional[bool]
-    cache_score: Optional[float]
-    cache_decision: Optional[str]
-    research_plan: str
-    draft_response: str
-    response: str
-    validation: Dict[str, Any]
-    memory_recall: Optional[str]
-    memory_confidence: Optional[float]
-    memory_freshness: Optional[str]
-    memory_cache_hit: Optional[bool]
-    memory_vector_64: Optional[List[float]]
-    memory_subgraph_hash: Optional[str]
-    memory_evidence: Optional[List[Dict[str, Any]]]
-    rule_chain: Annotated[List[str], operator.add]
-    prism_sequence: Annotated[List[PrismEnvelope], operator.add]
-
-
 def build_finance_graph(
     runtime: Optional[FinanceRuntime] = None,
     *,
-    checkpointer: Optional[BaseCheckpointSaver] = None,
+    checkpointer: Optional[EngineCheckpointer] = None,
     coarse_threshold: float = 0.82,
     verify_threshold: float = 0.85,
 ):
     runtime = runtime or FinanceRuntime()
-    graph = StateGraph(FinanceState)
+    graph = Graph(tenant_id=TENANT_ID, graph_id=GRAPH_ID)
 
-    graph.add_node("vector_ingress", make_vector_ingress_handler(runtime))
-    graph.add_node("cache_gate", make_cache_gate_handler(
-        runtime, coarse_threshold=coarse_threshold, verify_threshold=verify_threshold,
-    ))
-    graph.add_node("researcher", make_researcher_handler(runtime))
-    graph.add_node("tool", make_tool_handler(runtime))
-    graph.add_node("writer", make_writer_handler(runtime))
-    graph.add_node("validator", make_validator_handler(runtime))
+    graph.add_node(
+        "vector_ingress",
+        dict_node_adapter(make_vector_ingress_handler(runtime), hop="vector_ingress"),
+    )
+    graph.add_node(
+        "cache_gate",
+        dict_node_adapter(
+            make_cache_gate_handler(
+                runtime,
+                coarse_threshold=coarse_threshold,
+                verify_threshold=verify_threshold,
+            ),
+            hop="cache_gate",
+        ),
+    )
+    graph.add_node(
+        "researcher",
+        dict_node_adapter(make_researcher_handler(runtime), hop="researcher"),
+    )
+    graph.add_node("tool", dict_node_adapter(make_tool_handler(runtime), hop="tool"))
+    graph.add_node("writer", dict_node_adapter(make_writer_handler(runtime), hop="writer"))
+    graph.add_node("validator", dict_node_adapter(make_validator_handler(runtime), hop="validator"))
 
     graph.add_edge(START, "vector_ingress")
     graph.add_edge("vector_ingress", "cache_gate")
@@ -103,7 +84,9 @@ def turn_input(message: str, *, turn_id: Optional[str] = None) -> Dict[str, Any]
     return payload
 
 
-def initial_state(message: str, *, conversation_history: Optional[List[Dict[str, str]]] = None) -> Dict[str, Any]:
+def initial_state(
+    message: str, *, conversation_history: Optional[List[Dict[str, str]]] = None
+) -> Dict[str, Any]:
     return {
         "tenant_id": TENANT_ID,
         "message": message,

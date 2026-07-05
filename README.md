@@ -4,7 +4,27 @@
 
 > **Terminology:** **ChorusGraph** = native engine (`chorusgraph.core`) + full product stack. **Not LangGraph.** See [`docs/TERMINOLOGY.md`](docs/TERMINOLOGY.md) and [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md).
 
-Status: **Active implementation.** Engine in `chorusgraph/core/`; benchmarks in `benchmark/`. Design history: [`docs/DESIGN_v0.2.md`](docs/DESIGN_v0.2.md), [`docs/DESIGN_v0.3_PRISM_ENGINE.md`](docs/DESIGN_v0.3_PRISM_ENGINE.md).
+Status: **v1.0.0 enterprise release** — native engine, four swappable plug-in ports, CI-hardened. See [`docs/INSTALL.md`](docs/INSTALL.md) · [`docs/WHITEPAPER.md`](docs/WHITEPAPER.md).
+
+---
+
+## Install
+
+```bash
+pip install chorusgraph                              # core
+pip install "chorusgraph[retrieval]"                 # + PrismRAG vector plug-in
+pip install "chorusgraph[dev,gemini,retrieval]"      # full dev tier
+```
+
+Quick start, optional extras, and **PrismRAG implementation guide**: [`docs/INSTALL.md`](docs/INSTALL.md)  
+Plug-in ports (cache, memory, tools, retrieval): [`docs/PLUGINS.md`](docs/PLUGINS.md)
+
+```python
+from chorusgraph import Graph, START, END, ChorusStack
+
+stack = ChorusStack.defaults(tenant_id="demo")
+# stack = stack.with_retrieval(my_prismrag_backend)  # see INSTALL.md
+```
 
 ---
 
@@ -18,7 +38,7 @@ It composes the existing Prism family as first-class primitives:
 |-------|-----------|------|
 | L0 — hop | PrismLang | Per-hop state compression (64-d) + `rule_chain` audit |
 | L1 — cache | PrismCache | Semantic `get_or_call`, Resonance-scored |
-| L2 — knowledge | PrismRAG | Mapping-first Graph RAG + taxonomy slugs |
+| L2 — knowledge | PrismRAG plug-in | Swappable `RetrievalBackend` — keyword default, vector + taxonomy opt-in |
 | rerank | PrismResonance | Wave-interference retrieval |
 | L3 — memory | PrismCortex | Deterministic, bitemporal, byte-identical replay |
 | transport | CHORUS Fabric | Cross-region tensor spine (179 ms transatlantic, 4.45× bandwidth) |

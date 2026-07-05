@@ -59,9 +59,9 @@ Legacy containers A–F map to this matrix (A→FL1, B→FC1, C→HL2, D→HC2, 
 
 1. **Fair baselines** — FL1, FL2, HL1, HL2 so paired reports can say “ChorusGraph vs LangGraph” with only orchestration differing.
 2. **Legacy migration** — existing hubs that still compile `StateGraph`; run through `chorusgraph.adapter.wrap()` until rewritten to native `Graph`.
-3. **Optional dependency** — `langgraph` may remain in `[legacy]` extras; it must not be on the hot path for FC/HC.
+3. **Optional dependency** — `pip install "chorusgraph[langgraph]"` or `[benchmark]` for FL*/HL* baselines only; **not** required for FC/HC or the core library.
 
-Demo-only code (e.g. `chorusgraph/examples/finance_agent/graph.py`) may still use LangGraph for historical demos, but **must not** be wired into FC/HC benchmark runners.
+Demo-only code uses native `chorusgraph.core.Graph` (e.g. `patterns_graph.py`, `graph.py`). **Must not** be wired into FC/HC benchmark runners with LangGraph.
 
 ---
 

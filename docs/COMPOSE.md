@@ -28,6 +28,7 @@ without forking the engine or re-wiring benchmarks by hand.
 | **Checkpointer** | **Yes** | JSON file checkpointer | Postgres, SQLite, … |
 | **Route ledger sink** | **Yes** | `SqliteLedgerSink` | Postgres, custom |
 | **Tool registry** | **Yes** | Finance default registry | MCP / custom tools |
+| **L2 retrieval** | **Yes** | `KeywordRetrievalBackend` | `PrismRAGRetrievalBackend` — see [`PLUGINS.md`](PLUGINS.md) |
 
 **Rule:** swapping cache does **not** remove PrismLang projection — external stores still
 use engine embed/project for semantic paths unless the backend implements its own policy.
@@ -55,6 +56,18 @@ g = Graph(tenant_id="acme", graph_id="demo")
 compiled = g.compile(stack=stack)
 # Opt-in durability:
 # compiled = g.compile(stack=stack, checkpointer=stack.resolve_checkpointer())
+```
+
+Swap retrieval (PrismRAG plug-in) — full guide in [`INSTALL.md`](INSTALL.md):
+
+```python
+from chorusgraph.compose import PrismRAGRetrievalBackend
+from chorusgraph.embedders import PrismlangOnnxEmbedder
+
+backend = PrismRAGRetrievalBackend(embedder=PrismlangOnnxEmbedder(), mapping={...})
+backend.index(corpus)
+stack = ChorusStack.defaults(tenant_id="acme").with_retrieval(backend)
+retrieve_node = stack.to_retrieve_handler(topic="policy", top_k=6)
 ```
 
 ### Resolved defaults (`ChorusStack.defaults`)

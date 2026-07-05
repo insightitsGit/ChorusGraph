@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import sqlite3
-
 import pytest
 
 from chorusgraph.checkpoint import create_checkpointer, sqlite_checkpointer
@@ -22,12 +20,11 @@ def test_sqlite_checkpointer_factory(tmp_path):
 @pytest.mark.live
 @pytest.mark.skipif(not resolve_gemini_api_key(), reason="GEMINI_API_KEY not configured")
 def test_thread_resumes_after_restart(tmp_path):
-    db_path = tmp_path / "checkpoints.sqlite"
+    from chorusgraph.core.persistence import json_file_checkpointer
+
     thread_id = "resume-thread-1"
     config = {"configurable": {"thread_id": thread_id}}
-
-    conn = sqlite3.connect(str(db_path), check_same_thread=False)
-    cp = sqlite_checkpointer(conn=conn)
+    cp = json_file_checkpointer(str(tmp_path / "checkpoints"))
     runtime = FinanceRuntime(
         tenant_id="checkpoint-test",
         cortex_cache_dir=str(tmp_path / "cortex"),
@@ -41,10 +38,8 @@ def test_thread_resumes_after_restart(tmp_path):
     r2 = compiled.invoke(turn_input("What about USD to GBP?", turn_id="t2"), config=config)
     history_len = len(r2.get("conversation_history") or [])
     assert history_len >= 2
-    conn.close()
 
-    conn2 = sqlite3.connect(str(db_path), check_same_thread=False)
-    cp2 = sqlite_checkpointer(conn=conn2)
+    cp2 = json_file_checkpointer(str(tmp_path / "checkpoints"))
     runtime2 = FinanceRuntime(
         tenant_id="checkpoint-test",
         cortex_cache_dir=str(tmp_path / "cortex"),
@@ -59,4 +54,3 @@ def test_thread_resumes_after_restart(tmp_path):
         config=config,
     )
     assert len(r3.get("conversation_history") or []) > history_len
-    conn2.close()

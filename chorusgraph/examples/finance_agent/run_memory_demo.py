@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import sqlite3
 import sys
 import tempfile
 import time
@@ -12,7 +11,7 @@ from typing import Any, Dict, List
 from uuid import uuid4
 
 from chorusgraph import SqliteLedgerSink, wrap
-from chorusgraph.checkpoint import create_checkpointer
+from chorusgraph.core.persistence import json_file_checkpointer
 from chorusgraph.examples.finance_agent.graph import (
     GRAPH_ID,
     TENANT_ID,
@@ -57,12 +56,11 @@ def _invoke_turn(
 
 
 def demo_thread_resume(checkpoint_path: Path) -> Dict[str, Any]:
-    _print_section("Demo A — Thread resume after process restart (PrismCheckpointer / SQLite)")
+    _print_section("Demo A — Thread resume after process restart (native EngineCheckpointer)")
     thread_id = f"finance-thread-{uuid4().hex[:8]}"
     config = {"configurable": {"thread_id": thread_id}}
 
-    conn = sqlite3.connect(str(checkpoint_path), check_same_thread=False)
-    cp = create_checkpointer("sqlite", conn=conn)
+    cp = json_file_checkpointer(str(checkpoint_path))
     runtime = FinanceRuntime(tenant_id="finance-resume-demo", cortex_cache_dir=str(checkpoint_path.parent / "cortex-resume"))
     compiled, _ = build_finance_graph(runtime, checkpointer=cp)
     wrapped = wrap(compiled, tenant_id=TENANT_ID, graph_id=GRAPH_ID, sink=SqliteLedgerSink(":memory:"))
@@ -82,11 +80,9 @@ def demo_thread_resume(checkpoint_path: Path) -> Dict[str, Any]:
         turn_id="turn-2",
     )
     history_len_before = len(t2.get("conversation_history") or [])
-    conn.close()
 
-    print("\n>>> Simulating process restart (new connection, same SQLite checkpoint file) <<<")
-    conn2 = sqlite3.connect(str(checkpoint_path), check_same_thread=False)
-    cp2 = create_checkpointer("sqlite", conn=conn2)
+    print("\n>>> Simulating process restart (new runtime, same checkpoint directory) <<<")
+    cp2 = json_file_checkpointer(str(checkpoint_path))
     runtime2 = FinanceRuntime(tenant_id="finance-resume-demo", cortex_cache_dir=str(checkpoint_path.parent / "cortex-resume"))
     compiled2, _ = build_finance_graph(runtime2, checkpointer=cp2)
     wrapped2 = wrap(compiled2, tenant_id=TENANT_ID, graph_id=GRAPH_ID, sink=SqliteLedgerSink(":memory:"))
@@ -102,7 +98,6 @@ def demo_thread_resume(checkpoint_path: Path) -> Dict[str, Any]:
         config,
         turn_id="turn-3",
     )
-    conn2.close()
 
     return {
         "thread_id": thread_id,

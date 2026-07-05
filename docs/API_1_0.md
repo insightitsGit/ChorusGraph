@@ -16,7 +16,18 @@
 |--------|---------|
 | `gate`, `seed_cache_entry` | Cache gate evaluation and seeding |
 | `CortexMemoryService`, `get_cortex_service` | L3 Cortex memory |
-| `ChorusStack` | Composed cache + memory + ledger stack |
+| `ChorusStack` | Composed cache + memory + ledger + **retrieval** stack |
+
+## Plug-ins & retrieval (1.0)
+
+| Symbol | Purpose |
+|--------|---------|
+| `KeywordRetrievalBackend` | Zero-dep default retrieval |
+| `PrismRAGRetrievalBackend` | Chroma vector + optional taxonomy remap |
+| `with_retrieval()` | Swap retrieval port on `ChorusStack` |
+| `to_retrieve_handler()` | Ready-made retrieve node |
+
+Import via `chorusgraph.compose` — see [`docs/INSTALL.md`](INSTALL.md) and [`docs/PLUGINS.md`](PLUGINS.md).
 
 ## Persistence & lifecycle (E5)
 
