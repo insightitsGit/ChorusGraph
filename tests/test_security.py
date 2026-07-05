@@ -11,10 +11,12 @@ from chorusgraph.ledger.sink import SqliteLedgerSink
 from chorusgraph.nodes.tool import ToolRegistry, ToolSpec
 from chorusgraph.security import (
     AuthorizationError,
+    CacheSecurityError,
     CacheSecurityGuard,
     FederationAuthContext,
     ToolAllowlist,
     ToolSecurityError,
+    TransportSecurityError,
     TransportSecurityPolicy,
     redact_text,
 )
@@ -35,14 +37,12 @@ def test_disallowed_tool_not_registered():
     allow = ToolAllowlist(allowed_tools=frozenset({"safe_only"}))
     registry = ToolRegistry(allowlist=allow)
     with pytest.raises(ToolSecurityError):
-        registry.register(
-            ToolSpec(name="evil", description="", parameters={}, fn=lambda: None)
-        )
+        registry.register(ToolSpec(name="evil", description="", parameters={}, fn=lambda: None))
 
 
 def test_tls_default_blocks_plain_http():
     policy = TransportSecurityPolicy()
-    with pytest.raises(Exception):
+    with pytest.raises(TransportSecurityError):
         policy.validate_endpoint("http://api.example.com/data")
 
 
@@ -67,7 +67,7 @@ def test_federation_missing_token_denied():
 
 def test_cache_cross_tenant_write_blocked():
     guard = CacheSecurityGuard(tenant_id="tenant-a")
-    with pytest.raises(Exception):
+    with pytest.raises(CacheSecurityError):
         guard.authorize_write(
             writer="cache_gate",
             entry_tenant_id="tenant-b",
@@ -77,7 +77,7 @@ def test_cache_cross_tenant_write_blocked():
 
 def test_cache_user_generated_blocked():
     guard = CacheSecurityGuard(tenant_id="tenant-a")
-    with pytest.raises(Exception):
+    with pytest.raises(CacheSecurityError):
         guard.authorize_write(
             writer="cache_gate",
             entry_tenant_id="tenant-a",

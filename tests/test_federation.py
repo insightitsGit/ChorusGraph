@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import multiprocessing as mp
-from typing import Any, Dict, List
+from typing import Any
 
 import numpy as np
 import pytest
@@ -22,7 +21,7 @@ class CountingEmbedder:
     def __init__(self) -> None:
         self.call_count = 0
 
-    def embed(self, texts: List[str]) -> np.ndarray:
+    def embed(self, texts: list[str]) -> np.ndarray:
         self.call_count += 1
         dim = 384
         out = np.zeros((len(texts), dim), dtype=np.float32)
@@ -44,10 +43,9 @@ def _remote_child_graph():
     return g.compile()
 
 
-def _remote_batch_executor(batch: Any, spec: Any, config: Dict[str, Any]) -> List[Dict[str, Any]]:
-    outputs: List[Dict[str, Any]] = []
+def _remote_batch_executor(batch: Any, spec: Any, config: dict[str, Any]) -> list[dict[str, Any]]:
+    outputs: list[dict[str, Any]] = []
     from chorusgraph.core.subgraph_transport import decode_boundary_envelope
-    from chorusgraph.core.send import BranchTask
 
     for idx, ref in enumerate(batch.artifact_refs):
         import json
@@ -62,7 +60,13 @@ def _remote_batch_executor(batch: Any, spec: Any, config: Dict[str, Any]) -> Lis
         )
         child_input.update(payload)
         values = spec.child.invoke(child_input, config=config)
-        outputs.append({"item": values.get("item"), "processed": values.get("processed"), "branch_id": f"b{idx}"})
+        outputs.append(
+            {
+                "item": values.get("item"),
+                "processed": values.get("processed"),
+                "branch_id": f"b{idx}",
+            }
+        )
     return outputs
 
 
@@ -74,13 +78,15 @@ def map_ten(ctx: NodeContext):
 @native_node
 def reduce_quorum(ctx: NodeContext):
     outputs = ctx.read().get("branch_outputs") or []
-    return ctx.publish(artifact={"count": len(outputs), "items": sorted(o.get("item", "") for o in outputs)})
+    return ctx.publish(
+        artifact={"count": len(outputs), "items": sorted(o.get("item", "") for o in outputs)}
+    )
 
 
 def test_prismapi_zero_reembed_on_query_vector():
     pytest.importorskip("prism.api")
-    from prism.api.provider import PrismAPIProvider
     from prism.api.consumer import PrismAPIClient
+    from prism.api.provider import PrismAPIProvider
     from prism.lib.lang import PrismProjector, ProjectionConfig
 
     embedder = CountingEmbedder()

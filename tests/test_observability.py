@@ -5,11 +5,8 @@ from __future__ import annotations
 import json
 import urllib.request
 
-import pytest
-
 from chorusgraph.ledger.models import LedgerStep, RouteLedger
 from chorusgraph.observability import (
-    configure_structured_logging,
     export_spans_otlp_json,
     get_metrics,
     health_status,
@@ -32,7 +29,9 @@ def test_ledger_trace_id_matches_run_id():
 def test_otlp_export_includes_error_attrs():
     ledger = RouteLedger(tenant_id="t1", graph_id="g1")
     ledger.add_step(
-        LedgerStep(node="tool", duration_ms=5, error_code="timeout", error_kind="transient", retryable=True)
+        LedgerStep(
+            node="tool", duration_ms=5, error_code="timeout", error_kind="transient", retryable=True
+        )
     )
     spans = export_spans_otlp_json(ledger)
     assert spans[0]["attributes"]["chorusgraph.error_code"] == "timeout"
@@ -48,8 +47,12 @@ def test_health_server_endpoints():
     server = start_health_server("127.0.0.1", 0)
     port = server.server_port
     try:
-        health = json.loads(urllib.request.urlopen(f"http://127.0.0.1:{port}/health", timeout=2).read())
-        metrics = json.loads(urllib.request.urlopen(f"http://127.0.0.1:{port}/metrics", timeout=2).read())
+        health = json.loads(
+            urllib.request.urlopen(f"http://127.0.0.1:{port}/health", timeout=2).read()
+        )
+        metrics = json.loads(
+            urllib.request.urlopen(f"http://127.0.0.1:{port}/metrics", timeout=2).read()
+        )
         assert health["status"] == "ok"
         assert "llm_calls" in metrics
     finally:

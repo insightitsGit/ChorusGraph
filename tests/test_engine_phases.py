@@ -5,17 +5,13 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-import pytest
-
 from chorusgraph import SqliteLedgerSink, get_run, wrap
 from chorusgraph.cache_gate import SidecarStore, seed_cache_entry
-from chorusgraph.core import END, Graph, START
-from chorusgraph.core.cache_interceptor import CacheRuntime, NodeCacheSpec
-from chorusgraph.core.cache_interceptor import CacheInterceptor
-from chorusgraph.core.node import NodeContext
+from chorusgraph.core import END, START, Graph
+from chorusgraph.core.cache_interceptor import CacheRuntime
 from chorusgraph.core.channels import NodeUpdate
+from chorusgraph.core.node import NodeContext
 from chorusgraph.core.persistence import json_file_checkpointer
-from chorusgraph.core.scheduler import GraphInterrupt
 from chorusgraph.core.trace import RouteTracker
 from chorusgraph.examples.demo_graph import GRAPH_ID, TENANT_ID, build_demo_graph
 from chorusgraph.examples.multi_agent_graph import build_multi_agent_graph
@@ -136,9 +132,23 @@ def test_p4_cache_skip_zero_llm():
 def test_p4_native_ledger_via_wrap():
     sink = SqliteLedgerSink(":memory:")
     wrapped = wrap(build_demo_graph(), tenant_id=TENANT_ID, graph_id=GRAPH_ID, sink=sink)
-    wrapped.invoke({"tenant_id": TENANT_ID, "message": "hi", "score": 0, "route": "", "rule_chain": [], "prism_sequence": [], "response": ""})
+    wrapped.invoke(
+        {
+            "tenant_id": TENANT_ID,
+            "message": "hi",
+            "score": 0,
+            "route": "",
+            "rule_chain": [],
+            "prism_sequence": [],
+            "response": "",
+        }
+    )
     assert wrapped.last_ledger is not None
-    assert [s.node for s in wrapped.last_ledger.steps] == ["analyze", "route_decision", "short_path"]
+    assert [s.node for s in wrapped.last_ledger.steps] == [
+        "analyze",
+        "route_decision",
+        "short_path",
+    ]
     persisted = get_run(sink, wrapped.last_ledger.run_id)
     assert persisted is not None
 
@@ -146,7 +156,9 @@ def test_p4_native_ledger_via_wrap():
 def test_p4_multi_agent_role_graph():
     sink = SqliteLedgerSink(":memory:")
     compiled = build_multi_agent_graph()
-    wrapped = wrap(compiled, tenant_id="multi-agent-demo", graph_id="researcher-writer-validator", sink=sink)
+    wrapped = wrap(
+        compiled, tenant_id="multi-agent-demo", graph_id="researcher-writer-validator", sink=sink
+    )
     out = wrapped.invoke({"message": "Explain ChorusGraph engine"})
     assert out.get("response")
     nodes = [s.node for s in wrapped.last_ledger.steps]

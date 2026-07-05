@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from chorusgraph.cache_gate import seed_cache_entry
 from chorusgraph.embedders import CountingEmbedder
-from chorusgraph.examples.finance_agent.patterns_graph import build_react_graph, pattern_initial_state
+from chorusgraph.examples.finance_agent.patterns_graph import (
+    build_react_graph,
+    pattern_initial_state,
+)
 from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
 
 

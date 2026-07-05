@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
+
+from prismcortex.models import ExtractedGist, Subgraph
 
 from chorusgraph.memory.cortex_compat import _coerce_gist_payload, apply_cortex_compat_patches
-from prismcortex.models import ExtractedGist, Subgraph
 
 
 def test_coerce_gist_payload_null_notes():
@@ -19,6 +20,8 @@ def test_patched_extract_tolerates_null_notes():
     from prismcortex.llm.gemini import GeminiClient
 
     client = GeminiClient.__new__(GeminiClient)
-    with patch.object(client, "_generate", return_value='{"entities":[],"relations":[],"notes":null}'):
+    with patch.object(
+        client, "_generate", return_value='{"entities":[],"relations":[],"notes":null}'
+    ):
         gist = client.extract("user prefers conservative investing", Subgraph())
     assert gist.notes == ""

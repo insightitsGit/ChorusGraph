@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import time
-
 import pytest
 
-from chorusgraph.core import END, Graph, START
-from chorusgraph.core.node import NodeContext
+from chorusgraph.core import END, START, Graph
 from chorusgraph.core.channels import NodeUpdate
+from chorusgraph.core.node import NodeContext
 from chorusgraph.ledger.sink import SqliteLedgerSink
 from chorusgraph.memory.async_digest import AsyncDigester
 from chorusgraph.nodes.tool import ToolSpec, run_tool
@@ -50,14 +48,18 @@ def test_resilient_call_retries_then_succeeds():
     out = resilient_call(
         "test-flaky",
         flaky,
-        policy=CallPolicy(timeout_seconds=2.0, retry=RetryPolicy(max_retries=3, base_delay_seconds=0.01)),
+        policy=CallPolicy(
+            timeout_seconds=2.0, retry=RetryPolicy(max_retries=3, base_delay_seconds=0.01)
+        ),
     )
     assert out == "ok"
     assert calls["n"] == 3
 
 
 def test_circuit_breaker_opens_after_failures():
-    breaker = get_breaker("test-open", BreakerConfig(failure_threshold=2, recovery_timeout_seconds=60.0))
+    breaker = get_breaker(
+        "test-open", BreakerConfig(failure_threshold=2, recovery_timeout_seconds=60.0)
+    )
     policy = CallPolicy(timeout_seconds=1.0, retry=RetryPolicy(max_retries=0))
 
     def always_fail() -> None:

@@ -6,9 +6,9 @@ import os
 
 import pytest
 
-from chorusgraph.core import END, Graph, START
-from chorusgraph.core.node import NodeContext
+from chorusgraph.core import END, START, Graph
 from chorusgraph.core.channels import NodeUpdate
+from chorusgraph.core.node import NodeContext
 from chorusgraph.core.persistence import postgres_checkpointer
 
 PG_DSN = os.environ.get("CHORUSGRAPH_PG_DSN")

@@ -2,9 +2,7 @@
 
 from __future__ import annotations
 
-import json
-
-import pytest
+from prismcortex.models import DeltaOp, Node, Operation, Provenance, StateDelta
 
 from chorusgraph.ledger.models import RouteLedger
 from chorusgraph.ledger.sink import SqliteLedgerSink
@@ -16,7 +14,6 @@ from chorusgraph.persistence import (
     restore_sqlite_store,
     verify_backup_integrity,
 )
-from prismcortex.models import DeltaOp, Node, Operation, Provenance, StateDelta
 
 
 def _sample_delta(source_id: str = "subject-42") -> StateDelta:

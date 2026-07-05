@@ -9,8 +9,6 @@ from chorusgraph.transport import (
     InProcSpine,
     PrismAPISpine,
     TransportMode,
-    publish_hop,
-    resolve_envelope_artifact,
 )
 from chorusgraph.transport.chorus import ChorusSpine
 from chorusgraph.transport.context import PrismEngineContext

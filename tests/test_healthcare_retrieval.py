@@ -22,7 +22,9 @@ def test_make_healthcare_retrieve_handler_rerank(monkeypatch):
     state = {
         "message": "metformin contrast eGFR",
         "topic": "diabetes",
-        "query_vector_64": runtime.cache._projector.project(runtime.cache._embedder.embed("x")).vector.tolist(),
+        "query_vector_64": runtime.cache._projector.project(
+            runtime.cache._embedder.embed("x")
+        ).vector.tolist(),
     }
     update = handler(state)
     assert update.get("retrieved")

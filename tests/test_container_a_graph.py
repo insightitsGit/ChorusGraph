@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Dict, List
-
 from benchmark.fl1.graph import build_langgraph_agent, fresh_turn_state, run_task
 from benchmark.shared.stub_gemini import StubGemini
 from benchmark.workload import CANONICAL_QUERIES
@@ -53,8 +51,8 @@ def test_second_task_in_session_still_calls_tool():
     )
     compiled, gemini, _ = build_langgraph_agent(gemini=stub)
 
-    history: List[Dict[str, str]] = []
-    tool_counts: List[int] = []
+    history: list[dict[str, str]] = []
+    tool_counts: list[int] = []
     for message in (CANONICAL_QUERIES["usd_eur"][0], CANONICAL_QUERIES["usd_gbp"][0]):
         stub._react_i = 0
         result = run_task(message, compiled=compiled, gemini=gemini, conversation_history=history)

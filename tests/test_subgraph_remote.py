@@ -40,7 +40,9 @@ def test_chorus_location_round_trip():
     )
     parent.add_edge(START, "remote_child")
     parent.add_edge("remote_child", END)
-    out = parent.compile().invoke({"message": "chorus"}, config={"configurable": {"thread_id": "remote-chorus"}})
+    out = parent.compile().invoke(
+        {"message": "chorus"}, config={"configurable": {"thread_id": "remote-chorus"}}
+    )
     assert out.get("child_result") == "chorus"
 
 
@@ -55,5 +57,7 @@ def test_prismapi_location_round_trip():
     )
     parent.add_edge(START, "remote_child")
     parent.add_edge("remote_child", END)
-    out = parent.compile().invoke({"message": "api"}, config={"configurable": {"thread_id": "remote-api"}})
+    out = parent.compile().invoke(
+        {"message": "api"}, config={"configurable": {"thread_id": "remote-api"}}
+    )
     assert out.get("child_result") == "api"

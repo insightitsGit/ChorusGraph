@@ -4,13 +4,15 @@ from __future__ import annotations
 
 import numpy as np
 
+from chorusgraph.policy.embedder_guard import build_guarded_cache
 from chorusgraph.transforms.cortex_projector import project_cortex_from_raw, project_cortex_text
 from chorusgraph.transforms.projector import project_from_raw, project_text
-from chorusgraph.policy.embedder_guard import build_guarded_cache
 
 
 def test_cortex_projection_is_128d():
-    slug, vec, chain = project_cortex_text("finance-tenant", "conservative investor low risk tolerance")
+    slug, vec, chain = project_cortex_text(
+        "finance-tenant", "conservative investor low risk tolerance"
+    )
     assert len(vec) == 128
     assert slug
     assert any("k=128" in r for r in chain)

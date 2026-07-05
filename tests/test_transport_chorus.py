@@ -6,17 +6,22 @@ import json
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import Any, Dict, List
+from typing import Any
 
 import pytest
 
 from chorusgraph.core.transport_router import TransportRouter
-from chorusgraph.transport.chorus import ChorusBatchFrame, ChorusFrame, ChorusSpine, encode_batch_frame
+from chorusgraph.transport.chorus import (
+    ChorusBatchFrame,
+    ChorusFrame,
+    ChorusSpine,
+    encode_batch_frame,
+)
 from chorusgraph.transport.modes import TransportMode
 
 
 class _IngestHandler(BaseHTTPRequestHandler):
-    received: List[Dict[str, Any]] = []
+    received: list[dict[str, Any]] = []
 
     def do_POST(self) -> None:  # noqa: N802
         length = int(self.headers.get("Content-Length", 0))
@@ -59,7 +64,8 @@ def test_chorus_batch_frame_wire_roundtrip():
 
 def test_cluster_transport_loopback_http():
     httpx = pytest.importorskip("httpx")
-    from prism.cluster.transport import ClusterTransport, TransportMode as ClusterMode
+    from prism.cluster.transport import ClusterTransport
+    from prism.cluster.transport import TransportMode as ClusterMode
 
     server, thread = _start_server()
     port = server.server_address[1]

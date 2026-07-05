@@ -19,7 +19,6 @@ from chorusgraph.shadow.replay.stats import (
     clopper_pearson_upper,
     wilson_upper,
 )
-from chorusgraph.sections.models import CachePolicy
 
 
 def _turn(i: int, query: str, response: str, slug: str = "site_kb") -> TurnRecord:

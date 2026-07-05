@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from benchmark.hl2.runner import HL2Runner, build_healthcare_graph_hl2
 from benchmark.healthcare.tools import check_drug_interactions, retrieve_guidelines
-from benchmark.healthcare_workload import HealthcareCase, PIPELINE_AGENTS
+from benchmark.healthcare_workload import PIPELINE_AGENTS, HealthcareCase
+from benchmark.hl2.runner import HL2Runner, build_healthcare_graph_hl2
 from benchmark.multiagent_measure import hop_names
 from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient, LlmUsage
 
@@ -38,7 +38,11 @@ class _StubHealthcareGemini(InstrumentedGeminiClient):
     def generate_json(self, system: str, user: str) -> str:
         self.usage.record(prompt_tokens=35, output_tokens=25)
         if "safety" in system.lower():
-            if "lunar" in user.lower() or "off-label chemo" in user.lower() or "sarcoma" in user.lower():
+            if (
+                "lunar" in user.lower()
+                or "off-label chemo" in user.lower()
+                or "sarcoma" in user.lower()
+            ):
                 return '{"verdict":"ABSTAIN","missing_evidence":["no guideline"],"reason":"ungrounded"}'
             return '{"verdict":"APPROVED","missing_evidence":[],"reason":"grounded"}'
         if "intake" in system.lower():
@@ -108,7 +112,11 @@ def test_container_c_abstain_case():
 
 def test_container_d_cache_hit_prefills_facts_runs_pipeline():
     """H21: cache hit restores facts only — full pipeline runs, writer regenerates judgment."""
-    from benchmark.hc2.cache_helpers import build_cache_payload, cache_query_key, seed_healthcare_cache
+    from benchmark.hc2.cache_helpers import (
+        build_cache_payload,
+        cache_query_key,
+        seed_healthcare_cache,
+    )
     from benchmark.hc2.runner import build_healthcare_graph_hc2
     from benchmark.hc2.runtime import make_healthcare_envelope_runtime
 

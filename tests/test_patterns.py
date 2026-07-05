@@ -19,7 +19,9 @@ from chorusgraph.examples.finance_agent.patterns_graph import (
 @pytest.mark.skipif(not resolve_gemini_api_key(), reason="GEMINI_API_KEY not configured")
 def test_react_pattern_two_tools_in_ledger():
     compiled, _ = build_react_graph()
-    wrapped = wrap(compiled, tenant_id=TENANT_ID, graph_id="finance-react", sink=SqliteLedgerSink(":memory:"))
+    wrapped = wrap(
+        compiled, tenant_id=TENANT_ID, graph_id="finance-react", sink=SqliteLedgerSink(":memory:")
+    )
     result = wrapped.invoke(
         pattern_initial_state(
             "Compare USD to EUR and USD to GBP and tell me which is stronger against USD."
@@ -36,7 +38,12 @@ def test_react_pattern_two_tools_in_ledger():
 @pytest.mark.skipif(not resolve_gemini_api_key(), reason="GEMINI_API_KEY not configured")
 def test_reflection_pattern_catches_wrong_figure():
     compiled, _ = build_reflection_graph()
-    wrapped = wrap(compiled, tenant_id=TENANT_ID, graph_id="finance-reflection", sink=SqliteLedgerSink(":memory:"))
+    wrapped = wrap(
+        compiled,
+        tenant_id=TENANT_ID,
+        graph_id="finance-reflection",
+        sink=SqliteLedgerSink(":memory:"),
+    )
     result = wrapped.invoke(
         pattern_initial_state(
             "What are USD/EUR and USD/GBP rates? Which is stronger against USD?",
@@ -54,7 +61,9 @@ def test_reflection_pattern_catches_wrong_figure():
 @pytest.mark.skipif(not resolve_gemini_api_key(), reason="GEMINI_API_KEY not configured")
 def test_plan_solve_pattern_end_to_end():
     compiled, _ = build_plan_solve_graph()
-    wrapped = wrap(compiled, tenant_id=TENANT_ID, graph_id="finance-plan", sink=SqliteLedgerSink(":memory:"))
+    wrapped = wrap(
+        compiled, tenant_id=TENANT_ID, graph_id="finance-plan", sink=SqliteLedgerSink(":memory:")
+    )
     result = wrapped.invoke(
         pattern_initial_state(
             "Fetch USD to EUR and USD to GBP rates, compute EUR/GBP cross-rate, and summarize."

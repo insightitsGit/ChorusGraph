@@ -2,14 +2,19 @@
 
 from __future__ import annotations
 
-import json
 import os
 
 import pytest
 
 from benchmark.measure import ComparisonReport, TaskMeasurement
 from benchmark.thresholds import H4_DEMO_COARSE, H4_DEMO_VERIFY, measured_thresholds
-from benchmark.workload import REPEAT_BANDS, REPEAT_MODEL, generate_workload, repeat_model_for_band, validate_workload_messages, workload_stats
+from benchmark.workload import (
+    REPEAT_BANDS,
+    generate_workload,
+    repeat_model_for_band,
+    validate_workload_messages,
+    workload_stats,
+)
 
 
 def test_measured_thresholds_not_h4_demo():
@@ -54,7 +59,7 @@ def test_score_task_success_content_not_tool_calls():
 
 
 def test_analyze_produces_ci():
-    from benchmark.analyze import analyze_container, bootstrap_ci
+    from benchmark.analyze import analyze_container
     from benchmark.measure import TaskMeasurement
 
     rows = [
@@ -76,7 +81,11 @@ def test_analyze_produces_ci():
     ]
     metrics = analyze_container(rows)
     assert "latency_ms_p50" in metrics
-    assert metrics["latency_ms_p50"].lower95 <= metrics["latency_ms_p50"].point <= metrics["latency_ms_p50"].upper95
+    assert (
+        metrics["latency_ms_p50"].lower95
+        <= metrics["latency_ms_p50"].point
+        <= metrics["latency_ms_p50"].upper95
+    )
 
 
 def test_container_b_uses_react_path_constant():
@@ -263,9 +272,7 @@ def test_memory_workload_includes_seed_and_cross_recall():
     # Cross-session recall must land in a different session than its seed.
     for recall in cross:
         seed_sessions = {
-            t.session_id
-            for t in seeds
-            if t.memory_cortex_group == recall.memory_cortex_group
+            t.session_id for t in seeds if t.memory_cortex_group == recall.memory_cortex_group
         }
         assert recall.session_id not in seed_sessions
 
@@ -395,7 +402,11 @@ def test_dry_run_both_containers_two_tasks():
         assert row.llm_calls >= 0
         assert isinstance(row.answer, str)
     # Schema parity
-    a_keys = set(report.container_a[0].to_dict().keys()) - {"cache_hit", "cache_score", "grounding_score"}
+    a_keys = set(report.container_a[0].to_dict().keys()) - {
+        "cache_hit",
+        "cache_score",
+        "grounding_score",
+    }
     b_keys = set(report.container_b[0].to_dict().keys())
     for key in a_keys:
         assert key in b_keys

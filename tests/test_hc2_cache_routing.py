@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from benchmark.hc2.cache_helpers import first_judgment_hop_after_cache
-from benchmark.healthcare_workload import HealthcareCase, PIPELINE_AGENTS
+from benchmark.healthcare_workload import PIPELINE_AGENTS, HealthcareCase
 
 
 def test_first_judgment_hop_depth6_runs_analyze_when_missing():
@@ -17,7 +17,9 @@ def test_first_judgment_hop_depth6_runs_analyze_when_missing():
         pipeline_depth=6,
     )
     agents = PIPELINE_AGENTS[6]
-    hop = first_judgment_hop_after_cache({"case": case, "cache_hit": True, "cache_facts": True}, agents)
+    hop = first_judgment_hop_after_cache(
+        {"case": case, "cache_hit": True, "cache_facts": True}, agents
+    )
     assert hop == "analyze"
 
 
@@ -78,7 +80,9 @@ def test_first_judgment_hop_depth4_runs_analyze():
         pipeline_depth=4,
     )
     agents = PIPELINE_AGENTS[4]
-    hop = first_judgment_hop_after_cache({"case": case, "cache_hit": True, "cache_facts": True}, agents)
+    hop = first_judgment_hop_after_cache(
+        {"case": case, "cache_hit": True, "cache_facts": True}, agents
+    )
     assert hop == "analyze"
 
 
@@ -93,5 +97,7 @@ def test_first_judgment_hop_depth2_runs_writer():
         pipeline_depth=2,
     )
     agents = PIPELINE_AGENTS[2]
-    hop = first_judgment_hop_after_cache({"case": case, "cache_hit": True, "cache_facts": True}, agents)
+    hop = first_judgment_hop_after_cache(
+        {"case": case, "cache_hit": True, "cache_facts": True}, agents
+    )
     assert hop == "writer"

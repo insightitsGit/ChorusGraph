@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from chorusgraph.cache_gate import gate, seed_cache_entry
 from chorusgraph.compose import ChorusStack, PrismCacheBackend, RedisCacheBackend
-from chorusgraph.core import END, Graph, START
+from chorusgraph.core import END, START, Graph
 from chorusgraph.core.node import dict_node_adapter
 from chorusgraph.sections.models import CachePolicy, CacheProfile, Section
 

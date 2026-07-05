@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 import pytest
+from prism.cache.embedder import HashEmbedder
 
 from chorusgraph.cache_gate import SidecarStore, gate, seed_cache_entry
 from chorusgraph.cache_gate.decision import DecisionKind
 from chorusgraph.ledger.instrument import make_cache_gate_step
-from chorusgraph.policy.embedder_guard import assert_semantic_embedder, build_guarded_cache, is_hash_embedder
+from chorusgraph.policy.embedder_guard import (
+    assert_semantic_embedder,
+    build_guarded_cache,
+    is_hash_embedder,
+)
 from chorusgraph.sections.models import CachePolicy, Section
-from prism.cache.embedder import HashEmbedder
 
 
 def _section(slug: str = "greeting", policy: CachePolicy = CachePolicy.EXACT) -> Section:

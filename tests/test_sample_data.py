@@ -6,12 +6,16 @@ from benchmark.finance.corpus import (
     CANONICAL_QUERIES,
     COMPOUND_SCENARIOS,
     MEMORY_PROFILES,
+)
+from benchmark.finance.corpus import (
     corpus_stats as finance_stats,
 )
-from benchmark.healthcare.cases import CASES, PARAPHRASES, corpus_stats as healthcare_stats
-from benchmark.healthcare.kb import DRUG_INTERACTIONS, GUIDELINES
+from benchmark.healthcare.cases import CASES
+from benchmark.healthcare.cases import corpus_stats as healthcare_stats
+from benchmark.healthcare.kb import GUIDELINES
 from benchmark.healthcare.tools import check_drug_interactions, retrieve_guidelines
-from benchmark.healthcare_workload import generate_healthcare_workload, workload_stats as hc_workload_stats
+from benchmark.healthcare_workload import generate_healthcare_workload
+from benchmark.healthcare_workload import workload_stats as hc_workload_stats
 from benchmark.rubric import score_by_canonical
 from benchmark.workload import generate_workload, workload_stats
 
@@ -70,7 +74,14 @@ def test_healthcare_drug_interactions_lookup():
             continue
         hits = check_drug_interactions(drugs)
         # Known benchmark pairs must resolve when both drugs listed.
-        if set(drugs) & {"warfarin", "aspirin", "lisinopril", "spironolactone", "simvastatin", "clarithromycin"}:
+        if set(drugs) & {
+            "warfarin",
+            "aspirin",
+            "lisinopril",
+            "spironolactone",
+            "simvastatin",
+            "clarithromycin",
+        }:
             assert hits or case["expected_abstain"]
 
 

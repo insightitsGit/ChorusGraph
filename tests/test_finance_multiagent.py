@@ -4,18 +4,17 @@ from __future__ import annotations
 
 from unittest.mock import patch
 
-from benchmark.fl2.runner import FL2Runner, build_finance_graph_fl2
 from benchmark.fc2.nodes import build_finance_graph_fc2, route_after_cache_fc2
-from benchmark.fc2.runner import FC2Runner
 from benchmark.fc2.trace import clear_trace, trace_path
 from benchmark.finance_multiagent_shared import heuristic_tool_plan
+from benchmark.fl2.runner import FL2Runner, build_finance_graph_fl2
 from benchmark.multiagent_measure import hop_names
 from benchmark.workload import WorkloadTask, generate_workload
 
 
 class _StubFinanceGemini:
     def __init__(self) -> None:
-        from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient, LlmUsage
+        from benchmark.shared.instrumented_gemini import LlmUsage
 
         self.usage = LlmUsage()
         self._client = None
@@ -122,7 +121,9 @@ def test_container_f_graph_cache_hit_path_offline():
     )
     stub = _StubFinanceGemini()
     graph, _, runtime = build_finance_graph_fc2(gemini=stub)
-    runtime.seed_tool_cache(task.message, {"from_currency": "USD", "to_currency": "EUR", "rate": 0.87727})
+    runtime.seed_tool_cache(
+        task.message, {"from_currency": "USD", "to_currency": "EUR", "rate": 0.87727}
+    )
 
     result = graph.invoke(
         {

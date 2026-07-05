@@ -7,7 +7,7 @@ from pathlib import Path
 
 from chorusgraph.core.constants import END, START
 from chorusgraph.core.graph import Graph
-from chorusgraph.core.node import NodeContext, NodeInterrupt, native_node
+from chorusgraph.core.node import NodeContext, native_node
 from chorusgraph.core.persistence import json_file_checkpointer
 from chorusgraph.sections.models import CachePolicy
 
@@ -42,7 +42,9 @@ def test_parent_child_mapping_round_trip():
 
     parent_g = Graph()
     parent_g.add_node("prep", parent_prep)
-    parent_g.add_subgraph("child_sg", child, input_map={"message": "msg"}, output_map={"child_result": "child_result"})
+    parent_g.add_subgraph(
+        "child_sg", child, input_map={"message": "msg"}, output_map={"child_result": "child_result"}
+    )
     parent_g.add_node("finish", parent_finish)
     parent_g.add_edge(START, "prep")
     parent_g.add_edge("prep", "child_sg")
@@ -68,7 +70,9 @@ def test_interrupt_inside_child_surfaces_to_parent():
 
     parent_g = Graph()
     parent_g.add_node("prep", parent_prep)
-    parent_g.add_subgraph("child_sg", child, input_map={"message": "msg"}, output_map={"child_result": "child_result"})
+    parent_g.add_subgraph(
+        "child_sg", child, input_map={"message": "msg"}, output_map={"child_result": "child_result"}
+    )
     parent_g.add_edge(START, "prep")
     parent_g.add_edge("prep", "child_sg")
     parent_g.add_edge("child_sg", END)
@@ -91,7 +95,9 @@ def test_namespaced_child_thread_checkpoint():
     child = child_g.compile(checkpointer=cp)
 
     parent_g = Graph()
-    parent_g.add_subgraph("child_sg", child, input_map={"message": "msg"}, output_map={"child_result": "child_result"})
+    parent_g.add_subgraph(
+        "child_sg", child, input_map={"message": "msg"}, output_map={"child_result": "child_result"}
+    )
     parent_g.add_edge(START, "child_sg")
     parent_g.add_edge("child_sg", END)
 

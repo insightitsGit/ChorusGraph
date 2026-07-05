@@ -7,10 +7,11 @@ import pytest
 from chorusgraph.ledger.models import RouteLedger
 from chorusgraph.ledger.sink import SqliteLedgerSink
 from chorusgraph.persistence.sqlite_graph_store import SqliteGraphStore
-from chorusgraph.security.cache import CacheSecurityGuard, CacheSecurityError
+from chorusgraph.security.cache import CacheSecurityError, CacheSecurityGuard
 from chorusgraph.tenant import (
     TenantContext,
     TenantIsolationError,
+    TenantQuotaExceeded,
     TenantResourceLimiter,
     assert_graph_read,
     safe_get_run,
@@ -49,7 +50,7 @@ def test_resource_limiter_blocks_burst():
     tid = "noisy"
     for _ in range(16):
         limiter.acquire(tid)
-    with pytest.raises(Exception):
+    with pytest.raises(TenantQuotaExceeded):
         limiter.acquire(tid)
 
 

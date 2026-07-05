@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from chorusgraph.core import END, Graph, START
-from chorusgraph.core.node import NodeContext
-from chorusgraph.core.channels import NodeUpdate
 from benchmark.load.harness import run_load, run_sweep
+from chorusgraph.core import END, START, Graph
+from chorusgraph.core.channels import NodeUpdate
+from chorusgraph.core.node import NodeContext
 
 
 def _compiled():
@@ -31,6 +31,8 @@ def test_load_harness_reports_throughput():
 
 def test_load_sweep_increasing_concurrency():
     compiled = _compiled()
-    reports = run_sweep(lambda: compiled.invoke({"n": 0}), concurrencies=[1, 2], requests_per_level=10)
+    reports = run_sweep(
+        lambda: compiled.invoke({"n": 0}), concurrencies=[1, 2], requests_per_level=10
+    )
     assert len(reports) == 2
     assert all(r.success_rate == 1.0 for r in reports)

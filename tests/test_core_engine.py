@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from chorusgraph.core import END, Graph, START
+from chorusgraph.core import END, START, Graph
 from chorusgraph.core.bus import ResonanceBus, frequency_for_slug
 from chorusgraph.core.channels import ChannelState, NodeUpdate, publish_update
 from chorusgraph.core.node import NodeContext
@@ -79,12 +79,16 @@ def test_cycle_reactivates_node():
     def flip(ctx: NodeContext) -> NodeUpdate:
         visits["n"] += 1
         done = visits["n"] >= 2
-        return ctx.publish(artifact={"done": done, "raw_output": str(done)}, category_slug="general")
+        return ctx.publish(
+            artifact={"done": done, "raw_output": str(done)}, category_slug="general"
+        )
 
     g = Graph()
     g.add_node("flip", flip)
     g.add_edge(START, "flip")
-    g.add_conditional_edges("flip", lambda v: "end" if v.get("done") else "again", {"again": "flip", "end": END})
+    g.add_conditional_edges(
+        "flip", lambda v: "end" if v.get("done") else "again", {"again": "flip", "end": END}
+    )
     g.compile(recursion_limit=10).invoke({})
     assert visits["n"] == 2
 
@@ -181,7 +185,9 @@ def test_ambiguous_resonance_falls_back_to_router():
     g.add_node("tool", tool)
     g.add_node("writer", writer)
     g.add_edge(START, "react")
-    g.add_conditional_edges("react", route_react, {"tool": "tool", "writer": "writer", "react": "react"})
+    g.add_conditional_edges(
+        "react", route_react, {"tool": "tool", "writer": "writer", "react": "react"}
+    )
     g.add_edge("tool", END)
     g.add_edge("writer", END)
 

@@ -73,7 +73,10 @@ def test_require_tool_before_finish_blocks_early_finish():
             {"thought": "finish early", "action": None, "finish": True},
             {
                 "thought": "must fetch",
-                "action": {"tool": "fetch_exchange_rate", "args": {"from_currency": "USD", "to_currency": "EUR"}},
+                "action": {
+                    "tool": "fetch_exchange_rate",
+                    "args": {"from_currency": "USD", "to_currency": "EUR"},
+                },
                 "finish": False,
             },
             {"thought": "done", "action": None, "finish": True},
@@ -148,7 +151,10 @@ def test_agent_run_react_matches_run_react_shim():
         [
             {
                 "thought": "fetch",
-                "action": {"tool": "fetch_exchange_rate", "args": {"from_currency": "USD", "to_currency": "EUR"}},
+                "action": {
+                    "tool": "fetch_exchange_rate",
+                    "args": {"from_currency": "USD", "to_currency": "EUR"},
+                },
                 "finish": False,
             },
             {"thought": "done", "action": None, "finish": True},
@@ -156,17 +162,24 @@ def test_agent_run_react_matches_run_react_shim():
     )
     policy = PlanPolicy(max_steps=4)
     opts = ReActOpts(max_tool_calls=4)
-    via_agent = Agent(pattern="react", tools=registry, model=llm, policy=policy, pattern_opts=opts).run("USD EUR")
+    via_agent = Agent(
+        pattern="react", tools=registry, model=llm, policy=policy, pattern_opts=opts
+    ).run("USD EUR")
     llm2, _ = _stub_react_llm(
         [
             {
                 "thought": "fetch",
-                "action": {"tool": "fetch_exchange_rate", "args": {"from_currency": "USD", "to_currency": "EUR"}},
+                "action": {
+                    "tool": "fetch_exchange_rate",
+                    "args": {"from_currency": "USD", "to_currency": "EUR"},
+                },
                 "finish": False,
             },
             {"thought": "done", "action": None, "finish": True},
         ]
     )
-    via_shim = run_react(question="USD EUR", registry=registry, llm_json=llm2, policy=policy, pattern_opts=opts)
+    via_shim = run_react(
+        question="USD EUR", registry=registry, llm_json=llm2, policy=policy, pattern_opts=opts
+    )
     assert len(via_agent.tool_calls) == len(via_shim.tool_calls) == 1
     assert via_agent.tool_calls[0]["ok"] is True

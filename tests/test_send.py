@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import tempfile
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 import pytest
 
@@ -158,6 +158,7 @@ def test_deterministic_branch_ordering():
     ids_b: list[str] = []
 
     for store, tid in ((ids_a, "det-a"), (ids_b, "det-b")):
+
         @native_node
         def id_worker(ctx: NodeContext, _store=store):
             _store.append(ctx.branch_id or "")
@@ -255,4 +256,3 @@ def test_branch_same_key_isolation_and_scalar_collision():
     for bid, snap in branch_reads.items():
         assert snap["base_shared_tag"] is None
         assert snap["read_item"] == snap["item"]
-

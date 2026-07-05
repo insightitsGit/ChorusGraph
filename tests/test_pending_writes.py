@@ -5,10 +5,16 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
-from chorusgraph.core import END, Graph, START
+from chorusgraph.core import END, START, Graph
 from chorusgraph.core.channels import NodeUpdate, publish_update
 from chorusgraph.core.node import NodeContext
-from chorusgraph.core.pending_writes import MidStepAbort, PendingWriteStore, node_update_from_dict, node_update_to_dict, pending_store_for_backend
+from chorusgraph.core.pending_writes import (
+    MidStepAbort,
+    PendingWriteStore,
+    node_update_from_dict,
+    node_update_to_dict,
+    pending_store_for_backend,
+)
 from chorusgraph.core.persistence import EngineCheckpointer, json_file_checkpointer
 
 
@@ -56,22 +62,30 @@ def test_parallel_nodes_crash_resume_only_reruns_failed():
 
         def split(ctx: NodeContext) -> NodeUpdate:
             counts["split"] += 1
-            return ctx.publish(artifact={"split": True, "raw_output": "split"}, category_slug="general")
+            return ctx.publish(
+                artifact={"split": True, "raw_output": "split"}, category_slug="general"
+            )
 
         def a(ctx: NodeContext) -> NodeUpdate:
             counts["a"] += 1
-            return ctx.publish(artifact={"a": counts["a"], "raw_output": "a"}, category_slug="general")
+            return ctx.publish(
+                artifact={"a": counts["a"], "raw_output": "a"}, category_slug="general"
+            )
 
         def b(ctx: NodeContext) -> NodeUpdate:
             counts["b"] += 1
-            return ctx.publish(artifact={"b": counts["b"], "raw_output": "b"}, category_slug="general")
+            return ctx.publish(
+                artifact={"b": counts["b"], "raw_output": "b"}, category_slug="general"
+            )
 
         def c(ctx: NodeContext) -> NodeUpdate:
             counts["c"] += 1
             if c_failures["n"] == 0:
                 c_failures["n"] += 1
                 raise MidStepAbort({}, super_step=ctx.super_step, active_nodes={"a", "b", "c"})
-            return ctx.publish(artifact={"c": counts["c"], "raw_output": "c"}, category_slug="general")
+            return ctx.publish(
+                artifact={"c": counts["c"], "raw_output": "c"}, category_slug="general"
+            )
 
         g = Graph()
         g.add_node("split", split)

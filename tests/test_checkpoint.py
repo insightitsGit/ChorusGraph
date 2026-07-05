@@ -34,7 +34,9 @@ def test_thread_resumes_after_restart(tmp_path):
     )
     compiled, _ = build_finance_graph(runtime, checkpointer=cp)
 
-    r1 = compiled.invoke(turn_input("What is the USD to EUR exchange rate today?", turn_id="t1"), config=config)
+    r1 = compiled.invoke(
+        turn_input("What is the USD to EUR exchange rate today?", turn_id="t1"), config=config
+    )
     assert r1.get("response")
     r2 = compiled.invoke(turn_input("What about USD to GBP?", turn_id="t2"), config=config)
     history_len = len(r2.get("conversation_history") or [])

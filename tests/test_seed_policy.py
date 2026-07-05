@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from chorusgraph.cache_gate.seed_policy import is_refusal_response, safety_approving, should_seed_cache
+from chorusgraph.cache_gate.seed_policy import (
+    is_refusal_response,
+    safety_approving,
+    should_seed_cache,
+)
 
 
 def test_refusal_blocks_seed():

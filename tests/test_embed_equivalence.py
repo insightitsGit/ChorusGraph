@@ -12,7 +12,9 @@ from chorusgraph.transforms.projector import project_from_raw, project_text
 
 def test_gate_precomputed_raw_matches_full_embed():
     cache = build_guarded_cache("gate-equiv-test")
-    sidecar = __import__("chorusgraph.cache_gate.sidecar", fromlist=["SidecarStore"]).SidecarStore(":memory:")
+    sidecar = __import__("chorusgraph.cache_gate.sidecar", fromlist=["SidecarStore"]).SidecarStore(
+        ":memory:"
+    )
     query = "USD to EUR exchange rate today"
     seed_cache_entry(
         cache,

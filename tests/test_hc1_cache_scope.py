@@ -7,9 +7,9 @@ from dataclasses import replace
 
 import pytest
 
-from benchmark.healthcare.fingerprint import clinical_fingerprint
-from benchmark.healthcare_workload import HealthcareCase, generate_healthcare_workload
 from benchmark.hc1.runner import HC1Runner, build_healthcare_graph_hc1
+from benchmark.healthcare.fingerprint import clinical_fingerprint
+from benchmark.healthcare_workload import generate_healthcare_workload
 from benchmark.shared.healthcare_cache import gate_clinical, seed_clinical_cache_entry
 from benchmark.shared.instrumented_gemini import LlmUsage
 from chorusgraph.sections.profiles import default_registry

@@ -11,7 +11,9 @@ from benchmark.framework_guard import fc_hc_langgraph_offenders, fl_hl_missing_l
 
 def test_fc_hc_paths_have_no_langgraph_imports():
     offenders = fc_hc_langgraph_offenders()
-    assert not offenders, "LangGraph must not appear in FC/HC code paths:\n  " + "\n  ".join(offenders)
+    assert not offenders, "LangGraph must not appear in FC/HC code paths:\n  " + "\n  ".join(
+        offenders
+    )
 
 
 def test_fl_hl_paths_use_langgraph():

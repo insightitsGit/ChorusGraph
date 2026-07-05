@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from chorusgraph.core.cache_interceptor import NodeCacheSpec
 from chorusgraph.sections.models import CachePolicy, CacheProfile
 from chorusgraph.sections.profiles import ProfileRegistry, load_default_profiles

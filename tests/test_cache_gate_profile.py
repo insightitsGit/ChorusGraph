@@ -2,11 +2,6 @@
 
 from __future__ import annotations
 
-import time
-
-import numpy as np
-import pytest
-
 from chorusgraph.cache_gate import SidecarStore, gate, seed_cache_entry
 from chorusgraph.cache_gate.backend import recall_direct
 from chorusgraph.cache_gate.decision import DecisionKind

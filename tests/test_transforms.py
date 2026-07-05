@@ -8,7 +8,11 @@ from chorusgraph.examples.finance_agent.nodes import make_writer_handler
 from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
 from chorusgraph.policy.embedder_guard import build_guarded_cache
 from chorusgraph.transforms.projector import project_text
-from chorusgraph.transforms.templates import template_fx_response, template_multi_fx_response, try_template_draft
+from chorusgraph.transforms.templates import (
+    template_fx_response,
+    template_multi_fx_response,
+    try_template_draft,
+)
 
 
 def test_project_text_returns_64d_vector():

@@ -5,15 +5,19 @@ from __future__ import annotations
 import time
 
 import pytest
+from prismcortex.models import DigestOutcome
 
+from chorusgraph import SqliteLedgerSink, wrap
 from chorusgraph.examples.finance_agent.gemini_client import resolve_gemini_api_key
-from chorusgraph.examples.finance_agent.graph import build_finance_graph, turn_input
+from chorusgraph.examples.finance_agent.graph import (
+    GRAPH_ID,
+    TENANT_ID,
+    build_finance_graph,
+    turn_input,
+)
 from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
 from chorusgraph.memory import get_cortex_service
 from chorusgraph.memory.cortex_service import CortexMemoryService
-from chorusgraph import SqliteLedgerSink, wrap
-from chorusgraph.examples.finance_agent.graph import GRAPH_ID, TENANT_ID
-from prismcortex.models import DigestOutcome
 
 
 def test_cortex_skips_trivial_salience(tmp_path):
@@ -74,7 +78,9 @@ def test_cross_session_recall_with_provenance(tmp_path):
 
     runtime = FinanceRuntime(tenant_id="cross-session", cortex_cache_dir=str(cortex_dir))
     compiled, _ = build_finance_graph(runtime)
-    wrapped = wrap(compiled, tenant_id=TENANT_ID, graph_id=GRAPH_ID, sink=SqliteLedgerSink(":memory:"))
+    wrapped = wrap(
+        compiled, tenant_id=TENANT_ID, graph_id=GRAPH_ID, sink=SqliteLedgerSink(":memory:")
+    )
 
     config1 = {"configurable": {"thread_id": "session-one"}}
     config2 = {"configurable": {"thread_id": "session-two"}}

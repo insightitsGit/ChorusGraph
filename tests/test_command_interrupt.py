@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from chorusgraph.core import END, Graph, START
+from chorusgraph.core import END, START, Graph
 from chorusgraph.core.channels import NodeUpdate
 from chorusgraph.core.node import Command, NodeContext
 from chorusgraph.core.persistence import json_file_checkpointer
@@ -38,7 +38,9 @@ def test_command_routes_and_updates():
     g.add_node("left", left, category_slug="left")
     g.add_node("right", right, category_slug="long_path")
     g.add_edge(START, "router")
-    g.add_conditional_edges("router", lambda v: v.get("branch", "left"), {"left": "left", "long_path": "right"})
+    g.add_conditional_edges(
+        "router", lambda v: v.get("branch", "left"), {"left": "left", "long_path": "right"}
+    )
     g.add_edge("left", END)
     g.add_edge("right", END)
 

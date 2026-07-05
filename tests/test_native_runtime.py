@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from chorusgraph.core import END, Graph, START
-from chorusgraph.core.node import NodeContext
+from chorusgraph.core import END, START, Graph
 from chorusgraph.core.channels import NodeUpdate
+from chorusgraph.core.node import NodeContext
 
 
 def test_native_linear_graph():

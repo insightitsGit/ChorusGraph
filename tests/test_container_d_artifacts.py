@@ -97,12 +97,15 @@ def test_store_and_resolve_envelope_artifact():
 
 
 def test_should_abstain_safety_topic_without_citations():
-    assert should_abstain(
-        case_topic="safety",
-        retrieve_artifact={"cited_ids": []},
-        retrieved_docs=[],
-        safety_verdict={"verdict": "APPROVED"},
-    ) is True
+    assert (
+        should_abstain(
+            case_topic="safety",
+            retrieve_artifact={"cited_ids": []},
+            retrieved_docs=[],
+            safety_verdict={"verdict": "APPROVED"},
+        )
+        is True
+    )
 
 
 def test_should_abstain_honors_approved_verdict():

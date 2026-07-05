@@ -51,7 +51,9 @@ def test_install_disables_gate_and_seed():
     assert decision.kind == DecisionKind.MISS
     assert not decision.is_hit
 
-    cache_gate_pkg.seed_cache_entry(cache, sidecar, query="q", value={"a": 1}, category_slug="fx_rates")
+    cache_gate_pkg.seed_cache_entry(
+        cache, sidecar, query="q", value={"a": 1}, category_slug="fx_rates"
+    )
     # seed is a no-op when cache disabled — no exception, no store write
 
 
@@ -75,7 +77,9 @@ def test_configure_temperature_reaches_gemini_call_config():
 
     RealClient = real_instrumented_gemini_client()
     client = RealClient.__new__(RealClient)
-    client.usage = __import__("benchmark.shared.instrumented_gemini", fromlist=["LlmUsage"]).LlmUsage()
+    client.usage = __import__(
+        "benchmark.shared.instrumented_gemini", fromlist=["LlmUsage"]
+    ).LlmUsage()
     inner = MagicMock()
     inner._build_prompt.return_value = "prompt"
     client._inner = inner

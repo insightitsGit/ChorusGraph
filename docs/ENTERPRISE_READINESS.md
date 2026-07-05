@@ -1,112 +1,110 @@
-# ChorusGraph — Enterprise Readiness (post-MVP hardening plan)
+# ChorusGraph — Enterprise Readiness
 
-**Positioning:** This is the **hardening phase that runs AFTER the MVP is complete** (H1–H9 + the
-benchmark result). Clean path: finish the MVP and get the numbers first; *then* harden. **Nothing here
-starts until H9 is done.** This doc drives the E-series handoffs the way `BENCHMARK.md` drove H8/H9, under
-the same rules (`PROCESS.md`: no fakes, verify-against-code, honest deferral, one bounded increment).
-
-**Prerequisite gate:** ☑ MVP complete — native engine (Send, subgraphs, per-node durability,
-Command/interrupt, compat shim, distribution + federation wired) ☑ benchmark result in hand — full
-8-scenario matrix, `azure_20260704_212111`, verified line-by-line against raw JSONL: finance clean
-sweep (FL1/FC1, FL2/FC2), healthcare-single tie (HL1/HC1), healthcare-multi a genuine +30pp win
-(HL2 57.5% → HC2 87.5%), zero errors. **Gate cleared 2026-07-04 — the E-track starts now, E1 first.**
+**Positioning:** Post-MVP hardening track (E1–E9) on **`master` @ v1.0.0**. MVP benchmark gate cleared
+2026-07-04; enterprise track merged 2026-07-05.
 
 ---
 
-## Why this is a separate track
-"Enterprise-grade" is defined by the **-ilities** (reliability, security, observability, scalability,
-operability), not features. Those are ~half the total effort and never show in a demo. The MVP proves the
-*concept*; this track makes it *sellable to a regulated buyer*. Don't conflate the two milestones.
-
-## Current scorecard (baseline — update as phases land)
+## Current scorecard (post E-track)
 
 | Dimension | Status |
 |---|---|
-| Architecture / code structure | ✅ Solid — native engine complete, langgraph confined to baselines only |
-| Benchmark proof | ✅ Solid — full matrix verified, healthcare-multi +30pp, zero errors |
-| Functional test suite | ✅ Solid — 271+ passing — but needs live keys / hits real APIs (no deterministic CI tier) |
-| CI/CD + release engineering | 🔴 Gap |
-| Code-quality gates (lint/type/format) | 🔴 Gap |
-| Error handling / resilience | 🟡 Partial |
-| Observability / ops | 🟡 Partial (Route Ledger strong; rest missing) |
-| Security / compliance (§21) | 🔴 Gap — designed, not built |
-| Performance / scale | 🔴 Gap — unvalidated |
-| Data / persistence robustness | 🟡 Partial |
-| Multi-tenant isolation | 🟡 Partial |
-| API stability + reference docs | 🟡 Partial (0.x) |
-| Deployment / packaging | 🔴 Gap |
+| Architecture / native engine | ✅ Solid — LangGraph confined to baselines |
+| Benchmark proof | ✅ Full 8-scenario matrix verified (`20260704_212111`) |
+| Functional test suite | ✅ **323 passing** — deterministic CI tier (no live keys) |
+| CI/CD + release engineering | ✅ GitHub Actions: pytest, ruff, mypy, coverage, SBOM |
+| Code-quality gates | 🟡 **Partial** — ruff/mypy on tests + package; full `chorusgraph/` ruff deferred |
+| Error handling / resilience | ✅ Breakers, retries, partial failures, fault-injection tests |
+| Observability / ops | ✅ Structured logs, OTel, health/metrics, runbooks |
+| Security / compliance (§21) | 🟡 **Built, not externally audited** — SAST/SCA in CI; threat model doc |
+| Performance / scale | 🟡 Load harness + docs; **production SLO soak not run** |
+| Data / persistence | 🟡 **SQLite durable graph** ships; Postgres Cortex = Phase 2 |
+| Multi-tenant isolation | ✅ Guards + leakage tests + quotas |
+| API stability + reference docs | ✅ **1.0.0 frozen** — `public.py`, `API_1_0.md`, `STABILITY.md` |
+| Deployment / packaging | ✅ Dockerfile, Compose, k8s, `DEPLOY.md` |
+| Retrieval plug-in | ✅ `RetrievalBackend` — keyword default, PrismRAG swap |
 
 ---
 
-## The hardening phases (foundation-first)
+## Release readiness (1.0.0)
 
-Each phase = one or more E-series handoffs. Order matters: **E1 first** — CI + a test tier that runs
-without live keys is the ground everything else stands on.
+| Gate | Status |
+|------|--------|
+| `pytest` green (no secrets) | ✅ |
+| CI ruff + format (tests scope) | ✅ |
+| Coverage floor (71%) | ✅ |
+| Lockfile + SBOM | ✅ |
+| `git tag v1.0.0` | ⏸ Tag when Director approves push |
+| External security review | ⏸ Phase 2 / pre-regulated-customer |
+| Production load/soak SLOs | ⏸ Run `python -m benchmark.load` at target concurrency |
 
-### E1 — Engineering foundation
-- [ ] CI pipeline (GitHub Actions): tests + lint + type-check on every PR.
-- [ ] **Deterministic test tier** — record LLM/tool fixtures so the suite runs with **no live keys**; keep a small live-integration tier behind a flag.
-- [ ] Coverage measured + a floor enforced.
-- [ ] Lint (ruff) + format (black) + type-check (mypy) gates.
-- [ ] Dependency lockfile + pinned versions; SBOM.
-- [ ] Release process: semver, changelog, tagged builds.
-- **Acceptance:** a green PR gate runs the full suite with no secrets; coverage reported; a tagged release is reproducible.
-
-### E2 — Resilience
-- [ ] Timeouts + retries + circuit-breakers on **every** external call (Gemini, tools, DB, Cortex).
-- [ ] Graceful degradation: one node failing never crashes the whole graph.
-- [ ] Error taxonomy + consistent handling; idempotency where needed.
-- **Acceptance:** a fault-injection test (kill a tool/DB/LLM mid-run) leaves the graph responsive with a clean partial result, not a crash.
-
-### E3 — Security (§21 build-out)
-- [ ] Tool execution sandboxing + allowlists + capability scoping.
-- [ ] mTLS/TLS default for transport; CHORUS cipher **audited or opt-in-off**.
-- [ ] authn/authz for federated PrismAPI; per-request authorization.
-- [ ] Cache-poisoning controls (per-tenant isolation, write-auth, provenance).
-- [ ] PII redaction in ledger/logs; retention policy.
-- [ ] SAST + SCA (dependency CVEs) + secrets-scanning in CI; threat model doc.
-- **Acceptance:** external security review passes the ship-gate items (§21); no high/critical SCA findings; the crypto is either audited or off by default.
-
-### E4 — Observability / ops
-- [ ] Structured logging (levels, correlation IDs).
-- [ ] OpenTelemetry traces + metrics export (the H1-deferred item).
-- [ ] Health/readiness endpoints.
-- [ ] Alerting + runbooks for the common failure modes.
-- **Acceptance:** a running instance exposes traces/metrics/health to a standard stack (Grafana/Jaeger/Datadog); an on-call could diagnose a failing turn from the telemetry alone.
-
-### E5 — Durable & scalable persistence
-- [ ] Durable Cortex GraphStore (Postgres / customer datastore) — the flagged gap.
-- [ ] Schema migrations (ADR-003), backup/restore.
-- [ ] Data retention + right-to-forget wired product-wide (Cortex `forget()` surfaced).
-- **Acceptance:** memory + state survive a full restart; a documented restore works; a delete request provably erases across all layers.
-
-### E6 — Multi-tenant isolation
-- [ ] Verified isolation across cache, ledger, memory, checkpoint (not just projection).
-- [ ] Per-tenant resource limits + noisy-neighbor protection.
-- **Acceptance:** a cross-tenant leakage test suite passes; one tenant cannot exhaust another's resources.
-
-### E7 — Performance & load
-- [ ] (H9 benchmark done by now — per-task cost/latency/accuracy.)
-- [ ] **Load/traffic/throughput test** (director-designed) — concurrency, sustained load, memory/leak profiling.
-- **Acceptance:** documented throughput + latency under sustained concurrent load; no leaks over a soak test.
-
-### E8 — Deployment & packaging
-- [ ] Product Dockerfile + deployment manifests (k8s/helm).
-- [ ] 12-factor config management; dev/staging/prod separation.
-- [ ] The "point it at one Postgres" install story, productized.
-- **Acceptance:** a clean deploy from scratch on a fresh environment via documented steps.
-
-### E9 — API 1.0
-- [ ] Freeze the public API surface; deprecation/versioning policy.
-- [ ] Reference docs (docstrings → published API docs) + tutorials.
-- [ ] Resolve the packaging namespace (`chorusgraph` vs `prismlib-plus[orchestrator]`).
-- **Acceptance:** a 1.0 release with a stability guarantee and complete public docs.
+**Verdict:** Ready for **controlled enterprise pilot** (single-tenant, Docker/k8s, documented caveats).
+**Not yet** ready for regulated multi-tenant SaaS at scale without Phase 2 items below.
 
 ---
 
-## Honest sizing
-This track is **comparable in effort to the MVP feature build** — not because the code is weak, but
-because enterprise-grade *is* these -ilities. Sequence it foundation-first (E1), do security (E3) before
-any real customer touches it, and treat E7's load test as the gate to any scale claim.
+## Hardening phases — completion
 
-*Post-MVP · a plan, not a promise · drive it with E-series handoffs after H9.*
+### E1 — Engineering foundation ✅
+- CI pipeline, deterministic test tier, coverage floor, lockfile, SBOM, release docs
+
+### E2 — Resilience ✅
+- Timeouts/retries/breakers, graceful node failure, idempotency, fault-injection tests
+
+### E3 — Security ✅ (build-out; external review pending)
+- Tool sandbox, TLS default, federation auth, cache isolation, PII redaction, threat model, CI security job
+
+### E4 — Observability ✅
+- JSON logs, OTel traces, health/readiness, runbooks
+
+### E5 — Durable persistence ✅ (SQLite; Postgres Phase 2)
+- SqliteGraphStore, migrations, backup/restore, right-to-forget
+
+### E6 — Multi-tenant isolation ✅
+- Cross-tenant leakage tests, resource limits
+
+### E7 — Performance & load 🟡
+- Harness shipped (`python -m benchmark.load`); production SLO validation deferred
+
+### E8 — Deployment & packaging ✅
+- Dockerfile, docker-compose, k8s, deploy docs
+
+### E9 — API 1.0 ✅
+- Frozen public surface, stability guarantee, v1.0.0
+
+### PrismRagPlugin ✅
+- `RetrievalBackend` port; HC1/HC2 on library surface
+
+---
+
+## Phase 2 backlog (pre scale / regulated production)
+
+1. **Postgres-native Cortex GraphStore** — replace SQLite for multi-instance durability
+2. **CHORUS cipher audit** — currently opt-in only; TLS is default
+3. **Full-package ruff** — ~2300 legacy findings in `chorusgraph/`
+4. **Production load/soak** — Azure or staging SLO run with Director targets
+5. **External penetration test** — third-party sign-off for regulated buyers
+6. **`prismlib-plus[orchestrator]` namespace** — deferred; `chorusgraph` retained for 1.x
+
+---
+
+## How to verify locally
+
+```powershell
+# CI-equivalent (deterministic tier)
+ruff check tests .github
+ruff format --check tests .github
+mypy chorusgraph --config-file pyproject.toml
+pytest tests -q --cov=chorusgraph --cov=benchmark
+
+# Load envelope (E7)
+python -m benchmark.load --requests 40 --levels 1,2,4,8
+
+# Deploy smoke (E8)
+cd deploy; docker compose up --build
+curl http://localhost:8080/health
+```
+
+See [`handoffs/handoffEback.md`](../handoffs/handoffEback.md) for full E1–E9 return details.
+
+*Updated 2026-07-05 — post-merge enterprise track complete.*

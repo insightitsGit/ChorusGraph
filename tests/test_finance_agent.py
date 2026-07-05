@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
-import os
-
 import pytest
 
 from chorusgraph import SqliteLedgerSink, wrap
 from chorusgraph.cache_gate import gate
 from chorusgraph.examples.finance_agent.gemini_client import resolve_gemini_api_key
-from chorusgraph.examples.finance_agent.graph import GRAPH_ID, TENANT_ID, build_finance_graph, initial_state
+from chorusgraph.examples.finance_agent.graph import (
+    GRAPH_ID,
+    TENANT_ID,
+    build_finance_graph,
+    initial_state,
+)
 from chorusgraph.examples.finance_agent.nodes import (
     make_researcher_handler,
     make_tool_handler,
@@ -141,8 +144,11 @@ def test_react_path_seeds_canonical_phrases():
 @pytest.mark.live
 @pytest.mark.skipif(not resolve_gemini_api_key(), reason="GEMINI_API_KEY not configured")
 def test_react_graph_propagates_cache_score_on_hit():
-    from chorusgraph.examples.finance_agent.patterns_graph import build_react_graph, pattern_initial_state
     from chorusgraph.cache_gate import seed_cache_entry
+    from chorusgraph.examples.finance_agent.patterns_graph import (
+        build_react_graph,
+        pattern_initial_state,
+    )
 
     runtime = FinanceRuntime(tenant_id="finance-test-cache-score")
     compiled, _ = build_react_graph(runtime)
@@ -155,9 +161,7 @@ def test_react_graph_propagates_cache_score_on_hit():
         category_slug="fx_rates",
         cache_policy="replay_safe",
     )
-    result = compiled.invoke(
-        pattern_initial_state("What is the USD to EUR exchange rate today?")
-    )
+    result = compiled.invoke(pattern_initial_state("What is the USD to EUR exchange rate today?"))
     assert result.get("cache_hit") is True
     assert result.get("cache_score") is not None
     assert float(result["cache_score"]) > 0.0
@@ -184,7 +188,9 @@ def test_finance_graph_end_to_end_with_ledger():
 @pytest.mark.skipif(not resolve_gemini_api_key(), reason="GEMINI_API_KEY not configured")
 def test_two_turn_conversation_references_prior_context():
     compiled, runtime = build_finance_graph(FinanceRuntime(tenant_id="finance-test-2turn"))
-    wrapped = wrap(compiled, tenant_id=TENANT_ID, graph_id=GRAPH_ID, sink=SqliteLedgerSink(":memory:"))
+    wrapped = wrap(
+        compiled, tenant_id=TENANT_ID, graph_id=GRAPH_ID, sink=SqliteLedgerSink(":memory:")
+    )
 
     r1 = wrapped.invoke(initial_state("What is the USD to EUR exchange rate today?"))
     history = [

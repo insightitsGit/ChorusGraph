@@ -12,7 +12,11 @@ from benchmark.healthcare_workload import HealthcareCase
 
 
 def test_paraphrase_same_fingerprint_depth_4():
-    intake_a = {"drugs": ["warfarin", "aspirin"], "topic": "anticoagulation", "facts": "68yo AF on warfarin"}
+    intake_a = {
+        "drugs": ["warfarin", "aspirin"],
+        "topic": "anticoagulation",
+        "facts": "68yo AF on warfarin",
+    }
     intake_b = {
         "drugs": ["aspirin", "warfarin"],
         "topic": "anticoagulation",
@@ -51,9 +55,9 @@ def test_depth_6_interaction_severity_in_fingerprint():
         "retrieve": {"cited_ids": ["statin_cyp"]},
         "drug_check": {"interactions": [{"severity": "major"}]},
     }
-    assert clinical_fingerprint(intake, pipeline_depth=6, hop_artifacts=hop_minor) != clinical_fingerprint(
-        intake, pipeline_depth=6, hop_artifacts=hop_major
-    )
+    assert clinical_fingerprint(
+        intake, pipeline_depth=6, hop_artifacts=hop_minor
+    ) != clinical_fingerprint(intake, pipeline_depth=6, hop_artifacts=hop_major)
     assert FINGERPRINT_DEPTH_INTERACTIONS == 6
 
 

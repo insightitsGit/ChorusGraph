@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import sqlite3
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -12,7 +11,6 @@ import pytest
 from chorusgraph.compat.checkpoint_import import import_checkpoints
 from chorusgraph.compat.otel_exporter import ledger_to_spans
 from chorusgraph.compat.tool_node import ToolNode
-from chorusgraph.core.trace import RouteTracker
 from chorusgraph.ledger.models import LedgerStep, RouteLedger
 
 
@@ -40,9 +38,7 @@ def test_ledger_otel_exporter():
 def test_checkpoint_import_sqlite(tmp_path: Path):
     db = tmp_path / "lg.sqlite"
     conn = sqlite3.connect(str(db))
-    conn.execute(
-        "CREATE TABLE checkpoints (thread_id TEXT, checkpoint TEXT, metadata TEXT)"
-    )
+    conn.execute("CREATE TABLE checkpoints (thread_id TEXT, checkpoint TEXT, metadata TEXT)")
     conn.execute(
         "INSERT INTO checkpoints VALUES (?, ?, ?)",
         ("t1", json.dumps({"channel_values": {"x": 1}}), json.dumps({"step": 1})),

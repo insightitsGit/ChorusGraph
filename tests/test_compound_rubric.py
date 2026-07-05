@@ -16,7 +16,6 @@ from chorusgraph.nodes.tool import compound_interest
 from chorusgraph.transforms.intent import needs_compound_tool, parse_compound_params
 from chorusgraph.transforms.templates import template_compound_response, try_template_draft
 
-
 _COMPOUND_MSG = (
     "If I invest $10,000 at 5% annual interest compounded monthly for 3 years, "
     "what is the future value?"

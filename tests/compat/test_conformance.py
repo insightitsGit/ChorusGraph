@@ -96,7 +96,12 @@ def pattern_subgraph():
     child_g.add_edge("c", END)
     child_compiled = child_g.compile()
     g = Graph()
-    g.add_subgraph("sg", child_compiled, input_map={"message": "msg"}, output_map={"child_result": "child_result"})
+    g.add_subgraph(
+        "sg",
+        child_compiled,
+        input_map={"message": "msg"},
+        output_map={"child_result": "child_result"},
+    )
     g.add_edge(START, "sg")
     g.add_edge("sg", END)
     return _compile(g)
@@ -134,7 +139,9 @@ def pattern_langgraph_send_edge():
     """T4 — LangGraph conditional edge returning Send objects."""
     from typing import TypedDict
 
-    from langgraph.graph import END as LG_END, START as LG_START, StateGraph
+    from langgraph.graph import END as LG_END
+    from langgraph.graph import START as LG_START
+    from langgraph.graph import StateGraph
     from langgraph.types import Send as LGSend
 
     from chorusgraph.compat.langgraph import compile_state_graph

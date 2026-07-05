@@ -6,7 +6,17 @@ from benchmark.compare_scenarios import compare_all_groups, format_comparison_re
 from benchmark.measure import TaskMeasurement
 
 
-def _row(task_id: str, container: str, *, latency: int, success: bool, cost: float, llm: int, variant: str = "novel", cache_hit=None):
+def _row(
+    task_id: str,
+    container: str,
+    *,
+    latency: int,
+    success: bool,
+    cost: float,
+    llm: int,
+    variant: str = "novel",
+    cache_hit=None,
+):
     return TaskMeasurement(
         task_id=task_id,
         session_id="s1",
@@ -27,11 +37,16 @@ def _row(task_id: str, container: str, *, latency: int, success: bool, cost: flo
 def test_finance_single_chorus_wins_on_latency_and_cost():
     results = {
         "FL1": [_row("t1", "FL1", latency=500, success=True, cost=0.002, llm=3) for _ in range(10)],
-        "FC1": [_row("t1", "FC1", latency=200, success=True, cost=0.001, llm=1, cache_hit=True) for _ in range(10)],
+        "FC1": [
+            _row("t1", "FC1", latency=200, success=True, cost=0.001, llm=1, cache_hit=True)
+            for _ in range(10)
+        ],
     }
     for i in range(10):
         results["FL1"][i] = _row(f"t{i}", "FL1", latency=500 + i, success=True, cost=0.002, llm=3)
-        results["FC1"][i] = _row(f"t{i}", "FC1", latency=200 + i, success=True, cost=0.001, llm=1, cache_hit=i > 0)
+        results["FC1"][i] = _row(
+            f"t{i}", "FC1", latency=200 + i, success=True, cost=0.001, llm=1, cache_hit=i > 0
+        )
 
     cmp = compare_all_groups(results)
     group = cmp["groups"]["finance_single"]
