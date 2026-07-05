@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, List, Optional, Protocol, runtime_checkable
+from typing import Any, Dict, List, Optional, Protocol, Sequence, runtime_checkable
 
 import numpy as np
 
@@ -95,13 +95,35 @@ class ToolBackend(Protocol):
     def list_names(self) -> List[str]: ...
 
 
+@runtime_checkable
+class RetrievalBackend(Protocol):
+    """
+    L2 retrieval port — default: keyword stand-in (zero dependencies).
+    Swap for ``PrismRAGRetrievalBackend`` for vector search + taxonomy remap.
+    """
+
+    name: str
+
+    def retrieve(self, topic: str, query: str, *, top_k: int = 6) -> List[Dict[str, Any]]:
+        """Return ranked chunks: at least {id, topic, text, source, category_slug, score}."""
+
+    def index(self, corpus: Sequence[Dict[str, Any]]) -> None:
+        """(Re)build the backend index from {id, topic, text, source} records."""
+
+
 def is_cache_backend(obj: Any) -> bool:
     return getattr(obj, "_chorusgraph_cache_backend", False) is True
+
+
+def is_retrieval_backend(obj: Any) -> bool:
+    return getattr(obj, "_chorusgraph_retrieval_backend", False) is True
 
 
 __all__ = [
     "CacheBackend",
     "MemoryBackend",
+    "RetrievalBackend",
     "ToolBackend",
     "is_cache_backend",
+    "is_retrieval_backend",
 ]

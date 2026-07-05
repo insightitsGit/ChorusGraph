@@ -7,9 +7,11 @@
 First enterprise-track handoff. Foundation-first: CI + a test tier that runs **without live keys** is the
 ground every later phase (E2–E9) stands on. No product features here — engineering hygiene only.
 
-**Track gate (note, not a blocker for E1):** ENTERPRISE_READINESS says the E-track is post-MVP. E1 is
-pure foundation and doesn't depend on the benchmark, so it's safe to start now in parallel — the MVP
-H10 fixes (routing bug, rubric, volume rerun) are a separate track.
+**Track gate: cleared.** The MVP is complete (native engine: Send, subgraphs, per-node durability,
+Command/interrupt, distribution + federation wired) and the benchmark result is in hand — full
+8-scenario matrix (`azure_20260704_212111`, verified against raw JSONL): finance clean sweep,
+healthcare-single tie, healthcare-multi +30pp win, zero errors. This is genuinely the first
+enterprise-track handoff, not a parallel-track exception.
 
 ---
 

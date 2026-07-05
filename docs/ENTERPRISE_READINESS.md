@@ -5,7 +5,11 @@ benchmark result). Clean path: finish the MVP and get the numbers first; *then* 
 starts until H9 is done.** This doc drives the E-series handoffs the way `BENCHMARK.md` drove H8/H9, under
 the same rules (`PROCESS.md`: no fakes, verify-against-code, honest deferral, one bounded increment).
 
-**Prerequisite gate:** ☐ MVP complete (H1–H9) ☐ benchmark result in hand (`BENCHMARK_RESULTS.md`).
+**Prerequisite gate:** ☑ MVP complete — native engine (Send, subgraphs, per-node durability,
+Command/interrupt, compat shim, distribution + federation wired) ☑ benchmark result in hand — full
+8-scenario matrix, `azure_20260704_212111`, verified line-by-line against raw JSONL: finance clean
+sweep (FL1/FC1, FL2/FC2), healthcare-single tie (HL1/HC1), healthcare-multi a genuine +30pp win
+(HL2 57.5% → HC2 87.5%), zero errors. **Gate cleared 2026-07-04 — the E-track starts now, E1 first.**
 
 ---
 
@@ -18,8 +22,9 @@ operability), not features. Those are ~half the total effort and never show in a
 
 | Dimension | Status |
 |---|---|
-| Architecture / code structure | ✅ Solid |
-| Functional test suite | ✅ Solid — but needs live keys / hits real APIs (no deterministic CI tier) |
+| Architecture / code structure | ✅ Solid — native engine complete, langgraph confined to baselines only |
+| Benchmark proof | ✅ Solid — full matrix verified, healthcare-multi +30pp, zero errors |
+| Functional test suite | ✅ Solid — 271+ passing — but needs live keys / hits real APIs (no deterministic CI tier) |
 | CI/CD + release engineering | 🔴 Gap |
 | Code-quality gates (lint/type/format) | 🔴 Gap |
 | Error handling / resilience | 🟡 Partial |
