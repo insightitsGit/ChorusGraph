@@ -24,7 +24,7 @@ Building production LLM agents usually means gluing six systems: orchestration, 
 | “Why did the agent say that?” | Route Ledger + `rule_chain` on every hop |
 | Orchestration + ops duct tape | Native scheduler, health endpoints, Docker/k8s packaging |
 
-**Core install has no LangGraph dependency.** Baselines that compare against LangGraph use the optional `[benchmark]` extra.
+**ChorusGraph's own code has no LangGraph dependency on the product path.** `chorusgraph.core.Graph`, the scheduler, and all four plug-in ports never import LangGraph. (One core dependency, `prismlang`, uses LangGraph internally for its own checkpointing utilities — a `pip show`/dependency-tree scan will find it installed, but ChorusGraph's engine never calls it.) Baselines that compare against LangGraph use the optional `[benchmark]` extra.
 
 ---
 
@@ -61,6 +61,14 @@ chorusgraph-demo
 ```
 
 Full install guide (extras, PrismRAG walkthrough): [`docs/INSTALL.md`](docs/INSTALL.md)
+
+### Even faster: let your AI IDE do it
+
+Paste one of these into Cursor, Claude Code, Windsurf, or Copilot Chat — it installs, wires, and
+verifies ChorusGraph in your project for you:
+
+- **[Fresh install prompt](docs/AI_IDE_PROMPTS.md#prompt-1--fresh-install-new-project-or-adding-an-agent-to-an-existing-one)** — add ChorusGraph to a new or existing project
+- **[Migration prompt](docs/AI_IDE_PROMPTS.md#prompt-2--replace--migrate-from-langgraph-or-crewai)** — move an existing LangGraph app over (automated shim) or CrewAI app over (guided manual translation)
 
 ---
 

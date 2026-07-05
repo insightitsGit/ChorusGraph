@@ -47,7 +47,7 @@ python -m pytest --version   # if dev extra installed
 
 Lockfile for reproducible installs: `requirements-lock.txt` (see [`RELEASE.md`](RELEASE.md)).
 
-**LangGraph is not a core dependency.** `pip install chorusgraph` gives you the native engine only. Install `chorusgraph[benchmark]` when running FL*/HL* comparison scenarios or compat conformance tests.
+**LangGraph is not a dependency of ChorusGraph's own code.** `pip install chorusgraph` gives you the native engine only — the scheduler and all four ports never import LangGraph. (`prismlang`, a core dependency, uses LangGraph internally for its own checkpointing utilities, so it will still show up in a dependency-tree scan — that's `prismlang`'s implementation detail, not something ChorusGraph's engine calls.) Install `chorusgraph[benchmark]` when running FL*/HL* comparison scenarios or compat conformance tests.
 
 ---
 
