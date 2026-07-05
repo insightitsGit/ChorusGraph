@@ -21,6 +21,14 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
+
+[project.urls]
+Homepage = "https://github.com/insightitsGit/ChorusGraph"
+Documentation = "https://github.com/insightitsGit/ChorusGraph/tree/master/docs"
+Repository = "https://github.com/insightitsGit/ChorusGraph"
+Changelog = "https://github.com/insightitsGit/ChorusGraph/blob/master/CHANGELOG.md"
+"Bug Tracker" = "https://github.com/insightitsGit/ChorusGraph/issues"
+
 dependencies = [
     "httpx>=0.27",
     "numpy>=1.24",
