@@ -46,10 +46,14 @@ class ToolResult:
 class ToolRegistry:
     """Registry of callable tools with isolated execution."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, allowlist: "ToolAllowlist | None" = None) -> None:
+        from chorusgraph.security.tools import ToolAllowlist
+
         self._tools: Dict[str, ToolSpec] = {}
+        self._allowlist = allowlist or ToolAllowlist.finance_defaults()
 
     def register(self, spec: ToolSpec) -> None:
+        self._allowlist.validate_tool(spec.name)
         self._tools[spec.name] = spec
 
     def get(self, name: str) -> ToolSpec:
@@ -61,7 +65,11 @@ class ToolRegistry:
         return sorted(self._tools.keys())
 
     def run(self, name: str, /, **kwargs: Any) -> ToolResult:
-        return run_tool(self.get(name), **kwargs)
+        from chorusgraph.security.tools import sanitize_tool_kwargs
+
+        self._allowlist.validate_args(name, kwargs)
+        safe_kwargs = sanitize_tool_kwargs(kwargs)
+        return run_tool(self.get(name), **safe_kwargs)
 
 
 def run_tool(spec: ToolSpec, /, **kwargs: Any) -> ToolResult:

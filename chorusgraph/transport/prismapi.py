@@ -38,6 +38,7 @@ class PrismAPISpine:
     tenant_id: str
     client: Any = None
     boundary_translator: Any = None
+    auth_context: Any = None
     _calls: List[RemoteQuery] = field(default_factory=list)
     remote_embed_calls: int = 0
 
@@ -53,6 +54,12 @@ class PrismAPISpine:
         category_slug: str = "knowledge",
         metadata: Optional[Dict[str, Any]] = None,
     ) -> RemoteResponse:
+        if self.auth_context is not None:
+            self.auth_context.authorize(
+                target_tenant_id=self.tenant_id,
+                provider_id=provider_id,
+                action="federated_retrieve",
+            )
         query = RemoteQuery(
             provider_id=provider_id,
             query_text=query_text,

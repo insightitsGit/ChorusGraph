@@ -83,6 +83,18 @@ def _row_to_step(data: dict) -> LedgerStep:
     )
 
 
+def _redact_ledger_for_persist(ledger: RouteLedger) -> RouteLedger:
+    from chorusgraph.security.pii import redact_value
+
+    return ledger.model_copy(
+        update={
+            "steps": [
+                s.model_copy(update={"rule_chain": redact_value(s.rule_chain)}) for s in ledger.steps
+            ]
+        }
+    )
+
+
 def _ledger_to_row(ledger: RouteLedger) -> tuple:
     steps_json = json.dumps([_step_to_row(s) for s in ledger.steps])
     return (
@@ -122,6 +134,7 @@ class SqliteLedgerSink(LedgerSink):
         self._conn.close()
 
     def write(self, ledger: RouteLedger) -> None:
+        ledger = _redact_ledger_for_persist(ledger)
         self._conn.execute(
             """
             INSERT OR REPLACE INTO route_ledgers
@@ -196,6 +209,7 @@ class PostgresLedgerSink(LedgerSink):
             conn.execute(_SCHEMA)
 
     def write(self, ledger: RouteLedger) -> None:
+        ledger = _redact_ledger_for_persist(ledger)
         row = _ledger_to_row(ledger)
         with self._connect() as conn:
             conn.execute(

@@ -116,12 +116,14 @@ class RouteTracker:
             "retryable": retryable,
         }
         self._events.append(event)
+        from chorusgraph.security.pii import redact_value
+
         logger.info(
             "route %s -> %s (%dms) chain=%s cache_hit=%s",
             node,
             edge_taken,
             duration_ms,
-            chain,
+            redact_value(chain),
             cache_hit,
         )
         return step
