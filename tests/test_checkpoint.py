@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from chorusgraph.checkpoint import create_checkpointer, sqlite_checkpointer
+from chorusgraph.checkpoint import create_checkpointer
 from chorusgraph.examples.finance_agent.gemini_client import resolve_gemini_api_key
 from chorusgraph.examples.finance_agent.graph import build_finance_graph, turn_input
 from chorusgraph.examples.finance_agent.runtime import FinanceRuntime

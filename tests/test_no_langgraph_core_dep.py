@@ -18,7 +18,9 @@ def test_pyproject_core_dependencies_exclude_langgraph():
         if in_deps:
             if line.strip().startswith("]"):
                 break
-            assert "langgraph" not in line.lower(), f"LangGraph must not be a core dep: {line.strip()}"
+            assert "langgraph" not in line.lower(), (
+                f"LangGraph must not be a core dep: {line.strip()}"
+            )
 
 
 def test_chorusgraph_package_has_no_langgraph_imports():
