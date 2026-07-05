@@ -76,12 +76,12 @@ class DataLifecycleManager:
         if self._checkpoint_db and Path(self._checkpoint_db).exists():
             conn = sqlite3.connect(self._checkpoint_db)
             try:
-                for table in ("checkpoints", "writes"):
+                for table, sql in (
+                    ("checkpoints", "DELETE FROM checkpoints WHERE thread_id = ?"),
+                    ("writes", "DELETE FROM writes WHERE thread_id = ?"),
+                ):
                     try:
-                        cur = conn.execute(
-                            f"DELETE FROM {table} WHERE thread_id = ?",
-                            (subject_id,),
-                        )
+                        cur = conn.execute(sql, (subject_id,))
                         result.layers[f"checkpoint_{table}_deleted"] = cur.rowcount
                     except sqlite3.OperationalError:
                         pass

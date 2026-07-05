@@ -107,6 +107,92 @@ def _ledger_to_row(ledger: RouteLedger) -> tuple:
     )
 
 
+_LIST_RUNS_ALL_SQLITE = """
+            SELECT run_id, turn_id, tenant_id, graph_id, created_at, steps_json
+            FROM route_ledgers
+            ORDER BY created_at DESC
+            LIMIT ?
+            """
+_LIST_RUNS_GRAPH_SQLITE = """
+            SELECT run_id, turn_id, tenant_id, graph_id, created_at, steps_json
+            FROM route_ledgers
+            WHERE graph_id = ?
+            ORDER BY created_at DESC
+            LIMIT ?
+            """
+_LIST_RUNS_TENANT_SQLITE = """
+            SELECT run_id, turn_id, tenant_id, graph_id, created_at, steps_json
+            FROM route_ledgers
+            WHERE tenant_id = ?
+            ORDER BY created_at DESC
+            LIMIT ?
+            """
+_LIST_RUNS_GRAPH_TENANT_SQLITE = """
+            SELECT run_id, turn_id, tenant_id, graph_id, created_at, steps_json
+            FROM route_ledgers
+            WHERE graph_id = ? AND tenant_id = ?
+            ORDER BY created_at DESC
+            LIMIT ?
+            """
+_LIST_RUNS_ALL_POSTGRES = """
+                SELECT run_id, turn_id, tenant_id, graph_id, created_at, steps_json
+                FROM route_ledgers
+                ORDER BY created_at DESC
+                LIMIT %s
+                """
+_LIST_RUNS_GRAPH_POSTGRES = """
+                SELECT run_id, turn_id, tenant_id, graph_id, created_at, steps_json
+                FROM route_ledgers
+                WHERE graph_id = %s
+                ORDER BY created_at DESC
+                LIMIT %s
+                """
+_LIST_RUNS_TENANT_POSTGRES = """
+                SELECT run_id, turn_id, tenant_id, graph_id, created_at, steps_json
+                FROM route_ledgers
+                WHERE tenant_id = %s
+                ORDER BY created_at DESC
+                LIMIT %s
+                """
+_LIST_RUNS_GRAPH_TENANT_POSTGRES = """
+                SELECT run_id, turn_id, tenant_id, graph_id, created_at, steps_json
+                FROM route_ledgers
+                WHERE graph_id = %s AND tenant_id = %s
+                ORDER BY created_at DESC
+                LIMIT %s
+                """
+
+
+def _list_runs_sqlite_query(
+    *,
+    graph_id: Optional[str],
+    tenant_id: Optional[str],
+    limit: int,
+) -> tuple[str, list[object]]:
+    if graph_id is not None and tenant_id is not None:
+        return _LIST_RUNS_GRAPH_TENANT_SQLITE, [graph_id, tenant_id, limit]
+    if graph_id is not None:
+        return _LIST_RUNS_GRAPH_SQLITE, [graph_id, limit]
+    if tenant_id is not None:
+        return _LIST_RUNS_TENANT_SQLITE, [tenant_id, limit]
+    return _LIST_RUNS_ALL_SQLITE, [limit]
+
+
+def _list_runs_postgres_query(
+    *,
+    graph_id: Optional[str],
+    tenant_id: Optional[str],
+    limit: int,
+) -> tuple[str, list[object]]:
+    if graph_id is not None and tenant_id is not None:
+        return _LIST_RUNS_GRAPH_TENANT_POSTGRES, [graph_id, tenant_id, limit]
+    if graph_id is not None:
+        return _LIST_RUNS_GRAPH_POSTGRES, [graph_id, limit]
+    if tenant_id is not None:
+        return _LIST_RUNS_TENANT_POSTGRES, [tenant_id, limit]
+    return _LIST_RUNS_ALL_POSTGRES, [limit]
+
+
 def _row_to_ledger(row: tuple) -> RouteLedger:
     run_id, turn_id, tenant_id, graph_id, created_at, steps_json = row
     steps_data = json.loads(steps_json)
@@ -160,26 +246,10 @@ class SqliteLedgerSink(LedgerSink):
         tenant_id: Optional[str] = None,
         limit: int = 100,
     ) -> List[RouteLedger]:
-        clauses: list[str] = []
-        params: list[object] = []
-        if graph_id is not None:
-            clauses.append("graph_id = ?")
-            params.append(graph_id)
-        if tenant_id is not None:
-            clauses.append("tenant_id = ?")
-            params.append(tenant_id)
-        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
-        params.append(limit)
-        rows = self._conn.execute(
-            f"""
-            SELECT run_id, turn_id, tenant_id, graph_id, created_at, steps_json
-            FROM route_ledgers
-            {where}
-            ORDER BY created_at DESC
-            LIMIT ?
-            """,
-            params,
-        ).fetchall()
+        query, params = _list_runs_sqlite_query(
+            graph_id=graph_id, tenant_id=tenant_id, limit=limit
+        )
+        rows = self._conn.execute(query, params).fetchall()
         return [_row_to_ledger(r) for r in rows]
 
 
@@ -243,25 +313,9 @@ class PostgresLedgerSink(LedgerSink):
         tenant_id: Optional[str] = None,
         limit: int = 100,
     ) -> List[RouteLedger]:
-        clauses: list[str] = []
-        params: list[object] = []
-        if graph_id is not None:
-            clauses.append("graph_id = %s")
-            params.append(graph_id)
-        if tenant_id is not None:
-            clauses.append("tenant_id = %s")
-            params.append(tenant_id)
-        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
-        params.append(limit)
+        query, params = _list_runs_postgres_query(
+            graph_id=graph_id, tenant_id=tenant_id, limit=limit
+        )
         with self._connect() as conn:
-            rows = conn.execute(
-                f"""
-                SELECT run_id, turn_id, tenant_id, graph_id, created_at, steps_json
-                FROM route_ledgers
-                {where}
-                ORDER BY created_at DESC
-                LIMIT %s
-                """,
-                params,
-            ).fetchall()
+            rows = conn.execute(query, params).fetchall()
         return [_row_to_ledger(r) for r in rows]

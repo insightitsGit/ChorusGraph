@@ -23,13 +23,15 @@ def _core_dependency_lines() -> list[str]:
 def test_core_dependencies_include_prism_stack():
     deps = _core_dependency_lines()
     joined = "\n".join(deps)
-    assert "prismlib-plus>=" in joined, "PrismCache (prism.cache) requires prismlib-plus in core deps"
+    assert "prismlib-plus>=" in joined, (
+        "PrismCache (prism.cache) requires prismlib-plus in core deps"
+    )
     assert "prismresonance>=" in joined, "ResonanceBus requires prismresonance in core deps"
 
 
 def test_import_chorusgraph_smoke():
     import chorusgraph
-    from chorusgraph import ChorusStack, END, Graph, START
+    from chorusgraph import END, START, ChorusStack, Graph
 
     assert chorusgraph.__version__
     assert Graph is not None
