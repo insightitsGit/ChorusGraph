@@ -1,6 +1,6 @@
 # Install ChorusGraph (pip)
 
-**Package:** `chorusgraph` · **Version:** 1.0.0 · **Python:** ≥3.10 · **License:** Apache-2.0
+**Package:** `chorusgraph` · **Version:** 1.0.1 · **Python:** ≥3.11 · **License:** Apache-2.0
 
 ---
 
@@ -33,7 +33,7 @@ python -m pytest --version   # if dev extra installed
 
 | Extra | Installs | When you need it |
 |-------|----------|------------------|
-| *(none)* | Core only | Keyword retrieval, in-memory cache, local graphs |
+| *(none)* | Core runtime (`prismlang`, `prismlib-plus`, `prismresonance`) | Default stack — semantic cache + resonance bus ship with `pip install chorusgraph` |
 | `retrieval` | `chromadb>=0.4` | `PrismRAGRetrievalBackend` vector search |
 | `gemini` | `google-genai` | Live Gemini examples and `-m live` tests |
 | `cortex` | `prismcortex[prism,gemini]` | L3 structured memory (PrismCortex) |

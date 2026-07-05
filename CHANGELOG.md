@@ -12,6 +12,12 @@ All notable changes to ChorusGraph are documented here (semver).
 - **E8:** Product Dockerfile, docker-compose, k8s manifest, deploy docs.
 - **E9:** Frozen public API (`chorusgraph/public.py`), stability guarantee, API 1.0 docs.
 
+## [1.0.1] — 2026-07-05
+
+### Fixed
+- **Clean install:** add `prismlib-plus` and `prismresonance` to core dependencies so `pip install chorusgraph` succeeds and `import chorusgraph` works without optional extras.
+- **Python floor:** require Python ≥3.11 (matches `prismlib-plus`).
+
 ## [Unreleased]
 
 ### Changed

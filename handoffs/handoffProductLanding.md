@@ -2,7 +2,7 @@
 
 **Director:** Amin · **Architect:** Claude · **Website agent:** (assign)  
 **Style playbook:** [`c:\code\alex-hormozi.md`](file:///c:/code/alex-hormozi.md) — read **in full** before writing copy  
-**Product source of truth:** ChorusGraph repo · **Version:** 1.0.0 · **Date issued:** 2026-07-05
+**Product source of truth:** ChorusGraph repo · **Version:** 1.0.1 · **Date issued:** 2026-07-05
 
 ---
 
@@ -18,6 +18,14 @@ Build a **marketing-oriented product landing site** for ChorusGraph that convert
 4. Visual system: modern, confident, enterprise-trustworthy (dark + accent; avoid generic “AI purple gradient” cliché unless Director prefers)
 
 **Do not:** fake customer logos, fake testimonials, fake urgency countdowns, or unverified performance claims.
+
+**Hard release gate — verify before ANY page goes live with a `pip install` snippet:**
+```powershell
+python -m venv clean_test_env
+clean_test_env\Scripts\pip install chorusgraph
+clean_test_env\Scripts\python -c "import chorusgraph; from chorusgraph import Graph, ChorusStack; print(chorusgraph.__version__)"
+```
+**Status (2026-07-05):** Fixed in v1.0.1 — core deps include `prismlib-plus` and `prismresonance`. Re-run this exact command after any dependency change before publishing the hero install snippet or "60s hello world" claim.
 
 ---
 
@@ -146,8 +154,15 @@ Zero errors. Real Gemini. See `docs/BENCHMARK_RESULTS.md`, `benchmark/results/az
 /docs                      Link out to GitHub docs/ (or embedded)
 /pricing                   3-tier + enterprise contact
 /whitepaper                PDF or long-scroll from WHITEPAPER.md
-/benchmarks                Honest results + fairness disclosure
+/benchmarks                Honest results + fairness disclosure — include the exact
+                           `python -m benchmark.run_scenarios ...` repro command, not just the table.
+                           A reader who can reproduce the number themselves is worth ten who just read it.
 /security                  Enterprise trust (link THREAT_MODEL, STABILITY)
+/blog (optional, strong)   The engineering honesty story is a real distribution asset: "our first
+                           benchmark said we won 82–27 — it was lying, here's how we caught it,"
+                           the H21 depth-6 cache-quality investigation, the temperature-noise finding.
+                           This kind of transparent post-mortem is rare in vendor content and is
+                           exactly what earns HN/technical-audience trust — don't leave it unpublished.
 ```
 
 ---
@@ -252,15 +267,26 @@ Insight IT Solutions · Apache-2.0 · GitHub · Whitepaper · Privacy
 
 ## 7. Website agent checklist (exit criteria)
 
-- [ ] Read `alex-hormozi.md` Sections 1–9 before writing
+- [ ] **`pip install chorusgraph` verified in a throwaway clean venv THIS SAME DAY** (see hard gate in §0) —
+      not assumed from a prior pass. Re-check if the release engineer says it was "just fixed."
+- [ ] Read `alex-hormozi.md` Sections 1–9 before writing — **if the assigned agent cannot resolve
+      `c:\code\alex-hormozi.md`** (local-machine path, not in this repo), request the Director copy the
+      needed excerpt into `docs/` first rather than writing copy blind to the playbook
 - [ ] Hero uses **Pain → Proof → Plan**; CTA is named
 - [ ] All numbers match §1 (no invented stats)
 - [ ] HL1 tie disclosed; H10 metrics labeled “sliced”
-- [ ] PrismRAG page includes pip install + 20-line sample + link to `INSTALL.md`
+- [ ] PrismRAG page includes pip install + 20-line sample + link to `INSTALL.md` — **sample actually run**
+      against a fresh install, output pasted into the return doc, not copied from the whitepaper unverified
 - [ ] Pricing uses 3-tier + enterprise; no fake scarcity
-- [ ] Whitepaper linked or rendered
+- [ ] Whitepaper linked or rendered; **also export a clean PDF** for the classic B2B email-gated download
+      (many enterprise buyers expect a PDF, not just a scrolling page)
 - [ ] Mobile-responsive; code blocks readable
 - [ ] Lighthouse accessibility ≥ 90 (target)
+- [ ] CTA buttons carry basic UTM/analytics tags so click-through on "Book Agent Stack Audit" is
+      measurable from week 1 — the earlier marketing-metrics discussion flagged inbound-per-week and
+      activation as the two leading indicators worth tracking from day one, not added later
+- [ ] Nothing from `docs/THREAT_MODEL.md` beyond the summary level is exposed verbatim on `/security` —
+      link a one-paragraph public summary, not the internal attack-surface enumeration
 
 ---
 

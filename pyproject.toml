@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chorusgraph"
-version = "1.0.0"
+version = "1.0.1"
 description = "Native agent graph runtime with Prism cache, memory, swappable PrismRAG retrieval, and Route Ledger"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
 authors = [{ name = "Insight IT Solutions" }]
 keywords = ["agents", "llm", "semantic-cache", "rag", "prismrag", "graph-runtime", "orchestration"]
@@ -16,10 +16,18 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "httpx>=0.27",
+    "numpy>=1.24",
+    "pydantic>=2.0",
+    "prismlang>=0.1.1",
+    "prismlib-plus>=0.7.0",
+    "prismresonance>=0.3.0",
 ]
 
 [project.urls]
@@ -28,13 +36,6 @@ Documentation = "https://github.com/insightitsGit/ChorusGraph/tree/master/docs"
 Repository = "https://github.com/insightitsGit/ChorusGraph"
 Changelog = "https://github.com/insightitsGit/ChorusGraph/blob/master/CHANGELOG.md"
 "Bug Tracker" = "https://github.com/insightitsGit/ChorusGraph/issues"
-
-dependencies = [
-    "httpx>=0.27",
-    "numpy>=1.24",
-    "pydantic>=2.0",
-    "prismlang>=0.1.1",
-]
 
 [project.optional-dependencies]
 langgraph = [

@@ -193,6 +193,13 @@ Run ID: **`20260704_212111`** · 8 scenarios · verified against raw JSONL
 
 HC2 uses library PrismRAG retrieval + depth-aware cache routing (H21 profiles).
 
+**Reproduce it yourself** — don't take the table on faith:
+```bash
+python -m benchmark.run_scenarios --tier light --temperature 0.0 --seed 42
+```
+Real Gemini calls, same seed, same 40-task matrix. A number a skeptical reader can regenerate on their
+own machine is worth more than any polished chart — this is a deliberate choice, not an afterthought.
+
 ### 5.2 H10 sliced metrics (FX workload)
 
 Repeat band 40%, competent LangGraph ReAct baseline:
@@ -312,6 +319,16 @@ Not in 1.0 — documented, not hidden:
 - External penetration test certification
 
 ---
+
+## 9.5 Publish gate (internal — remove before external release)
+
+**Verified 2026-07-05:** `pip install chorusgraph` in a throwaway venv succeeds; `import chorusgraph` and the README hello-world snippet work with core deps only (`prismlib-plus`, `prismresonance`, `prismlang`). Re-run the gate after any `pyproject.toml` dependency change:
+
+```powershell
+python -m venv clean_test_env
+clean_test_env\Scripts\pip install chorusgraph
+clean_test_env\Scripts\python -c "import chorusgraph; from chorusgraph import Graph, ChorusStack; print(chorusgraph.__version__)"
+```
 
 ## 10. Conclusion
 
