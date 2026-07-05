@@ -8,6 +8,8 @@ from typing import Any, Callable, Dict, List, Optional
 
 import httpx
 
+from chorusgraph.resilience import CallPolicy, ChorusExternalError, RetryPolicy, classify_exception, resilient_call
+
 ToolFn = Callable[..., Any]
 
 
@@ -63,33 +65,42 @@ class ToolRegistry:
 
 
 def run_tool(spec: ToolSpec, /, **kwargs: Any) -> ToolResult:
-    """Execute a tool with timeout and retry. No global state mutation."""
-    last_error: Optional[str] = None
+    """Execute a tool with timeout, retry, and circuit breaker. No global state mutation."""
     started = time.perf_counter()
-    for attempt in range(1, spec.max_retries + 2):
-        try:
-            data = spec.fn(**kwargs)
-            duration_ms = int((time.perf_counter() - started) * 1000)
-            return ToolResult(
-                tool=spec.name,
-                ok=True,
-                data=data,
-                attempts=attempt,
-                duration_ms=duration_ms,
-            )
-        except Exception as exc:
-            last_error = str(exc)
-            if attempt > spec.max_retries:
-                break
-            time.sleep(0.25 * attempt)
-    duration_ms = int((time.perf_counter() - started) * 1000)
-    return ToolResult(
-        tool=spec.name,
-        ok=False,
-        error=last_error or "unknown error",
-        attempts=spec.max_retries + 1,
-        duration_ms=duration_ms,
+    policy = CallPolicy(
+        timeout_seconds=spec.timeout_seconds,
+        retry=RetryPolicy(max_retries=spec.max_retries),
     )
+    try:
+        data = resilient_call(f"tool:{spec.name}", lambda: spec.fn(**kwargs), policy=policy)
+        duration_ms = int((time.perf_counter() - started) * 1000)
+        return ToolResult(
+            tool=spec.name,
+            ok=True,
+            data=data,
+            attempts=1,
+            duration_ms=duration_ms,
+        )
+    except ChorusExternalError as exc:
+        detail = exc.detail
+        duration_ms = int((time.perf_counter() - started) * 1000)
+        return ToolResult(
+            tool=spec.name,
+            ok=False,
+            error=detail.message,
+            attempts=detail.attempts,
+            duration_ms=duration_ms,
+        )
+    except Exception as exc:
+        detail = classify_exception(exc, service=f"tool:{spec.name}")
+        duration_ms = int((time.perf_counter() - started) * 1000)
+        return ToolResult(
+            tool=spec.name,
+            ok=False,
+            error=detail.message,
+            attempts=spec.max_retries + 1,
+            duration_ms=duration_ms,
+        )
 
 
 def fetch_exchange_rate(from_currency: str, to_currency: str) -> Dict[str, Any]:
@@ -103,9 +114,13 @@ def fetch_exchange_rate(from_currency: str, to_currency: str) -> Dict[str, Any]:
     if len(base) != 3 or len(quote) != 3:
         raise ValueError("Currency codes must be ISO 4217 (3 letters)")
     with httpx.Client(timeout=10.0, follow_redirects=True) as client:
-        resp = client.get(
-            "https://api.frankfurter.app/latest",
-            params={"from": base, "to": quote},
+        resp = resilient_call(
+            "frankfurter",
+            lambda: client.get(
+                "https://api.frankfurter.app/latest",
+                params={"from": base, "to": quote},
+            ),
+            policy=CallPolicy.tool(),
         )
         resp.raise_for_status()
         payload = resp.json()

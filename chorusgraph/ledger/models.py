@@ -27,6 +27,9 @@ class LedgerStep(BaseModel):
     grounding_score: Optional[float] = None
     parent_run_id: Optional[str] = None
     subgraph_node: Optional[str] = None
+    error_code: Optional[str] = None
+    error_kind: Optional[str] = None
+    retryable: Optional[bool] = None
 
 
 class RouteLedger(BaseModel):

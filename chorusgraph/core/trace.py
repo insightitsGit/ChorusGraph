@@ -71,6 +71,9 @@ class RouteTracker:
         skipped: bool = False,
         parent_run_id: Optional[str] = None,
         subgraph_node: Optional[str] = None,
+        error_code: Optional[str] = None,
+        error_kind: Optional[str] = None,
+        retryable: Optional[bool] = None,
     ) -> LedgerStep:
         chain = _stringify_rule_chain(rule_chain)
         step = LedgerStep(
@@ -84,6 +87,9 @@ class RouteTracker:
             grounding_score=grounding_score,
             parent_run_id=parent_run_id or self.parent_run_id,
             subgraph_node=subgraph_node or self.subgraph_node,
+            error_code=error_code,
+            error_kind=error_kind,
+            retryable=retryable,
         )
         self.ledger.add_step(step)
 
@@ -105,6 +111,9 @@ class RouteTracker:
             "dominant_frequency": dominant_frequency,
             "super_step": super_step,
             "skipped": skipped,
+            "error_code": error_code,
+            "error_kind": error_kind,
+            "retryable": retryable,
         }
         self._events.append(event)
         logger.info(

@@ -6,16 +6,26 @@ import logging
 from concurrent.futures import Future, ThreadPoolExecutor
 from typing import Any, Callable, List
 
+from chorusgraph.resilience.idempotency import IdempotencyGuard
+
 logger = logging.getLogger(__name__)
+
+_SHARED_GUARD = IdempotencyGuard()
 
 
 class AsyncDigester:
     """Fire-and-forget digest + idle sleep on a background thread pool."""
 
-    def __init__(self, memory_factory: Callable[[], Any]) -> None:
+    def __init__(
+        self,
+        memory_factory: Callable[[], Any],
+        *,
+        idempotency: IdempotencyGuard | None = None,
+    ) -> None:
         self._memory_factory = memory_factory
         self._executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="cortex-digest")
         self._futures: List[Future] = []
+        self._idempotency = idempotency or _SHARED_GUARD
 
     def submit_digest(self, text: str, *, source_id: str, agent_id: str) -> Future:
         future = self._executor.submit(self._run_digest, text, source_id, agent_id)
@@ -29,6 +39,11 @@ class AsyncDigester:
 
     def _run_digest(self, text: str, source_id: str, agent_id: str) -> str:
         from prismcortex.models import DigestOutcome
+
+        key = f"digest:{source_id}"
+        if not self._idempotency.try_acquire(key):
+            logger.debug("cortex digest skipped duplicate source_id=%s", source_id)
+            return "skipped_duplicate"
 
         mem = self._memory_factory()
         try:

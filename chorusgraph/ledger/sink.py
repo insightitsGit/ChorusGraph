@@ -59,6 +59,9 @@ def _step_to_row(step: LedgerStep) -> dict:
         "cache_hit": step.cache_hit,
         "cache_score": step.cache_score,
         "grounding_score": step.grounding_score,
+        "error_code": step.error_code,
+        "error_kind": step.error_kind,
+        "retryable": step.retryable,
     }
 
 
@@ -74,6 +77,9 @@ def _row_to_step(data: dict) -> LedgerStep:
         cache_hit=data.get("cache_hit"),
         cache_score=data.get("cache_score"),
         grounding_score=data.get("grounding_score"),
+        error_code=data.get("error_code"),
+        error_kind=data.get("error_kind"),
+        retryable=data.get("retryable"),
     )
 
 

@@ -64,7 +64,13 @@ class GeminiClient:
 
         prompt = self._build_prompt(system, user, history)
         cfg = types.GenerateContentConfig(temperature=0.2, max_output_tokens=1024)
-        response = self._client.models.generate_content(model=self._model, contents=prompt, config=cfg)
+        from chorusgraph.resilience import CallPolicy, resilient_call
+
+        response = resilient_call(
+            "gemini",
+            lambda: self._client.models.generate_content(model=self._model, contents=prompt, config=cfg),
+            policy=CallPolicy.llm(),
+        )
         return (response.text or "").strip()
 
     def generate_stream(self, system: str, user: str, history: Optional[List[Dict[str, str]]] = None):
@@ -92,5 +98,11 @@ class GeminiClient:
             max_output_tokens=2048,
             response_mime_type="application/json",
         )
-        response = self._client.models.generate_content(model=self._model, contents=prompt, config=cfg)
+        from chorusgraph.resilience import CallPolicy, resilient_call
+
+        response = resilient_call(
+            "gemini",
+            lambda: self._client.models.generate_content(model=self._model, contents=prompt, config=cfg),
+            policy=CallPolicy.llm(),
+        )
         return (response.text or "").strip()

@@ -49,6 +49,9 @@ class NodeUpdate:
     envelopes: List[PrismEnvelopeLike] = field(default_factory=list)
     artifacts: Dict[str, Dict[str, Any]] = field(default_factory=dict)
     rule_chain: List[str] = field(default_factory=list)
+    error_code: Optional[str] = None
+    error_kind: Optional[str] = None
+    retryable: Optional[bool] = None
 
     @property
     def primary(self) -> Optional[PrismEnvelopeLike]:

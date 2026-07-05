@@ -12,6 +12,7 @@ from uuid import uuid4
 
 from prismlang import PrismProjector
 
+from chorusgraph.core.constants import END
 from chorusgraph.core.bus import ResonanceBus
 from chorusgraph.core.cache_interceptor import CacheInterceptor
 from chorusgraph.core.channels import ChannelState, NodeUpdate
@@ -391,10 +392,43 @@ class CompiledGraph:
             parent_run_id=getattr(self, "_parent_run_id", None),
         )
         fn = self.ir.nodes[node_id]
-        raw = fn(ctx)
+        try:
+            raw = fn(ctx)
+        except NodeInterrupt:
+            raise
+        except MidStepAbort:
+            raise
+        except GraphInterrupt:
+            raise
+        except Exception as exc:
+            return self._coerce_node_result(ctx, self._failure_command(ctx, exc))
         if getattr(fn, "_counts_as_llm", False):
             self._llm_calls += 1
         return self._coerce_node_result(ctx, raw)
+
+    def _failure_command(self, ctx: NodeContext, exc: Exception) -> Command:
+        from chorusgraph.resilience.errors import classify_exception
+
+        detail = classify_exception(exc, service=ctx.node_id)
+        update = ctx.publish(
+            artifact={
+                "response": f"Node {ctx.node_id} failed: {detail.message}",
+                "route": END,
+                "__partial__": True,
+                "__node_error__": {
+                    "service": detail.service,
+                    "code": detail.code,
+                    "kind": detail.kind.value,
+                    "retryable": detail.retryable,
+                },
+            },
+            category_slug=ctx.node_id,
+            rule_chain=[detail.ledger_rule],
+        )
+        update.error_code = detail.code
+        update.error_kind = detail.kind.value
+        update.retryable = detail.retryable
+        return Command(update=update, goto=END)
 
     async def _ainvoke_node(
         self,
@@ -429,9 +463,27 @@ class CompiledGraph:
             parent_run_id=getattr(self, "_parent_run_id", None),
         )
         if inspect.iscoroutinefunction(fn):
-            raw = await fn(ctx)
+            try:
+                raw = await fn(ctx)
+            except NodeInterrupt:
+                raise
+            except MidStepAbort:
+                raise
+            except GraphInterrupt:
+                raise
+            except Exception as exc:
+                return self._coerce_node_result(ctx, self._failure_command(ctx, exc))
         else:
-            raw = await asyncio.to_thread(fn, ctx)
+            try:
+                raw = await asyncio.to_thread(fn, ctx)
+            except NodeInterrupt:
+                raise
+            except MidStepAbort:
+                raise
+            except GraphInterrupt:
+                raise
+            except Exception as exc:
+                return self._coerce_node_result(ctx, self._failure_command(ctx, exc))
         if getattr(fn, "_counts_as_llm", False):
             self._llm_calls += 1
         return self._coerce_node_result(ctx, raw)
@@ -1078,6 +1130,9 @@ class CompiledGraph:
                 dominant_frequency=self.bus.dominant_frequency(),
                 super_step=super_step,
                 skipped=skipped,
+                error_code=update.error_code,
+                error_kind=update.error_kind,
+                retryable=update.retryable,
             )
 
             if stream_mode == "debug":
