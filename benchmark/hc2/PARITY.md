@@ -1,15 +1,16 @@
 # HC2 vs HL2 — success gap and Prism Resonance
 
-Canonical run `20260703_042206` (40 tasks, 40% repeat band):
+Canonical run `20260704_212111` (40 tasks, 40% repeat band, Azure ACI, commit `f43f532`):
 
 | Metric | HL2 | HC2 |
 |--------|-----|-----|
-| Task success | **57.5%** | **45.0%** |
-| Cache hit rate | 0% | **62.5%** |
-| Abstain rate | 10% | 2.5% |
-| Mean LLM calls | 3.85 | 1.02 |
+| Task success | **57.5%** | **87.5%** |
+| Cache hit rate | 0% | **25%** |
+| Abstain rate | 10% | **5%** |
+| Mean LLM calls | 3.85 | **3.48** |
+| Mean latency | 11,150 ms | 11,546 ms |
 
-HC2 wins on latency/cost but **loses on success** — mostly because of how cache + prompts interact, not missing engine magic.
+HC2 **wins on success** after Bug-1 fix (663edf7): facts-only cache + depth-aware judgment replay. Lower cache hit vs pre-fix run `20260703_042206` (62.5%) is intentional — `cache_payload_sufficient` rejects shallow hits that inflated cache but hurt accuracy.
 
 ## Is Prism Resonance used to improve success?
 

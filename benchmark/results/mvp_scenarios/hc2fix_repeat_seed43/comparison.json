@@ -1,0 +1,782 @@
+{
+  "groups": {
+    "healthcare_multi": {
+      "group": "healthcare_multi",
+      "langgraph": "HL2",
+      "chorusgraph": "HC2",
+      "n_langgraph": 40,
+      "n_chorusgraph": 40,
+      "paired": {
+        "n_paired": 40,
+        "cost_delta_usd": {
+          "point": 3.442874999999999e-05,
+          "lower95": -1.5679687499999903e-06,
+          "upper95": 6.637134374999999e-05,
+          "n": 40,
+          "method": "bootstrap_2000"
+        },
+        "latency_delta_ms": {
+          "point": 2063.85,
+          "lower95": 1230.67375,
+          "upper95": 2921.5056249999993,
+          "n": 40,
+          "method": "bootstrap_2000"
+        },
+        "llm_calls_delta": {
+          "point": 0.1,
+          "lower95": 0.025,
+          "upper95": 0.2,
+          "n": 40,
+          "method": "bootstrap_2000"
+        },
+        "success_delta_rate": {
+          "point": 0.4,
+          "lower95": 0.225,
+          "upper95": 0.575,
+          "n": 40,
+          "method": "bootstrap_2000"
+        }
+      },
+      "metrics": [
+        {
+          "metric": "task_success_rate",
+          "langgraph": {
+            "point": 0.5,
+            "lower95": 0.35199526933465386,
+            "upper95": 0.6480047306653461,
+            "n": 40,
+            "method": "wilson_95"
+          },
+          "chorusgraph": {
+            "point": 0.9,
+            "lower95": 0.8395795286826063,
+            "upper95": 0.9604204713173937,
+            "n": 40,
+            "method": "wilson_95"
+          },
+          "delta_chorus_minus_lang": null,
+          "lower_is_better": false,
+          "winner": "chorusgraph",
+          "unit": "rate"
+        },
+        {
+          "metric": "llm_calls_per_task",
+          "langgraph": {
+            "point": 3.825,
+            "lower95": 3.375,
+            "upper95": 4.275624999999997,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "chorusgraph": {
+            "point": 3.925,
+            "lower95": 3.45,
+            "upper95": 4.425,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "delta_chorus_minus_lang": {
+            "point": 0.1,
+            "lower95": 0.025,
+            "upper95": 0.2,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "lower_is_better": true,
+          "winner": "langgraph",
+          "unit": "calls"
+        },
+        {
+          "metric": "latency_ms_mean",
+          "langgraph": {
+            "point": 10596.2,
+            "lower95": 9018.23625,
+            "upper95": 12192.300625,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "chorusgraph": {
+            "point": 12660.05,
+            "lower95": 10733.33375,
+            "upper95": 14601.345625,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "delta_chorus_minus_lang": {
+            "point": 2063.85,
+            "lower95": 1230.67375,
+            "upper95": 2921.5056249999993,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "lower_is_better": true,
+          "winner": "langgraph",
+          "unit": "ms"
+        },
+        {
+          "metric": "latency_ms_p50",
+          "langgraph": {
+            "point": 11056.5,
+            "lower95": 8745.5,
+            "upper95": 13157.5,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "chorusgraph": {
+            "point": 14277.5,
+            "lower95": 9921.0,
+            "upper95": 16178.5,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "delta_chorus_minus_lang": null,
+          "lower_is_better": true,
+          "winner": "langgraph",
+          "unit": "ms"
+        },
+        {
+          "metric": "latency_ms_p95",
+          "langgraph": {
+            "point": 19382.55,
+            "lower95": 15177.599999999999,
+            "upper95": 22080.0,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "chorusgraph": {
+            "point": 21238.749999999993,
+            "lower95": 18415.84999999999,
+            "upper95": 25604.0,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "delta_chorus_minus_lang": null,
+          "lower_is_better": true,
+          "winner": "langgraph",
+          "unit": "ms"
+        },
+        {
+          "metric": "cost_usd_per_task",
+          "langgraph": {
+            "point": 0.0003020925,
+            "lower95": 0.00024828271875,
+            "upper95": 0.0003558040312499999,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "chorusgraph": {
+            "point": 0.00033652125,
+            "lower95": 0.0002837325,
+            "upper95": 0.0003863386874999999,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "delta_chorus_minus_lang": {
+            "point": 3.442874999999999e-05,
+            "lower95": -1.5679687499999903e-06,
+            "upper95": 6.637134374999999e-05,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "lower_is_better": true,
+          "winner": "langgraph",
+          "unit": "USD"
+        },
+        {
+          "metric": "cache_hit_rate",
+          "langgraph": {
+            "point": 0.0,
+            "lower95": 0.0,
+            "upper95": 0.08762160119728664,
+            "n": 40,
+            "method": "wilson_95"
+          },
+          "chorusgraph": {
+            "point": 0.0,
+            "lower95": 0.0,
+            "upper95": 0.08762160119728664,
+            "n": 40,
+            "method": "wilson_95"
+          },
+          "delta_chorus_minus_lang": null,
+          "lower_is_better": false,
+          "winner": "tie",
+          "unit": "rate"
+        },
+        {
+          "metric": "llm_calls_on_cache_hit_mean",
+          "langgraph": {
+            "point": 0.0,
+            "lower95": 0.0,
+            "upper95": 0.0,
+            "n": 0,
+            "method": "none"
+          },
+          "chorusgraph": {
+            "point": 0.0,
+            "lower95": 0.0,
+            "upper95": 0.0,
+            "n": 0,
+            "method": "none"
+          },
+          "delta_chorus_minus_lang": null,
+          "lower_is_better": true,
+          "winner": "inconclusive",
+          "unit": "calls"
+        },
+        {
+          "metric": "tokens_in_per_task",
+          "langgraph": {
+            "point": 836.85,
+            "lower95": 670.339375,
+            "upper95": 995.8818749999999,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "chorusgraph": {
+            "point": 1130.975,
+            "lower95": 902.9575,
+            "upper95": 1342.2118749999997,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "delta_chorus_minus_lang": null,
+          "lower_is_better": true,
+          "winner": "langgraph",
+          "unit": "tokens"
+        },
+        {
+          "metric": "tokens_out_per_task",
+          "langgraph": {
+            "point": 294.275,
+            "lower95": 243.99625,
+            "upper95": 349.03624999999994,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "chorusgraph": {
+            "point": 278.125,
+            "lower95": 244.345,
+            "upper95": 311.30125,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "delta_chorus_minus_lang": null,
+          "lower_is_better": true,
+          "winner": "chorusgraph",
+          "unit": "tokens"
+        },
+        {
+          "metric": "tool_calls_per_task",
+          "langgraph": {
+            "point": 0.875,
+            "lower95": 0.65,
+            "upper95": 1.1,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "chorusgraph": {
+            "point": 0.9,
+            "lower95": 0.675,
+            "upper95": 1.1256249999999965,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "delta_chorus_minus_lang": null,
+          "lower_is_better": true,
+          "winner": "langgraph",
+          "unit": "calls"
+        },
+        {
+          "metric": "error_rate",
+          "langgraph": {
+            "point": 0.0,
+            "lower95": 0.0,
+            "upper95": 0.08762160119728664,
+            "n": 40,
+            "method": "wilson_95"
+          },
+          "chorusgraph": {
+            "point": 0.0,
+            "lower95": 0.0,
+            "upper95": 0.08762160119728664,
+            "n": 40,
+            "method": "wilson_95"
+          },
+          "delta_chorus_minus_lang": null,
+          "lower_is_better": true,
+          "winner": "tie",
+          "unit": "rate"
+        },
+        {
+          "metric": "embed_count_per_task",
+          "langgraph": {
+            "point": 0.0,
+            "lower95": 0.0,
+            "upper95": 0.0,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "chorusgraph": {
+            "point": 9.875,
+            "lower95": 8.924375000000001,
+            "upper95": 10.875,
+            "n": 40,
+            "method": "bootstrap_2000"
+          },
+          "delta_chorus_minus_lang": null,
+          "lower_is_better": true,
+          "winner": "langgraph",
+          "unit": "embeds"
+        },
+        {
+          "metric": "abstain_rate",
+          "langgraph": {
+            "point": 0.125,
+            "lower95": 0.0,
+            "upper95": 0.261121198388511,
+            "n": 40,
+            "method": "wilson_95"
+          },
+          "chorusgraph": {
+            "point": 0.025,
+            "lower95": 0.0,
+            "upper95": 0.1288136896347409,
+            "n": 40,
+            "method": "wilson_95"
+          },
+          "delta_chorus_minus_lang": null,
+          "lower_is_better": false,
+          "winner": "langgraph",
+          "unit": "rate"
+        }
+      ],
+      "scorecard": {
+        "chorusgraph_wins": 2,
+        "langgraph_wins": 9,
+        "overall_winner": "langgraph"
+      },
+      "by_variant": {
+        "exact_repeat": {
+          "group": "healthcare_multi/exact_repeat",
+          "langgraph": "HL2",
+          "chorusgraph": "HC2",
+          "n_langgraph": 0,
+          "n_chorusgraph": 13,
+          "paired": {
+            "n_paired": 0,
+            "cost_delta_usd": null,
+            "latency_delta_ms": null,
+            "llm_calls_delta": null,
+            "success_delta_rate": null
+          },
+          "metrics": [],
+          "scorecard": {
+            "chorusgraph_wins": 0,
+            "langgraph_wins": 0,
+            "overall_winner": "inconclusive"
+          }
+        },
+        "novel": {
+          "group": "healthcare_multi/novel",
+          "langgraph": "HL2",
+          "chorusgraph": "HC2",
+          "n_langgraph": 40,
+          "n_chorusgraph": 20,
+          "paired": {
+            "n_paired": 20,
+            "cost_delta_usd": {
+              "point": 1.1962499999999991e-05,
+              "lower95": -2.42026875e-05,
+              "upper95": 4.680862499999998e-05,
+              "n": 20,
+              "method": "bootstrap_2000"
+            },
+            "latency_delta_ms": {
+              "point": 1062.85,
+              "lower95": 115.565,
+              "upper95": 2259.75875,
+              "n": 20,
+              "method": "bootstrap_2000"
+            },
+            "llm_calls_delta": {
+              "point": 0.05,
+              "lower95": 0.0,
+              "upper95": 0.15,
+              "n": 20,
+              "method": "bootstrap_2000"
+            },
+            "success_delta_rate": {
+              "point": 0.55,
+              "lower95": 0.35,
+              "upper95": 0.75,
+              "n": 20,
+              "method": "bootstrap_2000"
+            }
+          },
+          "metrics": [
+            {
+              "metric": "task_success_rate",
+              "langgraph": {
+                "point": 0.5,
+                "lower95": 0.35199526933465386,
+                "upper95": 0.6480047306653461,
+                "n": 40,
+                "method": "wilson_95"
+              },
+              "chorusgraph": {
+                "point": 0.9,
+                "lower95": 0.8278664812137683,
+                "upper95": 0.9721335187862318,
+                "n": 20,
+                "method": "wilson_95"
+              },
+              "delta_chorus_minus_lang": null,
+              "lower_is_better": false,
+              "winner": "chorusgraph",
+              "unit": "rate"
+            },
+            {
+              "metric": "llm_calls_per_task",
+              "langgraph": {
+                "point": 3.825,
+                "lower95": 3.375,
+                "upper95": 4.275624999999997,
+                "n": 40,
+                "method": "bootstrap_2000"
+              },
+              "chorusgraph": {
+                "point": 2.85,
+                "lower95": 2.3,
+                "upper95": 3.5,
+                "n": 20,
+                "method": "bootstrap_2000"
+              },
+              "delta_chorus_minus_lang": {
+                "point": 0.05,
+                "lower95": 0.0,
+                "upper95": 0.15,
+                "n": 20,
+                "method": "bootstrap_2000"
+              },
+              "lower_is_better": true,
+              "winner": "chorusgraph",
+              "unit": "calls"
+            },
+            {
+              "metric": "latency_ms_mean",
+              "langgraph": {
+                "point": 10596.2,
+                "lower95": 9018.23625,
+                "upper95": 12192.300625,
+                "n": 40,
+                "method": "bootstrap_2000"
+              },
+              "chorusgraph": {
+                "point": 8285.7,
+                "lower95": 6020.42375,
+                "upper95": 10707.643749999997,
+                "n": 20,
+                "method": "bootstrap_2000"
+              },
+              "delta_chorus_minus_lang": {
+                "point": 1062.85,
+                "lower95": 115.565,
+                "upper95": 2259.75875,
+                "n": 20,
+                "method": "bootstrap_2000"
+              },
+              "lower_is_better": true,
+              "winner": "chorusgraph",
+              "unit": "ms"
+            },
+            {
+              "metric": "latency_ms_p50",
+              "langgraph": {
+                "point": 11056.5,
+                "lower95": 8745.5,
+                "upper95": 13157.5,
+                "n": 40,
+                "method": "bootstrap_2000"
+              },
+              "chorusgraph": {
+                "point": 5263.5,
+                "lower95": 4358.0,
+                "upper95": 11158.5,
+                "n": 20,
+                "method": "bootstrap_2000"
+              },
+              "delta_chorus_minus_lang": null,
+              "lower_is_better": true,
+              "winner": "chorusgraph",
+              "unit": "ms"
+            },
+            {
+              "metric": "latency_ms_p95",
+              "langgraph": {
+                "point": 19382.55,
+                "lower95": 15177.599999999999,
+                "upper95": 22080.0,
+                "n": 40,
+                "method": "bootstrap_2000"
+              },
+              "chorusgraph": {
+                "point": 17765.15,
+                "lower95": 15202.050000000001,
+                "upper95": 20162.0,
+                "n": 20,
+                "method": "bootstrap_2000"
+              },
+              "delta_chorus_minus_lang": null,
+              "lower_is_better": true,
+              "winner": "chorusgraph",
+              "unit": "ms"
+            },
+            {
+              "metric": "cost_usd_per_task",
+              "langgraph": {
+                "point": 0.0003020925,
+                "lower95": 0.00024828271875,
+                "upper95": 0.0003558040312499999,
+                "n": 40,
+                "method": "bootstrap_2000"
+              },
+              "chorusgraph": {
+                "point": 0.00021821999999999998,
+                "lower95": 0.00014756325,
+                "upper95": 0.0002926633124999999,
+                "n": 20,
+                "method": "bootstrap_2000"
+              },
+              "delta_chorus_minus_lang": {
+                "point": 1.1962499999999991e-05,
+                "lower95": -2.42026875e-05,
+                "upper95": 4.680862499999998e-05,
+                "n": 20,
+                "method": "bootstrap_2000"
+              },
+              "lower_is_better": true,
+              "winner": "chorusgraph",
+              "unit": "USD"
+            },
+            {
+              "metric": "cache_hit_rate",
+              "langgraph": {
+                "point": 0.0,
+                "lower95": 0.0,
+                "upper95": 0.08762160119728664,
+                "n": 40,
+                "method": "wilson_95"
+              },
+              "chorusgraph": {
+                "point": 0.0,
+                "lower95": 0.0,
+                "upper95": 0.16112515805281938,
+                "n": 20,
+                "method": "wilson_95"
+              },
+              "delta_chorus_minus_lang": null,
+              "lower_is_better": false,
+              "winner": "tie",
+              "unit": "rate"
+            },
+            {
+              "metric": "llm_calls_on_cache_hit_mean",
+              "langgraph": {
+                "point": 0.0,
+                "lower95": 0.0,
+                "upper95": 0.0,
+                "n": 0,
+                "method": "none"
+              },
+              "chorusgraph": {
+                "point": 0.0,
+                "lower95": 0.0,
+                "upper95": 0.0,
+                "n": 0,
+                "method": "none"
+              },
+              "delta_chorus_minus_lang": null,
+              "lower_is_better": true,
+              "winner": "inconclusive",
+              "unit": "calls"
+            },
+            {
+              "metric": "tokens_in_per_task",
+              "langgraph": {
+                "point": 836.85,
+                "lower95": 670.339375,
+                "upper95": 995.8818749999999,
+                "n": 40,
+                "method": "bootstrap_2000"
+              },
+              "chorusgraph": {
+                "point": 615.6,
+                "lower95": 312.45,
+                "upper95": 941.7012500000001,
+                "n": 20,
+                "method": "bootstrap_2000"
+              },
+              "delta_chorus_minus_lang": null,
+              "lower_is_better": true,
+              "winner": "chorusgraph",
+              "unit": "tokens"
+            },
+            {
+              "metric": "tokens_out_per_task",
+              "langgraph": {
+                "point": 294.275,
+                "lower95": 243.99625,
+                "upper95": 349.03624999999994,
+                "n": 40,
+                "method": "bootstrap_2000"
+              },
+              "chorusgraph": {
+                "point": 209.8,
+                "lower95": 165.9475,
+                "upper95": 258.15624999999994,
+                "n": 20,
+                "method": "bootstrap_2000"
+              },
+              "delta_chorus_minus_lang": null,
+              "lower_is_better": true,
+              "winner": "chorusgraph",
+              "unit": "tokens"
+            },
+            {
+              "metric": "tool_calls_per_task",
+              "langgraph": {
+                "point": 0.875,
+                "lower95": 0.65,
+                "upper95": 1.1,
+                "n": 40,
+                "method": "bootstrap_2000"
+              },
+              "chorusgraph": {
+                "point": 0.45,
+                "lower95": 0.15,
+                "upper95": 0.8,
+                "n": 20,
+                "method": "bootstrap_2000"
+              },
+              "delta_chorus_minus_lang": null,
+              "lower_is_better": true,
+              "winner": "chorusgraph",
+              "unit": "calls"
+            },
+            {
+              "metric": "error_rate",
+              "langgraph": {
+                "point": 0.0,
+                "lower95": 0.0,
+                "upper95": 0.08762160119728664,
+                "n": 40,
+                "method": "wilson_95"
+              },
+              "chorusgraph": {
+                "point": 0.0,
+                "lower95": 0.0,
+                "upper95": 0.16112515805281938,
+                "n": 20,
+                "method": "wilson_95"
+              },
+              "delta_chorus_minus_lang": null,
+              "lower_is_better": true,
+              "winner": "tie",
+              "unit": "rate"
+            },
+            {
+              "metric": "embed_count_per_task",
+              "langgraph": {
+                "point": 0.0,
+                "lower95": 0.0,
+                "upper95": 0.0,
+                "n": 40,
+                "method": "bootstrap_2000"
+              },
+              "chorusgraph": {
+                "point": 7.75,
+                "lower95": 6.6,
+                "upper95": 9.1,
+                "n": 20,
+                "method": "bootstrap_2000"
+              },
+              "delta_chorus_minus_lang": null,
+              "lower_is_better": true,
+              "winner": "langgraph",
+              "unit": "embeds"
+            },
+            {
+              "metric": "abstain_rate",
+              "langgraph": {
+                "point": 0.125,
+                "lower95": 0.0,
+                "upper95": 0.261121198388511,
+                "n": 40,
+                "method": "wilson_95"
+              },
+              "chorusgraph": {
+                "point": 0.05,
+                "lower95": 0.0,
+                "upper95": 0.23613119344674208,
+                "n": 20,
+                "method": "wilson_95"
+              },
+              "delta_chorus_minus_lang": null,
+              "lower_is_better": false,
+              "winner": "langgraph",
+              "unit": "rate"
+            }
+          ],
+          "scorecard": {
+            "chorusgraph_wins": 9,
+            "langgraph_wins": 2,
+            "overall_winner": "chorusgraph"
+          }
+        },
+        "paraphrase": {
+          "group": "healthcare_multi/paraphrase",
+          "langgraph": "HL2",
+          "chorusgraph": "HC2",
+          "n_langgraph": 0,
+          "n_chorusgraph": 7,
+          "paired": {
+            "n_paired": 0,
+            "cost_delta_usd": null,
+            "latency_delta_ms": null,
+            "llm_calls_delta": null,
+            "success_delta_rate": null
+          },
+          "metrics": [],
+          "scorecard": {
+            "chorusgraph_wins": 0,
+            "langgraph_wins": 0,
+            "overall_winner": "inconclusive"
+          }
+        }
+      }
+    }
+  },
+  "pairs": [
+    {
+      "langgraph": "FL1",
+      "chorusgraph": "FC1",
+      "group_key": "finance_single"
+    },
+    {
+      "langgraph": "FL2",
+      "chorusgraph": "FC2",
+      "group_key": "finance_multi"
+    },
+    {
+      "langgraph": "HL1",
+      "chorusgraph": "HC1",
+      "group_key": "healthcare_single"
+    },
+    {
+      "langgraph": "HL2",
+      "chorusgraph": "HC2",
+      "group_key": "healthcare_multi"
+    }
+  ]
+}
