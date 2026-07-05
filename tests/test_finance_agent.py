@@ -138,6 +138,7 @@ def test_react_path_seeds_canonical_phrases():
     assert decision.is_hit
 
 
+@pytest.mark.live
 @pytest.mark.skipif(not resolve_gemini_api_key(), reason="GEMINI_API_KEY not configured")
 def test_react_graph_propagates_cache_score_on_hit():
     from chorusgraph.examples.finance_agent.patterns_graph import build_react_graph, pattern_initial_state
@@ -162,6 +163,7 @@ def test_react_graph_propagates_cache_score_on_hit():
     assert float(result["cache_score"]) > 0.0
 
 
+@pytest.mark.live
 @pytest.mark.skipif(not resolve_gemini_api_key(), reason="GEMINI_API_KEY not configured")
 def test_finance_graph_end_to_end_with_ledger():
     compiled, runtime = build_finance_graph(FinanceRuntime(tenant_id="finance-test-e2e"))
@@ -178,6 +180,7 @@ def test_finance_graph_end_to_end_with_ledger():
     assert result["validation"]["approved"] is True
 
 
+@pytest.mark.live
 @pytest.mark.skipif(not resolve_gemini_api_key(), reason="GEMINI_API_KEY not configured")
 def test_two_turn_conversation_references_prior_context():
     compiled, runtime = build_finance_graph(FinanceRuntime(tenant_id="finance-test-2turn"))

@@ -19,6 +19,7 @@ def test_sqlite_checkpointer_factory(tmp_path):
     assert path.exists() or True  # file created on first put
 
 
+@pytest.mark.live
 @pytest.mark.skipif(not resolve_gemini_api_key(), reason="GEMINI_API_KEY not configured")
 def test_thread_resumes_after_restart(tmp_path):
     db_path = tmp_path / "checkpoints.sqlite"

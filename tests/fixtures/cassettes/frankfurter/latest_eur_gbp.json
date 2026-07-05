@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "https://api.frankfurter.app/latest",
+    "params": {"from": "EUR", "to": "GBP"}
+  },
+  "response": {
+    "status_code": 200,
+    "json": {
+      "amount": 1.0,
+      "base": "EUR",
+      "date": "2026-07-03",
+      "rates": {"GBP": 0.8572}
+    }
+  },
+  "recorded_at": "2026-07-04T00:00:00Z",
+  "source": "api.frankfurter.app (live recording for CI replay)"
+}

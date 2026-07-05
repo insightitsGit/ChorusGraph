@@ -15,6 +15,7 @@ from chorusgraph.examples.finance_agent.patterns_graph import (
 )
 
 
+@pytest.mark.live
 @pytest.mark.skipif(not resolve_gemini_api_key(), reason="GEMINI_API_KEY not configured")
 def test_react_pattern_two_tools_in_ledger():
     compiled, _ = build_react_graph()
@@ -31,6 +32,7 @@ def test_react_pattern_two_tools_in_ledger():
     assert any("/observation" in n for n in nodes)
 
 
+@pytest.mark.live
 @pytest.mark.skipif(not resolve_gemini_api_key(), reason="GEMINI_API_KEY not configured")
 def test_reflection_pattern_catches_wrong_figure():
     compiled, _ = build_reflection_graph()
@@ -48,6 +50,7 @@ def test_reflection_pattern_catches_wrong_figure():
     assert validation.get("approved") is True
 
 
+@pytest.mark.live
 @pytest.mark.skipif(not resolve_gemini_api_key(), reason="GEMINI_API_KEY not configured")
 def test_plan_solve_pattern_end_to_end():
     compiled, _ = build_plan_solve_graph()

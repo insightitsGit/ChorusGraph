@@ -8,14 +8,14 @@ from benchmark.hl2.runner import HL2Runner, build_healthcare_graph_hl2
 from benchmark.healthcare.tools import check_drug_interactions, retrieve_guidelines
 from benchmark.healthcare_workload import HealthcareCase, PIPELINE_AGENTS
 from benchmark.multiagent_measure import hop_names
-from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient
+from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient, LlmUsage
 
 
 class _StubHealthcareGemini(InstrumentedGeminiClient):
     """Minimal stub — records usage without API."""
 
     def __init__(self) -> None:
-        self.usage = InstrumentedGeminiClient().usage
+        self.usage = LlmUsage()
         self._client = None
         self.model = "stub"
         self._writer_text = (

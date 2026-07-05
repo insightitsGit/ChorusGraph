@@ -15,9 +15,9 @@ from benchmark.workload import WorkloadTask, generate_workload
 
 class _StubFinanceGemini:
     def __init__(self) -> None:
-        from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient
+        from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient, LlmUsage
 
-        self.usage = InstrumentedGeminiClient().usage
+        self.usage = LlmUsage()
         self._client = None
         self.model = "stub"
 

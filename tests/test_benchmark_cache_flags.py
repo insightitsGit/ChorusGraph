@@ -68,13 +68,13 @@ def test_temperature_defaults_to_production_value():
 
 
 def test_configure_temperature_reaches_gemini_call_config():
-    """Deterministic-comparison mode: --temperature 0.0 must reach the actual API call config,
-    not just the flags dataclass — this is the fix for HL2's 70%->60% no-code-change swing."""
+    """Deterministic-comparison mode: --temperature 0.0 must reach the actual API call config."""
     configure(temperature=0.0)
 
-    from benchmark.shared.instrumented_gemini import InstrumentedGeminiClient
+    from tests.support.deterministic import real_instrumented_gemini_client
 
-    client = InstrumentedGeminiClient.__new__(InstrumentedGeminiClient)
+    RealClient = real_instrumented_gemini_client()
+    client = RealClient.__new__(RealClient)
     client.usage = __import__("benchmark.shared.instrumented_gemini", fromlist=["LlmUsage"]).LlmUsage()
     inner = MagicMock()
     inner._build_prompt.return_value = "prompt"

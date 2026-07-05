@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main, "P1_*"]
+  pull_request:
+    branches: [master, main, "P1_*"]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install package + dev tools
+        run: |
+          python -m pip install -U pip setuptools wheel
+          pip install -e ".[dev,gemini,benchmark-healthcare]"
+
+      - name: Ruff lint (E1 scope — tests + CI)
+        run: ruff check tests .github
+
+      - name: Ruff format check (E1 scope)
+        run: ruff format --check tests .github
+
+      - name: Mypy (baseline)
+        run: mypy chorusgraph --config-file pyproject.toml
+
+      - name: Deterministic test suite (no secrets, no network)
+        env:
+          CHORUSGRAPH_DETERMINISTIC: "1"
+          GEMINI_API_KEY: ""
+          GOOGLE_API_KEY: ""
+        run: pytest tests -q --cov=chorusgraph --cov=benchmark --cov-report=term-missing:skip-covered
+
+      - name: SBOM (CycloneDX)
+        run: cyclonedx-py environment -o sbom/ci-sbom.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom/ci-sbom.json
+
+  live-integration:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: pip install -e ".[dev,gemini,benchmark-healthcare]"
+      - name: Live Gemini/API tests
+        env:
+          CHORUSGRAPH_LIVE: "1"
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: pytest tests -m live -q

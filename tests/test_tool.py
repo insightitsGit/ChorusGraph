@@ -1,4 +1,4 @@
-"""Tests for finance tool node (real API, no mocks)."""
+"""Tests for finance tool node — Frankfurter replayed from cassettes in CI (E1)."""
 
 from __future__ import annotations
 

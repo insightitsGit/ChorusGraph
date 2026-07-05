@@ -66,6 +66,7 @@ def test_recall_structured_no_demo_fallback_by_default(tmp_path):
     assert queries == ["USD/EUR rate?"]
 
 
+@pytest.mark.live
 @pytest.mark.skipif(not resolve_gemini_api_key(), reason="GEMINI_API_KEY not configured")
 def test_cross_session_recall_with_provenance(tmp_path):
     cortex_dir = tmp_path / "cortex-cross"

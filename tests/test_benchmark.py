@@ -374,6 +374,7 @@ def test_slice_rows_fx_and_compound_excludes_memory():
     assert fx[0].task_id == "t2"
 
 
+@pytest.mark.live
 @pytest.mark.skipif(
     not os.environ.get("GEMINI_API_KEY") and not os.environ.get("GOOGLE_API_KEY"),
     reason="GEMINI_API_KEY required for live dry-run",
