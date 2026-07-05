@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: chorusgraph
+      POSTGRES_PASSWORD: chorusgraph
+      POSTGRES_DB: chorusgraph
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chorusgraph"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  chorusgraph:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      CHORUSGRAPH_PG_DSN: postgresql://chorusgraph:chorusgraph@postgres:5432/chorusgraph
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:

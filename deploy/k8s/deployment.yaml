@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chorusgraph
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chorusgraph
+  template:
+    metadata:
+      labels:
+        app: chorusgraph
+    spec:
+      containers:
+        - name: chorusgraph
+          image: chorusgraph:1.0.0
+          ports:
+            - containerPort: 8080
+          env:
+            - name: CHORUSGRAPH_PG_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: chorusgraph-secrets
+                  key: pg-dsn
+            - name: GEMINI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: chorusgraph-secrets
+                  key: gemini-api-key
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 20
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: chorusgraph
+spec:
+  selector:
+    app: chorusgraph
+  ports:
+    - port: 8080
+      targetPort: 8080
