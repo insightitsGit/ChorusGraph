@@ -10,6 +10,8 @@ from uuid import uuid4
 
 from chorusgraph.ledger.models import LedgerStep, RouteLedger
 from chorusgraph.ledger.sink import LedgerSink, SqliteLedgerSink
+from chorusgraph.observability.logging import set_correlation
+from chorusgraph.observability.metrics import get_metrics
 
 logger = logging.getLogger("chorusgraph.route")
 
@@ -53,6 +55,7 @@ class RouteTracker:
             tenant_id=self.tenant_id,
             graph_id=self.graph_id,
         )
+        set_correlation(correlation_id=self.run_id, run_id=self.run_id)
 
     def record_step(
         self,
@@ -92,6 +95,14 @@ class RouteTracker:
             retryable=retryable,
         )
         self.ledger.add_step(step)
+        metrics = get_metrics()
+        metrics.record_node_latency(node, duration_ms)
+        if error_code:
+            metrics.inc("errors")
+        elif cache_hit is True:
+            metrics.inc("cache_hits")
+        elif cache_hit is False:
+            metrics.inc("cache_misses")
 
         event = {
             "type": "route_step",
