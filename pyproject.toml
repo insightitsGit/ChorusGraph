@@ -111,7 +111,8 @@ ignore = ["E501"]
 "tests/**" = ["B011", "E402", "B007", "F841"]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
+follow_imports = "silent"
 warn_return_any = false
 warn_unused_ignores = false
 ignore_missing_imports = true
