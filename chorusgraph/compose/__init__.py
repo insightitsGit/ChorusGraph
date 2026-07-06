@@ -17,10 +17,15 @@ from chorusgraph.compose.defaults import (
 from chorusgraph.compose.ports import (
     CacheBackend,
     MemoryBackend,
+    PersistenceBackend,
     RetrievalBackend,
     ToolBackend,
     is_cache_backend,
     is_retrieval_backend,
+)
+from chorusgraph.compose.adapters.persistence import (
+    PostgresPersistenceBackend,
+    SqlitePersistenceBackend,
 )
 from chorusgraph.compose.stack import ChorusStack
 
@@ -31,9 +36,12 @@ __all__ = [
     "KeywordRetrievalBackend",
     "MemoryBackend",
     "PrismCacheBackend",
+    "PostgresPersistenceBackend",
     "PrismRAGRetrievalBackend",
     "RedisCacheBackend",
+    "PersistenceBackend",
     "RetrievalBackend",
+    "SqlitePersistenceBackend",
     "ToolBackend",
     "default_checkpointer",
     "default_ledger_sink",

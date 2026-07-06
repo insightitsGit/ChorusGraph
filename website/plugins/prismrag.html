@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PrismRAG plug-in — ChorusGraph</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <nav>
+        <a class="logo" href="../index.html">Chorus<span>Graph</span></a>
+        <ul>
+          <li><a href="../index.html">Home</a></li>
+          <li><a href="../benchmarks.html">Benchmarks</a></li>
+          <li><a href="../pricing.html">Pricing</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="container">
+        <h1>PrismRAG retrieval plug-in</h1>
+        <p class="sub">Fourth swappable port — vector search + taxonomy remap in ~20 lines, not a benchmark fork.</p>
+        <pre>pip install "chorusgraph[retrieval]"
+
+from chorusgraph.compose import ChorusStack, PrismRAGRetrievalBackend
+
+stack = (
+    ChorusStack.defaults(tenant_id="acme")
+    .with_retrieval(PrismRAGRetrievalBackend(
+        embedder=...,
+        mapping=YOUR_MAPPING,
+    ))
+)
+stack.resolve_retrieval().index(YOUR_CORPUS)
+retrieve_node = stack.to_retrieve_handler(topic="policy", top_k=6)</pre>
+        <p>Vector search works without a license; taxonomy remap requires PrismRAG Pro license. Full guide: <a href="https://github.com/insightitsGit/ChorusGraph/blob/master/docs/INSTALL.md">INSTALL.md</a></p>
+      </div>
+    </section>
+  </main>
+  <footer><div class="container"><p>Apache-2.0 · <a href="https://github.com/insightitsGit/ChorusGraph">GitHub</a></p></div></footer>
+</body>
+</html>

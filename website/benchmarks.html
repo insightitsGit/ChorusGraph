@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Benchmarks — ChorusGraph</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <nav>
+        <a class="logo" href="index.html">Chorus<span>Graph</span></a>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="plugins/prismrag.html">PrismRAG</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <main>
+    <section>
+      <div class="container">
+        <h1>Honest benchmarks</h1>
+        <p>Azure run <code>20260704_212111</code> — real Gemini, zero errors. Healthcare single-agent is a tie (disclosed).</p>
+        <h2 style="margin-top:2rem">Reproduce</h2>
+        <pre>python -m benchmark.run_scenarios --help
+# See docs/BENCHMARK.md and benchmark/results/azure_20260704_212111/</pre>
+        <h2 style="margin-top:2rem">H10 repeat band (FX, 40% repeat)</h2>
+        <p>Median latency ~8× lower on repeat FX band (575 ms vs 4498 ms). Sliced metric — see <a href="https://github.com/insightitsGit/ChorusGraph/blob/master/benchmark/FAIRNESS_H9.md">FAIRNESS_H9.md</a>.</p>
+      </div>
+    </section>
+  </main>
+  <footer><div class="container"><p><a href="https://github.com/insightitsGit/ChorusGraph/blob/master/docs/BENCHMARK_RESULTS.md">Full results</a></p></div></footer>
+</body>
+</html>

@@ -29,6 +29,7 @@ without forking the engine or re-wiring benchmarks by hand.
 | **Route ledger sink** | **Yes** | `SqliteLedgerSink` | Postgres, custom |
 | **Tool registry** | **Yes** | Finance default registry | MCP / custom tools |
 | **L2 retrieval** | **Yes** | `KeywordRetrievalBackend` | `PrismRAGRetrievalBackend` — see [`PLUGINS.md`](PLUGINS.md) |
+| **Persistence** | **Yes** | `SqlitePersistenceBackend` | `PostgresPersistenceBackend` — Enterprise license; see [`ENTERPRISE_READINESS.md`](ENTERPRISE_READINESS.md) |
 
 **Rule:** swapping cache does **not** remove PrismLang projection — external stores still
 use engine embed/project for semantic paths unless the backend implements its own policy.
@@ -70,6 +71,18 @@ stack = ChorusStack.defaults(tenant_id="acme").with_retrieval(backend)
 retrieve_node = stack.to_retrieve_handler(topic="policy", top_k=6)
 ```
 
+Enterprise Postgres persistence (offline license required):
+
+```python
+import os
+from chorusgraph.compose import PostgresPersistenceBackend
+
+stack = ChorusStack.defaults(tenant_id="acme").with_persistence(
+    PostgresPersistenceBackend(dsn=os.environ["CHORUSGRAPH_PG_DSN"])
+)
+# Set CHORUSGRAPH_LICENSE_FILE to signed JSON with enterprise_persistence feature
+```
+
 ### Resolved defaults (`ChorusStack.defaults`)
 
 | Port | Implementation |
@@ -81,6 +94,7 @@ retrieve_node = stack.to_retrieve_handler(topic="policy", top_k=6)
 | `ledger` | In-memory SQLite ledger |
 | `tools` | Finance tool registry |
 | `retrieval` | `KeywordRetrievalBackend` (zero-deps keyword overlap) |
+| `persistence` | `SqlitePersistenceBackend` (checkpoints + graph store) |
 
 ---
 
@@ -92,6 +106,7 @@ retrieve_node = stack.to_retrieve_handler(topic="policy", top_k=6)
 | `MemoryBackend` | `schedule_digest`, `recall_structured` |
 | `ToolBackend` | `get`, `list_names` |
 | `RetrievalBackend` | `retrieve`, `index` |
+| `PersistenceBackend` | `make_checkpointer`, `make_graph_store` |
 
 See [`PLUGINS.md`](../docs/PLUGINS.md) for defaults and swap options in one place.
 

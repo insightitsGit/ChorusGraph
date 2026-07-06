@@ -11,12 +11,18 @@ from chorusgraph.core.channels import NodeUpdate
 from chorusgraph.core.node import NodeContext
 from chorusgraph.core.persistence import postgres_checkpointer
 
+from tests.support.license_fixture import write_test_license
+
 PG_DSN = os.environ.get("CHORUSGRAPH_PG_DSN")
 
 
 @pytest.mark.skipif(not PG_DSN, reason="CHORUSGRAPH_PG_DSN not configured")
 @pytest.mark.asyncio
-async def test_postgres_checkpoint_resume():
+async def test_postgres_checkpoint_resume(tmp_path, monkeypatch):
+    from chorusgraph.licensing import ENTERPRISE_PERSISTENCE
+
+    lic = write_test_license(tmp_path / "lic.json", features=[ENTERPRISE_PERSISTENCE])
+    monkeypatch.setenv("CHORUSGRAPH_LICENSE_FILE", str(lic))
     cp = postgres_checkpointer(PG_DSN)
     config = {"configurable": {"thread_id": "pg-resume-test"}}
 

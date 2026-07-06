@@ -16,6 +16,8 @@ Build a **marketing-oriented product landing site** for ChorusGraph that convert
 2. Optional `/plugins/prismrag` subpage (retrieval plug-in story)
 3. Download / docs links to GitHub + pip install
 4. Visual system: modern, confident, enterprise-trustworthy (dark + accent; avoid generic “AI purple gradient” cliché unless Director prefers)
+5. **60-second hero/ad video** (script in §2.5 below) — embed at the top of the landing page and reuse
+   as a standalone social/ad asset (LinkedIn, X, YouTube pre-roll)
 
 **Do not:** fake customer logos, fake testimonials, fake urgency countdowns, or unverified performance claims.
 
@@ -99,7 +101,11 @@ Zero errors. Real Gemini. See `docs/BENCHMARK_RESULTS.md`, `benchmark/results/az
 **Free:** “Agent Stack Audit” (30 min)  
 **Paid pilot:** “Production Agent Pilot”  
 **Recurring:** “ChorusGraph Pro” (PrismRAG + support)  
-**Enterprise:** “ChorusGraph Enterprise” (SLA, compliance, air-gap)
+**Enterprise:** “ChorusGraph Enterprise” (SLA, compliance, Postgres HA)
+  — **do NOT say "air-gap" anywhere on the site.** Verified 2026-07-05: PrismRAG's license check calls
+  home to a remote server with only a 7-day offline grace period — true zero-connectivity air-gap is not
+  deliverable until the offline license mechanism ships (see `PrismRagLib/handoffs/handoff1_licensing.md`).
+  Re-check this note before removing it.
 
 ### Offer stack (value anchor — adjust dollars with Director)
 
@@ -137,11 +143,47 @@ Zero errors. Real Gemini. See `docs/BENCHMARK_RESULTS.md`, `benchmark/results/az
 2. **Wire** — `ChorusStack.with_retrieval(PrismRAGRetrievalBackend(...))`
 3. **Measure** — Route Ledger + cache hit report on your staging traffic
 
+**Alternate plan (strong, add as a callout box):** "Or skip the manual steps — paste our AI IDE prompt
+into Cursor/Claude Code/Copilot and it installs + wires ChorusGraph into your project for you."
+Link to `docs/AI_IDE_PROMPTS.md` (README already surfaces this). This is a genuinely differentiated
+proof point for the weakest lever (Perceived Likelihood / Effort) — a visitor can literally watch their
+own AI agent do the integration live, which is more convincing than any code sample on the page.
+
 **CTA (named — never “Learn more”):**
 
 - Primary: **“Book a 30-Min Agent Stack Audit”**
 - Secondary: **“Read the Whitepaper”** → `docs/WHITEPAPER.md`
 - Tertiary: **“View on GitHub”**
+
+---
+
+## 2.5 60-second hero/ad video (script — produce, do not invent new claims)
+
+**Format decision (deliberate):** no voiceover, caption-driven, real screen footage — LinkedIn/X autoplay
+muted by default, so a video that only works with sound loses most viewers in the first second. Bold
+captions over *real* terminal output reads as proof to this audience; a narrator reads as marketing.
+
+**Cheap to produce:** the two terminal segments are a real screen recording (OBS Studio or Loom, free),
+the stat cards reuse the existing flyer's dark-background/teal-accent branding, editing is just cuts +
+text overlays (CapCut or DaVinci Resolve, free) — no animation, no actors.
+
+| Time | Visual | On-screen text |
+|---|---|---|
+| 0:00–0:05 | Black screen, blinking cursor | "Every agent stack pays the same tax." |
+| 0:05–0:10 | Fast, slightly chaotic list flashing | "LangGraph + Redis + Pinecone + checkpoints + audit logs = six repos, glued together" |
+| 0:10–0:14 | Hard cut to a clean terminal | "Or: one command." |
+| 0:14–0:24 | **Real recording**: `pip install chorusgraph` actually running (sped up if needed) | (minimal text, let it run) |
+| 0:24–0:32 | **Real recording**: the hello-world snippet, real output appearing | `{'reply': 'Hello, ChorusGraph'}` — genuinely printed, not mocked |
+| 0:32–0:40 | Bold stat cards, dark bg, teal accent (reuse flyer look) | "+30pp healthcare multi-agent vs. LangGraph" → "100% vs 87.5% finance success" |
+| 0:40–0:46 | Same stat-card style | "323 tests. Zero API keys to verify. Zero fake stats." |
+| 0:46–0:53 | Quick 3-line code cut: swapping in `PrismRAGRetrievalBackend` | "Swap ports, don't fork the engine." |
+| 0:53–0:58 | End card, same flyer branding | `pip install chorusgraph` · `github.com/insightitsGit/ChorusGraph` |
+| 0:58–1:00 | Final hold | "Real Gemini calls. Real benchmarks. Zero fake stats." |
+
+**Every number in this script is already verified against raw logs elsewhere in this repo — do not add
+a new claim to the video that isn't in §1.** If a shorter 15-second cutdown is needed for platforms
+where 60s is too long, cut straight from 0:00–0:10 (pain) to 0:32–0:40 (the two headline stats) to
+0:53–1:00 (CTA) — skip the terminal demo in the cutdown, it needs the full minute to land.
 
 ---
 
@@ -262,6 +304,7 @@ Insight IT Solutions · Apache-2.0 · GitHub · Whitepaper · Privacy
 | API stability | [`docs/STABILITY.md`](../docs/STABILITY.md) |
 | Hormozi playbook | [`c:\code\alex-hormozi.md`](file:///c:/code/alex-hormozi.md) |
 | Architecture diagram source | `docs/COMPOSE.md`, whitepaper §3 |
+| **NotebookLM story source** (for the audio/video overview) | [`docs/NOTEBOOKLM_STORY.md`](../docs/NOTEBOOKLM_STORY.md) — feed this into NotebookLM to generate the hero video/audio; every fact in it is source-cited at the bottom, don't let the generated output drift from it |
 
 ---
 

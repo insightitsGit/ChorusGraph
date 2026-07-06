@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
+from pathlib import Path
 from typing import Any, Optional
 
 from chorusgraph.cache_gate.sidecar import SidecarStore
 from chorusgraph.cache_gate.thresholds import CacheThresholds, measured_thresholds
 from chorusgraph.compose.adapters.prism_cache import PrismCacheBackend
+from chorusgraph.compose.adapters.persistence import SqlitePersistenceBackend
 from chorusgraph.compose.defaults import (
     default_checkpointer,
     default_ledger_sink,
@@ -17,7 +19,7 @@ from chorusgraph.compose.defaults import (
     default_sidecar,
     default_tool_registry,
 )
-from chorusgraph.compose.ports import CacheBackend, MemoryBackend, RetrievalBackend, ToolBackend
+from chorusgraph.compose.ports import CacheBackend, MemoryBackend, PersistenceBackend, RetrievalBackend, ToolBackend
 from chorusgraph.core.persistence import EngineCheckpointer
 from chorusgraph.ledger.sink import LedgerSink
 from chorusgraph.sections.profiles import default_registry
@@ -46,6 +48,7 @@ class ChorusStack:
     ledger: Optional[LedgerSink] = None
     tools: Optional[ToolBackend] = None
     retrieval: Optional[RetrievalBackend] = None
+    persistence: Optional[PersistenceBackend] = None
     coarse_threshold: Optional[float] = None
     verify_threshold: Optional[float] = None
     enable_memory: bool = True
@@ -89,10 +92,23 @@ class ChorusStack:
             )
         return self.memory
 
+    def resolve_persistence(self) -> PersistenceBackend:
+        if self.persistence is None:
+            self.persistence = SqlitePersistenceBackend()
+        return self.persistence
+
     def resolve_checkpointer(self) -> EngineCheckpointer:
         if self.checkpointer is None:
-            self.checkpointer = default_checkpointer(self.checkpoint_root)
+            backend = self.resolve_persistence()
+            self.checkpointer = backend.make_checkpointer(checkpoint_root=self.checkpoint_root)
         return self.checkpointer
+
+    def resolve_graph_store(self, *, graph_path: str | None = None) -> Any:
+        path = graph_path or str(Path(self.cortex_cache_dir) / "graph_store.db")
+        return self.resolve_persistence().make_graph_store(
+            graph_path=path,
+            tenant_id=self.tenant_id,
+        )
 
     def resolve_ledger(self) -> LedgerSink:
         if self.ledger is None:
@@ -142,6 +158,10 @@ class ChorusStack:
     def with_retrieval(self, backend: RetrievalBackend) -> "ChorusStack":
         """Return a copy with retrieval backend replaced (e.g. PrismRAG)."""
         return replace(self, retrieval=backend)
+
+    def with_persistence(self, backend: PersistenceBackend) -> "ChorusStack":
+        """Return a copy with persistence backend replaced (e.g. licensed Postgres)."""
+        return replace(self, persistence=backend, checkpointer=None)
 
     def to_retrieve_handler(
         self,

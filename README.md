@@ -5,7 +5,7 @@
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-1.0.1-informational)](CHANGELOG.md)
 
-**Native agent runtime with semantic cache, swappable retrieval (PrismRAG), auditable memory, and enterprise hardening — one pip install, four plug-in ports.**
+**Native agent runtime with semantic cache, swappable retrieval (PrismRAG), auditable memory, and enterprise hardening — one pip install, five plug-in ports.**
 
 ChorusGraph is **not** a LangGraph wrapper. It ships a **native BSP graph engine** (`chorusgraph.core.Graph`) with the Prism stack attached by default: semantic cache, L2 retrieval, L3 memory, Route Ledger, checkpoints, and observability. Swap backends (Redis cache, vector RAG, custom tools) without rewriting orchestration.
 

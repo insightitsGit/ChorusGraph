@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="ChorusGraph — native agent runtime with semantic cache, PrismRAG retrieval, auditable memory, and enterprise hardening." />
+  <title>ChorusGraph — Ship production agents without the integration tax</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <header>
+    <div class="container">
+      <nav>
+        <a class="logo" href="index.html">Chorus<span>Graph</span></a>
+        <ul>
+          <li><a href="plugins/prismrag.html">PrismRAG</a></li>
+          <li><a href="benchmarks.html">Benchmarks</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+          <li><a href="https://github.com/insightitsGit/ChorusGraph/tree/master/docs">Docs</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <h1>Ship production agents without the integration tax.</h1>
+        <p class="sub">You're paying to re-answer the same question — and you still can't replay why the agent said it. ChorusGraph is one runtime: semantic cache, retrieval, memory, checkpoints, and Route Ledger audit.</p>
+        <div class="proof-strip">
+          <span><strong>+30 pp</strong> healthcare multi-agent</span>
+          <span><strong>100%</strong> finance single</span>
+          <span><strong>329</strong> tests, no API keys</span>
+          <span><code>pip install chorusgraph</code></span>
+        </div>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="mailto:contact@insightits.com?subject=Agent%20Stack%20Audit&utm_source=landing&utm_medium=cta&utm_campaign=audit">Book a 30-Min Agent Stack Audit</a>
+          <a class="btn btn-secondary" href="https://github.com/insightitsGit/ChorusGraph/blob/master/docs/WHITEPAPER.md">Read the Whitepaper</a>
+          <a class="btn btn-secondary" href="https://github.com/insightitsGit/ChorusGraph">View on GitHub</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="pain">
+      <div class="container">
+        <h2>The pain</h2>
+        <div class="grid-3">
+          <div class="card"><h3>Token burn</h3><p>LLM line items grow faster than revenue when every repeat intent re-hits the model.</p></div>
+          <div class="card"><h3>Audit gap</h3><p>Compliance asks for replay; you have logs, not decision traces per hop.</p></div>
+          <div class="card"><h3>Integration tax</h3><p>LangGraph + Redis + Pinecone + checkpoints + audit = three teams and six repos.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="proof">
+      <div class="container">
+        <h2>Proof (verified Azure run 20260704_212111)</h2>
+        <table>
+          <thead><tr><th>Scenario</th><th>LangGraph</th><th>ChorusGraph</th></tr></thead>
+          <tbody>
+            <tr><td>Finance single</td><td>87.5%</td><td><strong>100%</strong></td></tr>
+            <tr><td>Finance multi</td><td>75%</td><td><strong>87.5%</strong></td></tr>
+            <tr><td>Healthcare single</td><td>72.5%</td><td>72.5% (tie — honest)</td></tr>
+            <tr><td>Healthcare multi</td><td>57.5%</td><td><strong>87.5%</strong></td></tr>
+          </tbody>
+        </table>
+        <p class="footnote">Zero errors. Real Gemini. Full methodology: <a href="benchmarks.html">benchmarks</a> · <a href="https://github.com/insightitsGit/ChorusGraph/blob/master/benchmark/FAIRNESS_H9.md">fairness disclosure</a></p>
+      </div>
+    </section>
+
+    <section id="plan">
+      <div class="container">
+        <h2>Plan — three steps to staging</h2>
+        <ol>
+          <li><strong>Install</strong> — <code>pip install "chorusgraph[retrieval]"</code></li>
+          <li><strong>Wire</strong> — <code>ChorusStack.with_retrieval(PrismRAGRetrievalBackend(...))</code></li>
+          <li><strong>Measure</strong> — Route Ledger + cache hit report on staging traffic</li>
+        </ol>
+        <div class="card" style="margin-top:1.5rem">
+          <h3>Or let your AI IDE do it</h3>
+          <p>Paste our Cursor/Claude Code prompt — it installs and wires ChorusGraph in your project. <a href="https://github.com/insightitsGit/ChorusGraph/blob/master/docs/AI_IDE_PROMPTS.md">AI IDE prompts</a></p>
+        </div>
+        <pre>pip install chorusgraph
+python -c "import chorusgraph; from chorusgraph import Graph, ChorusStack; print(chorusgraph.__version__)"</pre>
+      </div>
+    </section>
+
+    <section id="ports">
+      <div class="container">
+        <h2>Five swappable ports</h2>
+        <p>Cache · Memory · Tools · Retrieval · <strong>Persistence</strong> (SQLite free; Postgres Enterprise with offline license)</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>Insight IT Solutions · Apache-2.0 · <a href="https://github.com/insightitsGit/ChorusGraph">GitHub</a> · <a href="pricing.html">Pricing</a></p>
+    </div>
+  </footer>
+</body>
+</html>

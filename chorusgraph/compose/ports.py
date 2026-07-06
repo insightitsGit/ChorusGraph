@@ -96,6 +96,24 @@ class ToolBackend(Protocol):
 
 
 @runtime_checkable
+class PersistenceBackend(Protocol):
+    """
+    Checkpoint + Cortex graph persistence port (5th swappable port).
+
+    Default: SQLite/file JSON (free, single-instance).
+    Enterprise: Postgres (license-gated, multi-replica safe).
+    """
+
+    name: str
+
+    def make_checkpointer(self, *, checkpoint_root: str) -> Any:
+        """Build an ``EngineCheckpointer`` for graph run resume."""
+
+    def make_graph_store(self, *, graph_path: str, tenant_id: str) -> Any:
+        """Build a durable Cortex ``GraphStore``."""
+
+
+@runtime_checkable
 class RetrievalBackend(Protocol):
     """
     L2 retrieval port — default: keyword stand-in (zero dependencies).
@@ -122,6 +140,7 @@ def is_retrieval_backend(obj: Any) -> bool:
 __all__ = [
     "CacheBackend",
     "MemoryBackend",
+    "PersistenceBackend",
     "RetrievalBackend",
     "ToolBackend",
     "is_cache_backend",

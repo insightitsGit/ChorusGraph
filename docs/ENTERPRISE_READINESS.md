@@ -11,14 +11,14 @@
 |---|---|
 | Architecture / native engine | ✅ Solid — LangGraph confined to baselines |
 | Benchmark proof | ✅ Full 8-scenario matrix verified (`20260704_212111`) |
-| Functional test suite | ✅ **323 passing** — deterministic CI tier (no live keys) |
+| Functional test suite | ✅ **329+ passing** — deterministic CI tier (no live keys) |
 | CI/CD + release engineering | ✅ GitHub Actions: pytest, ruff, mypy, coverage, SBOM |
 | Code-quality gates | 🟡 **Partial** — ruff/mypy on tests + package; full `chorusgraph/` ruff deferred |
 | Error handling / resilience | ✅ Breakers, retries, partial failures, fault-injection tests |
 | Observability / ops | ✅ Structured logs, OTel, health/metrics, runbooks |
 | Security / compliance (§21) | 🟡 **Built, not externally audited** — SAST/SCA in CI; threat model doc |
 | Performance / scale | 🟡 Load harness + docs; **production SLO soak not run** |
-| Data / persistence | 🟡 **SQLite durable graph** ships; Postgres Cortex = Phase 2 |
+| Data / persistence | ✅ **SQLite default (free)** · **Postgres Enterprise** (license-gated 5th port) |
 | Multi-tenant isolation | ✅ Guards + leakage tests + quotas |
 | API stability + reference docs | ✅ **1.0.0 frozen** — `public.py`, `API_1_0.md`, `STABILITY.md` |
 | Deployment / packaging | ✅ Dockerfile, Compose, k8s, `DEPLOY.md` |
@@ -57,8 +57,11 @@
 ### E4 — Observability ✅
 - JSON logs, OTel traces, health/readiness, runbooks
 
-### E5 — Durable persistence ✅ (SQLite; Postgres Phase 2)
-- SqliteGraphStore, migrations, backup/restore, right-to-forget
+### E5 — Durable persistence ✅
+- **Free:** SqliteGraphStore + JSON checkpoints (single-instance, fully functional)
+- **Enterprise:** `PostgresGraphStore` + `postgres_checkpointer` — offline Ed25519 license (`CHORUSGRAPH_LICENSE_FILE`, feature `enterprise_persistence`)
+- `PersistenceBackend` — 5th `ChorusStack` port (`SqlitePersistenceBackend` default, `PostgresPersistenceBackend` swap)
+- Migrations, backup/restore, right-to-forget (SQLite); Postgres graph migrations + concurrent-writer tests
 
 ### E6 — Multi-tenant isolation ✅
 - Cross-tenant leakage tests, resource limits
@@ -79,12 +82,28 @@
 
 ## Phase 2 backlog (pre scale / regulated production)
 
-1. **Postgres-native Cortex GraphStore** — replace SQLite for multi-instance durability
+1. **Shared license package with PrismRAG** — extract `chorusgraph.licensing` offline validator to shared `prism-license` (coordinate with `PrismRagLib/handoff1_licensing.md`)
 2. **CHORUS cipher audit** — currently opt-in only; TLS is default
 3. **Full-package ruff** — ~2300 legacy findings in `chorusgraph/`
 4. **Production load/soak** — Azure or staging SLO run with Director targets
 5. **External penetration test** — third-party sign-off for regulated buyers
 6. **`prismlib-plus[orchestrator]` namespace** — deferred; `chorusgraph` retained for 1.x
+
+### Enterprise Postgres (now available)
+
+Multi-replica k8s deployments should use licensed Postgres persistence instead of SQLite:
+
+```python
+from chorusgraph.compose import ChorusStack, PostgresPersistenceBackend
+
+stack = (
+    ChorusStack.defaults(tenant_id="acme")
+    .with_persistence(PostgresPersistenceBackend(dsn=os.environ["CHORUSGRAPH_PG_DSN"]))
+)
+# Requires CHORUSGRAPH_LICENSE_FILE with enterprise_persistence entitlement
+```
+
+Install: `pip install "chorusgraph[postgres]"`. License issuance is offline/signed — no phone-home on the validation path.
 
 ---
 

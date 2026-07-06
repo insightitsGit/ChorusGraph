@@ -306,7 +306,10 @@ def postgres_checkpointer(
     *,
     pending_writes_root: str | None = None,
 ) -> EngineCheckpointer:
-    """Postgres-backed checkpointer (P2 mandate) — requires ``CHORUSGRAPH_PG_DSN`` at runtime."""
+    """Postgres-backed checkpointer — requires Enterprise ``enterprise_persistence`` license."""
+    from chorusgraph.licensing import ENTERPRISE_PERSISTENCE, require_feature
+
+    require_feature(ENTERPRISE_PERSISTENCE)
     from prismlang import AsyncPostgresCheckpointer
 
     backend = AsyncPostgresCheckpointer(conn_string)
