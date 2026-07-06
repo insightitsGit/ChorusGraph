@@ -13,7 +13,6 @@ build/
 venv/
 env/
 clean_test_env*/
-clean_test_env_*/
 
 # Internal agent handoffs (local/private — not shipped on PyPI)
 handoffs/
