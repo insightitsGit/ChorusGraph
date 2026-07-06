@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chorusgraph"
-version = "1.0.2"
+version = "1.0.3"
 description = "Native agent graph runtime with Prism cache, memory, swappable PrismRAG retrieval, and Route Ledger"
 readme = "README.md"
 requires-python = ">=3.11"

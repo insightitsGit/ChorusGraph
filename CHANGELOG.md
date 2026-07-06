@@ -12,6 +12,19 @@ All notable changes to ChorusGraph are documented here (semver).
 - **E8:** Product Dockerfile, docker-compose, k8s manifest, deploy docs.
 - **E9:** Frozen public API (`chorusgraph/public.py`), stability guarantee, API 1.0 docs.
 
+## [1.0.3] — 2026-07-06
+
+### Added
+- **`chorusgraph-audit` CLI:** cold log simulation for cache hit-rate and cost estimates (no API key);
+  ledger-backed pilot reports via `--ledger` / `--list-runs`.
+- **Enterprise Postgres persistence port:** `PostgresGraphStore` and migrations for durable graph state.
+- **Licensing module:** key validation hooks for enterprise deployments.
+- **Package data:** ship default section profiles and shadow replay fixtures with the wheel.
+
+### Changed
+- Add `cryptography` to core dependencies.
+- Repo hygiene: stop tracking local virtualenvs and `dist_pkg_test` build artifacts.
+
 ## [1.0.2] — 2026-07-06
 
 ### Fixed
