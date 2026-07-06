@@ -92,6 +92,11 @@ chorusgraph-benchmark-volume = "benchmark.run_volume:main"
 where = ["."]
 include = ["chorusgraph*"]
 
+[tool.setuptools.package-data]
+"chorusgraph.sections" = ["profiles.default.json"]
+"chorusgraph.shadow.dataset" = ["labeled_queries.json"]
+"chorusgraph.shadow.replay.data" = ["website_chat_turns.jsonl"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = [".", "."]

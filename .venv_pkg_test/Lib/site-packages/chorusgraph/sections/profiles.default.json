@@ -1,0 +1,44 @@
+{
+  "fx_rates": {
+    "keying": "semantic",
+    "ttl_s": 3600,
+    "scope": "global",
+    "risk_tier": "low"
+  },
+  "compound_savings": {
+    "keying": "semantic",
+    "ttl_s": null,
+    "scope": "global",
+    "risk_tier": "low"
+  },
+  "user_profile": {
+    "keying": "semantic",
+    "ttl_s": null,
+    "scope": "user",
+    "risk_tier": "low"
+  },
+  "clinical_guidelines": {
+    "keying": "semantic",
+    "ttl_s": 2592000,
+    "scope": "global",
+    "risk_tier": "low"
+  },
+  "clinical_retrieval": {
+    "keying": "semantic",
+    "ttl_s": 2592000,
+    "scope": "global",
+    "risk_tier": "low"
+  },
+  "clinical_judgment": {
+    "keying": "fingerprint",
+    "ttl_s": null,
+    "scope": "session",
+    "risk_tier": "high"
+  },
+  "general": {
+    "keying": "semantic",
+    "ttl_s": null,
+    "scope": "global",
+    "risk_tier": "low"
+  }
+}
