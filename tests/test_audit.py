@@ -7,19 +7,19 @@ from pathlib import Path
 
 import pytest
 
-from chorusgraph.audit.benchmark_reference import load_portfolio_benchmark, load_scenario_benchmarks
+from benchmark.shared.instrumented_gemini import _INPUT_USD_PER_M, _OUTPUT_USD_PER_M
+from chorusgraph.audit.benchmark_reference import load_portfolio_benchmark
 from chorusgraph.audit.cli import main
 from chorusgraph.audit.ingest import detect_format, load_log
-from chorusgraph.audit.report import DISCLAIMER, audit_to_dict, format_console_report
-from chorusgraph.audit.simulate import gemini_cost_usd, run_cold_audit
-from chorusgraph.cache_gate.thresholds import COARSE_THRESHOLD, measured_thresholds
 from chorusgraph.audit.ledger_report import (
     LEDGER_DISCLAIMER,
     analyze_ledger_run,
     format_ledger_console_report,
 )
+from chorusgraph.audit.report import DISCLAIMER, audit_to_dict, format_console_report
+from chorusgraph.audit.simulate import gemini_cost_usd, run_cold_audit
+from chorusgraph.cache_gate.thresholds import COARSE_THRESHOLD, measured_thresholds
 from chorusgraph.ledger import LedgerStep, RouteLedger, SqliteLedgerSink
-from benchmark.shared.instrumented_gemini import _INPUT_USD_PER_M, _OUTPUT_USD_PER_M
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 JSONL_FIXTURE = FIXTURES / "audit_cold_queries.jsonl"
