@@ -7,9 +7,11 @@ import dataclasses
 import pytest
 
 from chorusgraph.compose import ChorusStack
-from chorusgraph.compose.adapters.persistence import PostgresPersistenceBackend, SqlitePersistenceBackend
-from chorusgraph.licensing import LicenseError
-from chorusgraph.licensing import ENTERPRISE_PERSISTENCE
+from chorusgraph.compose.adapters.persistence import (
+    PostgresPersistenceBackend,
+    SqlitePersistenceBackend,
+)
+from chorusgraph.licensing import ENTERPRISE_PERSISTENCE, LicenseError
 from tests.support.license_fixture import write_test_license
 
 

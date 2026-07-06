@@ -7,7 +7,6 @@ import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 # Matches chorusgraph.licensing.keys embedded public key (CI/dev issuer only).

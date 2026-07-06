@@ -10,7 +10,6 @@ from chorusgraph.core import END, START, Graph
 from chorusgraph.core.channels import NodeUpdate
 from chorusgraph.core.node import NodeContext
 from chorusgraph.core.persistence import postgres_checkpointer
-
 from tests.support.license_fixture import write_test_license
 
 PG_DSN = os.environ.get("CHORUSGRAPH_PG_DSN")
