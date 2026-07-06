@@ -50,7 +50,9 @@ jobs:
         run: pytest tests -q --timeout=120 --cov=chorusgraph --cov=benchmark --cov-report=term-missing:skip-covered
 
       - name: SBOM (CycloneDX)
-        run: cyclonedx-py environment -o sbom/ci-sbom.json
+        run: |
+          mkdir -p sbom
+          cyclonedx-py environment -o sbom/ci-sbom.json
 
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v4
