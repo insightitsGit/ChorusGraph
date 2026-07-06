@@ -10,9 +10,14 @@ build/
 
 # Virtual environments
 .venv/
+.venv*/
+.venv-*/
 venv/
 env/
 clean_test_env*/
+
+# Local package build / install test artifacts
+dist_pkg_test/
 
 # Internal agent handoffs (local/private — not shipped on PyPI)
 handoffs/
