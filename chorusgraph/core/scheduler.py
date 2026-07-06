@@ -267,25 +267,18 @@ class CompiledGraph:
             if pending_batch:
                 self._send_batch = self._send_batch_from_metadata(pending_batch)
                 active = set()
-                pending_writes = self.checkpointer.get_pending_writes(config, super_step)
-                for task in self._send_batch.tasks:
-                    if task.branch_id in self._send_batch.completed:
+                pending_writes = self._collect_pending_writes(config, super_step)
+                for bid in meta.get("pending_send_batch", {}).get("completed") or []:
+                    if bid in self._send_batch.completed:
+                        continue
+                    task = next((t for t in self._send_batch.tasks if t.branch_id == bid), None)
+                    if task is None:
                         continue
                     pending_id = self._branch_pending_id(task.target, task.branch_id)
                     if pending_id in pending_writes:
                         update = pending_writes[pending_id]
-                        self._send_batch.completed[task.branch_id] = update
+                        self._send_batch.completed[bid] = update
                         self._fan_back_branch_result(self._send_batch, task, update)
-                for bid in meta.get("pending_send_batch", {}).get("completed") or []:
-                    if bid not in self._send_batch.completed:
-                        pw = self.checkpointer.get_pending_writes(config, super_step)
-                        task = next((t for t in self._send_batch.tasks if t.branch_id == bid), None)
-                        if task:
-                            pending_id = self._branch_pending_id(task.target, task.branch_id)
-                            if pending_id in pw:
-                                update = pw[pending_id]
-                                self._send_batch.completed[bid] = update
-                                self._fan_back_branch_result(self._send_batch, task, update)
             if not active and self.ir.entry and not meta.get("step_in_progress"):
                 active = {self.ir.entry}
         else:
@@ -536,6 +529,17 @@ class CompiledGraph:
         if self.checkpointer is None:
             return {}
         return self.checkpointer.get_pending_writes(config, super_step)
+
+    def _collect_pending_writes(
+        self,
+        config: Dict[str, Any],
+        super_step: int,
+    ) -> Dict[str, NodeUpdate]:
+        """Merge pending writes for steps 0..super_step (Send branches persist per-step)."""
+        merged: Dict[str, NodeUpdate] = {}
+        for step in range(max(super_step, 0) + 1):
+            merged.update(self._load_pending_writes(config, step))
+        return merged
 
     def _checkpoint_mid_step(
         self,
@@ -847,7 +851,7 @@ class CompiledGraph:
             )
             return
         snapshot = batch.parent_snapshot if batch.parent_snapshot is not None else state.snapshot()
-        pending_writes = self._load_pending_writes(config, super_step)
+        pending_writes = self._collect_pending_writes(config, super_step)
         task = sorted(pending, key=lambda t: t.branch_id)[0]
         pending_id = self._branch_pending_id(task.target, task.branch_id)
         tracker.record_super_step(super_step, [pending_id])
@@ -855,10 +859,8 @@ class CompiledGraph:
         started = time.perf_counter()
         if pending_id in pending_writes:
             update = pending_writes[pending_id]
-        elif task.branch_id in batch.resumed_branch_ids:
-            if pending_id not in pending_writes:
-                return
-            update = pending_writes[pending_id]
+        elif task.branch_id in batch.completed:
+            update = batch.completed[task.branch_id]
         else:
             try:
                 update, _, sends = self._invoke_node(
@@ -969,7 +971,7 @@ class CompiledGraph:
                 yield item
             return
         snapshot = batch.parent_snapshot if batch.parent_snapshot is not None else state.snapshot()
-        pending_writes = self._load_pending_writes(config, super_step)
+        pending_writes = self._collect_pending_writes(config, super_step)
         task = sorted(pending, key=lambda t: t.branch_id)[0]
         pending_id = self._branch_pending_id(task.target, task.branch_id)
         tracker.record_super_step(super_step, [pending_id])
@@ -977,10 +979,8 @@ class CompiledGraph:
         started = time.perf_counter()
         if pending_id in pending_writes:
             update = pending_writes[pending_id]
-        elif task.branch_id in batch.resumed_branch_ids:
-            if pending_id not in pending_writes:
-                return
-            update = pending_writes[pending_id]
+        elif task.branch_id in batch.completed:
+            update = batch.completed[task.branch_id]
         else:
             update, _, sends = await self._ainvoke_node(
                 task.target,

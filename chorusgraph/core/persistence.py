@@ -290,7 +290,9 @@ class EngineCheckpointer:
 def json_file_checkpointer(root: str = ".chorusgraph/checkpoints") -> EngineCheckpointer:
     from prismlang import JsonFileCheckpointer
 
-    return EngineCheckpointer(JsonFileCheckpointer(root))
+    from chorusgraph.core.pending_writes import PendingWriteStore
+
+    return EngineCheckpointer(JsonFileCheckpointer(root), _pending=PendingWriteStore(root))
 
 
 def async_json_file_checkpointer(root: str = ".chorusgraph/checkpoints") -> EngineCheckpointer:

@@ -87,7 +87,11 @@ def test_prismapi_zero_reembed_on_query_vector():
     pytest.importorskip("prism.api")
     from prism.api.consumer import PrismAPIClient
     from prism.api.provider import PrismAPIProvider
+    from prism.lib.fabric import CHORUSFrame
     from prism.lib.lang import PrismProjector, ProjectionConfig
+
+    if not hasattr(CHORUSFrame, "from_api_request"):
+        pytest.skip("prismlib-plus>=0.7.0 required for CHORUSFrame.from_api_request")
 
     embedder = CountingEmbedder()
     projector = PrismProjector(ProjectionConfig(tenant_id="fed", target_dim=64))
