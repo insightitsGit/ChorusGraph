@@ -37,7 +37,7 @@ jobs:
           CHORUSGRAPH_DETERMINISTIC: "1"
           GEMINI_API_KEY: ""
           GOOGLE_API_KEY: ""
-        run: pytest tests -q --cov=chorusgraph --cov=benchmark --cov-report=term-missing:skip-covered
+        run: pytest tests -q --timeout=120 --cov=chorusgraph --cov=benchmark --cov-report=term-missing:skip-covered
 
       - name: SBOM (CycloneDX)
         run: cyclonedx-py environment -o sbom/ci-sbom.json

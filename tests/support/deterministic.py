@@ -109,10 +109,12 @@ def start_deterministic_patches() -> None:
         "chorusgraph.examples.finance_agent.gemini_client.resolve_gemini_api_key",
         "chorusgraph.examples.finance_agent.gemini_client.GeminiClient",
         "benchmark.shared.instrumented_gemini.InstrumentedGeminiClient",
+        "prismcortex.llm.gemini.GeminiClient",
     ]
     values = [
         _CassetteHttpxClient,
         _deterministic_resolve_gemini_api_key,
+        DeterministicGeminiStub,
         DeterministicGeminiStub,
         DeterministicGeminiStub,
     ]

@@ -10,11 +10,13 @@ from benchmark.shared.instrumented_gemini import LlmUsage
 class DeterministicGeminiStub:
     """Minimal Gemini stand-in — satisfies benchmark + finance agent interfaces."""
 
-    def __init__(self, model_name: str | None = None) -> None:
+    def __init__(self, model_name: str | None = None, *, model: str | None = None) -> None:
+        resolved = model_name or model or "deterministic-stub"
         self.usage = LlmUsage()
         self._client = None
-        self.model = model_name or "deterministic-stub"
+        self.model = resolved
         self._model = self.model
+        self.model_id = self.model
 
     def reset_usage(self) -> None:
         self.usage.reset()
@@ -57,3 +59,21 @@ class DeterministicGeminiStub:
 
     def generate_stream(self, system: str, user: str, history=None):  # noqa: ANN001
         yield self.generate(system, user, history)
+
+    def _generate(self, prompt: str, *, json_mode: bool = False) -> str:
+        if json_mode:
+            return self.generate_json("", prompt)
+        return self.generate("", prompt)
+
+    def extract(self, text: str, context) -> object:
+        from prismcortex.models import ExtractedGist
+
+        self.usage.record(prompt_tokens=24, output_tokens=12)
+        return ExtractedGist.model_validate(
+            {
+                "summary": text[:120] or "stub memory",
+                "entities": [],
+                "relations": [],
+                "notes": "",
+            }
+        )
