@@ -74,6 +74,24 @@ Run the bundled demo:
 chorusgraph-demo
 ```
 
+### Pre-install audit (no API key)
+
+Estimate cache hit rate from your own query logs (CSV/JSONL) using the real semantic gate:
+
+```bash
+chorusgraph-audit --log your_queries.jsonl
+chorusgraph-audit --log your_queries.csv --json -o audit_report.json
+```
+
+After a Production Agent Pilot, report **measured** cache hits from the Route Ledger:
+
+```bash
+chorusgraph-audit --list-runs --ledger-db .chorusgraph/ledger.db
+chorusgraph-audit --ledger <run_id> --ledger-db .chorusgraph/ledger.db
+```
+
+Live ledger reports include hit rate and latency; dollar estimates require a future `LedgerStep` token-field addition.
+
 ---
 
 ## Plug-in architecture (four swappable ports)

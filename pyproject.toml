@@ -84,6 +84,7 @@ chorusgraph-finance-memory = "chorusgraph.examples.finance_agent.run_memory_demo
 chorusgraph-finance-patterns = "chorusgraph.examples.finance_agent.run_patterns_demo:main"
 chorusgraph-shadow = "chorusgraph.shadow.harness:main"
 chorusgraph-replay = "chorusgraph.shadow.replay.cli:main"
+chorusgraph-audit = "chorusgraph.audit.cli:main"
 chorusgraph-benchmark = "benchmark.run:main"
 chorusgraph-benchmark-volume = "benchmark.run_volume:main"
 

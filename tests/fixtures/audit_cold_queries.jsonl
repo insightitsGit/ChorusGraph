@@ -1,0 +1,10 @@
+{"timestamp": "2026-01-06T09:00:00+00:00", "query": "What is the Acme Corp return policy for online orders?", "tokens_in": 120, "tokens_out": 40}
+{"timestamp": "2026-01-07T10:15:00+00:00", "query": "Tell me the Acme Corp return policy for online orders.", "tokens_in": 125, "tokens_out": 42}
+{"timestamp": "2026-01-08T11:30:00+00:00", "query": "How many PTO days do new Acme Corp engineers receive?", "tokens_in": 130, "tokens_out": 44}
+{"timestamp": "2026-01-09T13:45:00+00:00", "query": "How many PTO days do new Acme Corp engineers receive?", "tokens_in": 135, "tokens_out": 46}
+{"timestamp": "2026-01-10T14:00:00+00:00", "query": "What is the guest Wi-Fi password for Acme Corp Austin office?", "tokens_in": 140, "tokens_out": 48}
+{"timestamp": "2026-01-11T15:20:00+00:00", "query": "What is the guest Wi-Fi password for the Acme Corp Austin office?", "tokens_in": 145, "tokens_out": 50}
+{"timestamp": "2026-01-12T16:40:00+00:00", "query": "Summarize Q1 2026 EMEA revenue for Acme Corp.", "tokens_in": 150, "tokens_out": 52}
+{"timestamp": "2026-01-13T08:10:00+00:00", "query": "List open Jira tickets for the platform team.", "tokens_in": 155, "tokens_out": 54}
+{"timestamp": "2026-01-14T09:25:00+00:00", "query": "What is the Acme Corp return policy for online orders?", "tokens_in": 160, "tokens_out": 56}
+{"timestamp": "2026-01-15T10:30:00+00:00", "query": "Who won the 2024 Acme Corp hackathon?", "tokens_in": 165, "tokens_out": 58}

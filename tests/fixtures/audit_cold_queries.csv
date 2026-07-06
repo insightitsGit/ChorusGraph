@@ -1,0 +1,11 @@
+timestamp,question,tokens_in,tokens_out
+2026-01-06T09:00:00+00:00,What is the Acme Corp return policy for online orders?,120,40
+2026-01-07T10:15:00+00:00,Tell me the Acme Corp return policy for online orders.,125,42
+2026-01-08T11:30:00+00:00,How many PTO days do new Acme Corp engineers receive?,130,44
+2026-01-09T13:45:00+00:00,How many PTO days do new Acme Corp engineers receive?,135,46
+2026-01-10T14:00:00+00:00,What is the guest Wi-Fi password for Acme Corp Austin office?,140,48
+2026-01-11T15:20:00+00:00,What is the guest Wi-Fi password for the Acme Corp Austin office?,145,50
+2026-01-12T16:40:00+00:00,Summarize Q1 2026 EMEA revenue for Acme Corp.,150,52
+2026-01-13T08:10:00+00:00,List open Jira tickets for the platform team.,155,54
+2026-01-14T09:25:00+00:00,What is the Acme Corp return policy for online orders?,160,56
+2026-01-15T10:30:00+00:00,Who won the 2024 Acme Corp hackathon?,165,58
