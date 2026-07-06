@@ -22,6 +22,15 @@ jobs:
           python -m pip install -U pip setuptools wheel
           pip install -e ".[dev,gemini,benchmark-healthcare,cortex]"
 
+      - name: Cache prismlang ONNX model
+        uses: actions/cache@v4
+        with:
+          path: ~/.prismlang/models
+          key: prismlang-onnx-${{ runner.os }}-all-MiniLM-L6-v2-v1
+
+      - name: Prefetch prismlang ONNX encoder (no API keys)
+        run: python -c "from prismlang.encoder import encode; encode('ci-warmup')"
+
       - name: Ruff lint (E1 scope — tests + CI)
         run: ruff check tests .github
 
