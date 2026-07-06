@@ -12,6 +12,15 @@ All notable changes to ChorusGraph are documented here (semver).
 - **E8:** Product Dockerfile, docker-compose, k8s manifest, deploy docs.
 - **E9:** Frozen public API (`chorusgraph/public.py`), stability guarantee, API 1.0 docs.
 
+## [1.0.2] — 2026-07-06
+
+### Fixed
+- **`dict_node_adapter` resonance slug collision (Bug-2):** default `category_slug` now uses the node id
+  (`hop`) instead of shared state `route`, so downstream nodes no longer tune to the same frequency when
+  a router value (e.g. `site_kb`) flows through the graph. Opt-in legacy behavior:
+  `category_slug_from="route"`. Found via real Website Hub production migration — see
+  `handoffs/handoffBug2_dict_node_adapter.md`.
+
 ## [1.0.1] — 2026-07-05
 
 ### Fixed

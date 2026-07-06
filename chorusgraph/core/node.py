@@ -122,11 +122,23 @@ class NodeContext:
         )
 
 
-def dict_node_adapter(fn: Callable[[Dict[str, Any]], Dict[str, Any]], *, hop: str) -> NodeFn:
+def dict_node_adapter(
+    fn: Callable[[Dict[str, Any]], Dict[str, Any]],
+    *,
+    hop: str,
+    category_slug_from: str = "hop",
+) -> NodeFn:
     """
     Temporary bridge for dict-style nodes — wraps output as a single envelope.
 
     Prefer native ``NodeFn`` returning ``NodeUpdate`` for new graphs.
+
+    By default the Resonance ``category_slug`` is the node id (``hop``), not ``route``.
+    Router nodes often write ``route`` into shared state; downstream dict nodes still
+    carry that key in their result dict. Using ``route`` as the slug makes unrelated
+    nodes publish on the same frequency (e.g. every node after ``classify_intent`` all
+    tuning to ``site_kb``). Pass ``category_slug_from="route"`` only if you explicitly
+    want the legacy behavior.
     """
 
     def _envelope_item(raw: Any) -> Dict[str, Any]:
@@ -157,10 +169,14 @@ def dict_node_adapter(fn: Callable[[Dict[str, Any]], Dict[str, Any]], *, hop: st
             artifact["hop_metrics"] = [
                 asdict(m) if hasattr(m, "__dataclass_fields__") else m for m in hop_metrics
             ]
+        if category_slug_from == "route":
+            slug = str(result.get("route") or result.get("category_slug") or hop)
+        else:
+            slug = str(result.get("category_slug") or hop)
         update = ctx.publish(
             artifact=artifact,
             rule_chain=list(result.get("rule_chain") or []),
-            category_slug=str(result.get("route") or result.get("category_slug") or hop),
+            category_slug=slug,
         )
         if raw:
             update.envelopes.extend(_envelope_item(env) for env in raw)

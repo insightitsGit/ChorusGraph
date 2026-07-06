@@ -4,7 +4,7 @@ Copy one of these into Cursor, Claude Code, Windsurf, Copilot Chat, or any AI co
 shell + file access. The assistant installs ChorusGraph, wires it into your project, and verifies it
 runs — you don't type a single `pip` command yourself.
 
-Both prompts are grounded in the real, current `chorusgraph` 1.0.1 API — nothing invented. Prompt 2 is
+Both prompts are grounded in the real, current `chorusgraph` 1.0.2 API — nothing invented. Prompt 2 is
 explicit about what's an automated migration (LangGraph) versus a manual-translation guide (CrewAI),
 since no CrewAI adapter exists yet.
 
@@ -96,6 +96,13 @@ IF LANGGRAPH — this is a real, automated migration path. Do this:
 6. Run my existing tests (or write a quick before/after smoke test if none exist) and confirm identical
    output before and after the swap. If anything behaves differently, stop and show me the diff — don't
    silently paper over it.
+6b. **Backward-compat aliasing (proven in production):** wherever the codebase exposes LangGraph-named
+   diagnostics, health checks, or config flags, **alias — don't rename-and-break**. Real Website Hub
+   migration pattern:
+   - Health response: include both `"chorusgraph"` and legacy `"langgraph"` keys with the same status.
+   - Keep `use_langgraph()` as a documented alias for `use_chorusgraph()`.
+   - Env vars: accept both new and legacy names (e.g. `WEBSITE_HUB_USE_CHORUSGRAPH` and
+     `WEBSITE_HUB_USE_LANGGRAPH`) so deploy configs and dashboards keep working.
 7. Once it's running on the native engine, tell me about the semantic cache and Route Ledger it now has
    for free (things LangGraph doesn't give me), and point me at docs/CACHE_PROFILES.md and
    docs/PLUGINS.md for tuning them.
@@ -126,6 +133,6 @@ or the installed source if you're unsure whether something exists.
 
 ---
 
-*Both prompts assume `chorusgraph>=1.0.1` (verified working via a clean-room `pip install` + hello-world
+*Both prompts assume `chorusgraph>=1.0.2` (verified working via a clean-room `pip install` + hello-world
 run). If a newer version changes these APIs, `docs/STABILITY.md` documents the deprecation policy — the
 1.0 public surface is frozen, so these should keep working across patch/minor releases.*
