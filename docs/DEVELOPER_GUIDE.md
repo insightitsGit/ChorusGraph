@@ -6,6 +6,37 @@
 
 Standard patterns for building agents on **`chorusgraph.core.Graph`**.
 
+## Contents
+
+| § | Topic |
+|---|--------|
+| 1 | Mental model |
+| 2 | Minimal graph |
+| 3 | State |
+| 4 | Routing |
+| 5 | Cache (semantic skip) |
+| 6 | Route Ledger |
+| 7 | Checkpoints & interrupts |
+| 8 | Streaming |
+| 9 | Benchmark scenario naming |
+| **10** | **Planning & reasoning** |
+| **11** | **Execution patterns (ReAct / Plan-Solve / Reflection)** |
+| **12** | **Domain performance playbook** |
+| **13** | **Multi-agent pipelines** |
+| **14** | **Measuring & tuning** |
+| 15 | Further reading |
+
+**Demos (no LangGraph):**
+
+```bash
+chorusgraph-demo                    # routing + ledger (LLM-free)
+chorusgraph-finance-patterns        # ReAct, Plan-Solve, Reflection (needs GEMINI_API_KEY)
+```
+
+Reference graphs: `chorusgraph/examples/finance_agent/patterns_graph.py`, `benchmark/fc1/`, `benchmark/hc2/`.
+
+---
+
 ## 1. Mental model
 
 ```python
@@ -119,29 +150,48 @@ g.add_fan_out("split", "worker_a", "worker_b")  # same super-step
 
 ## 5. Cache (semantic skip)
 
-Finance and healthcare benchmarks use the same pattern:
+Finance and healthcare benchmarks share the same **cache_gate** shape; **what** you cache differs by domain (see §12).
 
-1. **`cache_gate` node** — `chorusgraph.cache_gate.gate()` lookup
-2. **On hit** — restore payload, route to writer (skip LLM hops)
-3. **On miss** — run agent loop, **seed cache** after success
+1. **`vector_ingress`** — project query once (`raw_embedding_384` / `query_vector_64`); reuse on every hop
+2. **`cache_gate` node** — `chorusgraph.cache_gate.gate()` two-stage lookup (64-d coarse → 384-d verify)
+3. **On hit** — restore payload, **conditional route** to writer (skip expensive hops)
+4. **On miss** — run agent / retrieval pipeline, **seed cache** after quality gates pass
 
 ```python
-from chorusgraph.cache_gate import gate
+from chorusgraph.cache_gate import gate, seed_cache_entry
 from chorusgraph.sections.models import CachePolicy, Section
+from chorusgraph.sections.profiles import default_registry
 
+profile = default_registry().get("fx_rates")  # semantic · 1h TTL · global · low risk
+section = Section(
+    section_id="fx_lookup",
+    category_slug="fx_rates",
+    content=query_text,
+    cache_policy=CachePolicy.REPLAY_SAFE,
+)
 decision = gate(
     query_text,
-    Section(section_id="...", category_slug="fx_rates", content=query_text, cache_policy=CachePolicy.REPLAY_SAFE),
-    runtime.cache,
-    runtime.sidecar,
+    section,
+    cache_backend,
+    sidecar,
     coarse_threshold=0.80,
     verify_threshold=0.85,
+    profile=profile,
+    tenant_id="my-tenant",
+    raw_embedding_384=state.get("raw_embedding_384"),
+    projected_vector_64=state.get("query_vector_64"),
 )
+if decision.is_hit:
+    tool_result = decision.value
+else:
+    ...  # run tools / agents, then seed_cache_entry(...) on success
 ```
 
-**FC1 / FC2** use this — that is why finance C-scenarios show ~3–4× latency wins. **HC1 / HC2** use clinical cache with `pipeline_depth` in the key.
+**Finance (FC1/FC2):** whole-answer skip on repeat FX queries — ~3–4× latency wins when Gemini dominates cost.
 
-Without cache, C vs L latency differs only by engine overhead (~1–5%) because **Gemini dominates**.
+**Healthcare (HC1/HC2):** **facts-only** cache (retrieval, drug interactions) — judgment hops (`analyze`, `safety`, `writer`) always re-run. See [`CACHE_PROFILES.md`](CACHE_PROFILES.md).
+
+Without cache, ChorusGraph vs LangGraph latency differs only by engine overhead (~1–5%) because **the LLM dominates**.
 
 ## 6. Route Ledger
 
@@ -191,10 +241,371 @@ Fair comparison requires **matching capabilities** (cache on/off, same tools, sa
 
 Enforced in CI: `tests/test_fc_hc_no_langgraph.py`.
 
-## 10. Further reading
+---
+
+## 10. Planning & reasoning
+
+ChorusGraph has **no separate “planning engine” box**. Planning is composed from three layers:
+
+| Layer | What it is | When to use |
+|-------|------------|-------------|
+| **Graph topology** | Nodes + conditional edges = the plan | Known pipelines (finance multi-agent, clinical intake→analyze→writer) |
+| **LLM nodes** | Chain-of-thought inside prompts | Single-hop reasoning, structured JSON outputs |
+| **`chorusgraph.agents`** | Dynamic loops: reason ↔ act ↔ route | Novel multi-step tasks, tool use, plan-then-execute |
+
+```
+Turn
+  → Router / cache_gate          (coarse path selection)
+  → EITHER graph nodes           (static multi-agent plan)
+  → OR Agent(pattern=...)        (ReAct / plan_solve / reflection)
+  → grounding guard + Route Ledger (every thought/action logged)
+```
+
+**Stance (product default):** deterministic graph routing first — cacheable and auditable. Drop into `Agent` only when the task needs dynamic multi-step reasoning.
+
+**Observability:** inspect `agent_trace`, `rule_chain`, and Route Ledger steps — not a black-box planner.
+
+```python
+from chorusgraph import SqliteLedgerSink, wrap
+
+wrapped = wrap(compiled, tenant_id="t", graph_id="g", sink=SqliteLedgerSink(":memory:"))
+result = wrapped.invoke({"message": "Compare USD/EUR and USD/GBP"})
+for step in result.get("agent_trace") or []:
+    print(step["kind"], step["content"][:120])
+for ls in wrapped.last_ledger.steps:
+    print(ls.node, ls.duration_ms, ls.cache_hit)
+```
+
+**`PlanPolicy`** (budgets, not belief knobs yet):
+
+```python
+from chorusgraph.agents import PlanPolicy
+
+policy = PlanPolicy(max_steps=8, token_budget=8000, on_exhaust="abstain")
+```
+
+Belief-tier knobs (`confidence_stop`, `groundedness_floor`) exist in `BeliefPolicy` but are **disabled until signals are calibrated** — enabling them raises `BeliefPolicyNotCalibratedError`.
+
+---
+
+## 11. Execution patterns (ReAct / Plan-Solve / Reflection)
+
+All three patterns use one substrate (`run_agent_loop`) behind `Agent(pattern=...)`.
+
+| Pattern | Best for | Stop condition |
+|---------|----------|----------------|
+| **`react`** | Unknown tool sequence, comparisons, exploration | LLM sets `finish=true` or `max_steps` / token budget |
+| **`plan_solve`** | Decomposable tasks with known tool catalog | Static plan emitted upfront, sequential execution |
+| **`reflection`** | Quality-sensitive drafts (rates, figures, citations) | Validator / grounding guard passes or `max_revisions` |
+
+### Standalone agent (no full graph)
+
+```python
+from chorusgraph.agents import Agent, PlanPolicy, ReActOpts
+from chorusgraph.nodes.tool import ToolRegistry
+
+registry = ToolRegistry()
+# registry.register("fetch_exchange_rate", ...)  # your tools
+
+agent = Agent(
+    pattern="react",
+    tools=registry,
+    model=your_llm_json_fn,  # (system, user) -> JSON string
+    policy=PlanPolicy(max_steps=6),
+    pattern_opts=ReActOpts(max_tool_calls=6, require_tool_before_finish=False),
+)
+result = agent.run("What is USD/EUR today?")
+print(result.finished, result.finish_reason)
+print([s.to_dict() for s in result.trace])
+```
+
+### Drop into a native graph
+
+```python
+from chorusgraph.core import Graph, START, END
+from chorusgraph.core.node import dict_node_adapter
+from chorusgraph.agents import Agent, AgentNode, PlanPolicy
+from chorusgraph.examples.finance_agent.pattern_nodes import make_react_agent_handler
+from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
+
+runtime = FinanceRuntime(tenant_id="finance-demo")
+graph = Graph(tenant_id="finance-demo", graph_id="react-only")
+
+graph.add_node(
+    "react_agent",
+    dict_node_adapter(make_react_agent_handler(runtime, policy=PlanPolicy(max_steps=6)), hop="react_agent"),
+)
+graph.add_edge(START, "react_agent")
+graph.add_edge("react_agent", END)
+
+out = graph.compile().invoke({"message": "USD to EUR rate?", "tool_calls": [], "rule_chain": []})
+```
+
+### Full finance pattern graph (cache + ReAct + validator)
+
+Run the bundled demo:
+
+```bash
+pip install "chorusgraph[gemini]"
+export GEMINI_API_KEY=...
+chorusgraph-finance-patterns
+```
+
+Source: `chorusgraph/examples/finance_agent/patterns_graph.py` — three graphs:
+
+- `build_react_graph()` — cache hit → writer; miss → ReAct → writer → validator
+- `build_plan_solve_graph()` — static planner → tools → writer
+- `build_reflection_graph()` — plan + writer + reflection validator loop
+
+Topology (ReAct):
+
+```
+START → vector_ingress → cache_gate ─┬─ hit ──────────────→ writer → validator → END
+                                     ├─ compound intent ──→ compound_tool → writer
+                                     └─ miss ─────────────→ react_agent → writer
+```
+
+---
+
+## 12. Domain performance playbook
+
+Performance is **domain-shaped**. The same engine; different cache profiles, graph topology, and reasoning patterns. Profiles live in `chorusgraph/sections/profiles.default.json` — see [`CACHE_PROFILES.md`](CACHE_PROFILES.md) for the four archetypes.
+
+### Quick picker
+
+| Your domain | Archetype | Cache strategy | Graph pattern | Reasoning | Expected win |
+|-------------|-----------|----------------|---------------|-----------|--------------|
+| **Finance / rates / pricing** | B — smooth + volatile | Semantic whole-answer, **short TTL** (`fx_rates`: 1h) | `cache_gate` → ReAct or plan-solve → writer | ReAct for multi-pair; plan-solve for fixed steps | **High** — skip LLM on repeats (~ms vs seconds) |
+| **Healthcare / legal / compliance** | C — brittle + stable | **Facts-only** cache; **never** cache judgment | intake → retrieve ∥ drug_check → analyze → safety → writer | Static multi-agent; `analyze` always fresh | **Medium** — mid-pipeline fact cache + parallel hops |
+| **FAQ / docs / support** | A — smooth + stable | Semantic whole-answer, long/no TTL | cache_gate → writer (or template) | Minimal LLM | **Highest** cache hit rate |
+| **Personalized / account context** | D — context-bound | **User/session scoped** keys (`user_profile`) | memory recall at ingress + scoped cache | Graph + Cortex recall | Isolation + correct hits per user |
+
+### Finance — maximize latency & token savings
+
+**Do:**
+
+- Project embedding **once** at `vector_ingress`; pass `raw_embedding_384` through state
+- Route cache hits **directly to writer** (skip researcher / ReAct)
+- Use `category_slug` per intent: `fx_rates`, `compound_savings`, `user_profile`
+- Seed cache **after successful tool calls** (see `seed_fx_cache_from_tool_calls` in finance nodes)
+- Prefer `compound_tool` (deterministic CPU) over LLM for savings math
+
+**Don't:**
+
+- Re-embed on every hop
+- Use global cache for user-specific profile payloads (`scope: user`)
+- Expect big wins without `cache_gate` — Gemini dominates cold path
+
+```python
+from chorusgraph.examples.finance_agent.nodes import route_after_cache_pattern, make_cache_gate_handler
+from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
+
+runtime = FinanceRuntime(tenant_id="finance-tenant")
+graph.add_node("vector_ingress", ...)
+graph.add_node("cache_gate", dict_node_adapter(make_cache_gate_handler(runtime), hop="cache_gate"))
+graph.add_conditional_edges(
+    "cache_gate",
+    route_after_cache_pattern,
+    {"writer": "writer", "compound_tool": "compound_tool", "react_agent": "react_agent"},
+)
+```
+
+Default profiles (finance slugs):
+
+| Slug | keying | ttl | scope | risk |
+|------|--------|-----|-------|------|
+| `fx_rates` | semantic | 3600s | global | low |
+| `compound_savings` | semantic | none | global | low |
+| `user_profile` | semantic | none | **user** | low |
+
+### Healthcare — maximize safety *and* throughput
+
+**Do:**
+
+- Cache **retrieval** and **drug_check** artifacts globally (`clinical_retrieval`, `clinical_guidelines`)
+- Use **fingerprint** keying on clinical facts (drugs, topic, pipeline depth) — not raw text alone
+- Always re-run **`analyze`** and **`safety`** — judgment is never replayed from cache
+- Use **PrismRAG** + vector retrieve for HC scenarios (`PrismRAGRetrievalBackend` on `ChorusStack`)
+- Fan out independent hops (`retrieve` ∥ `drug_check`) where the graph allows
+- Enable **quality-gated seeding** — do not seed abstain/refusal chains
+
+**Don't:**
+
+- Cache whole clinical recommendations (archetype C violation)
+- Silo cache per session for global facts (caused HC1 0% hits historically)
+- Expect finance-scale whole-answer skip rates — by design, judgment stays fresh
+
+```python
+from chorusgraph.sections.profiles import default_registry
+
+profile = default_registry().get("clinical_retrieval")  # semantic · 30d · global · low
+# Clinical gate: fingerprint keying + facts-only restore (retrieve, drug_check).
+# See benchmark/hc2/nodes.py and benchmark/shared/healthcare_cache.py for the reference wiring.
+# analyze_node always calls the LLM — judgment is never replayed from cache.
+```
+
+Default profiles (clinical slugs):
+
+| Slug | keying | ttl | scope | risk |
+|------|--------|-----|-------|------|
+| `clinical_retrieval` | semantic | 30d | global | low |
+| `clinical_judgment` | fingerprint | none | session | **high** |
+
+Pipeline depth matters: a depth-6 case needs cached retrieve **and** interaction artifacts — `cache_payload_sufficient()` rejects shallow hits.
+
+### FAQ / documentation — maximize hit rate
+
+```python
+from chorusgraph.sections.models import CacheProfile
+
+faq_profile = CacheProfile(
+    keying="semantic",
+    ttl_s=None,           # stable content
+    scope="global",
+    risk_tier="low",
+)
+registry = default_registry()
+registry.register("product_faq", faq_profile)
+```
+
+Graph: `cache_gate → writer` with `CachePolicy.REPLAY_SAFE` on low-risk categories.
+
+### Personalized assistants — maximize correctness
+
+```python
+profile = default_registry().get("user_profile")  # scope=user
+decision = gate(
+    query_text,
+    section,
+    cache_backend,
+    sidecar,
+    profile=profile,
+    tenant_id=tenant_id,
+    session_id=session_id,
+    user_id=user_id,  # required for user-scoped keys
+    ...
+)
+```
+
+Add Cortex recall at retrieve or ingress when answers depend on prior sessions — see `chorusgraph/examples/finance_agent/run_memory_demo.py`.
+
+### Cold-path debugging (all domains)
+
+Run benchmarks without cache to surface real LLM/safety gaps:
+
+```bash
+python -m benchmark.run_scenarios --scenarios FC1,HC2 --tasks 12 --no-cache
+```
+
+---
+
+## 13. Multi-agent pipelines
+
+Multi-agent = **role-typed nodes** wired by graph edges, not a separate orchestration framework.
+
+| Role | Module | Typical job |
+|------|--------|-------------|
+| Researcher | `ResearcherNode` | Tool planning, ReAct |
+| Writer | `WriterNode` | Final user-facing text |
+| Validator | `ValidatorNode` | Grounding, reflection |
+
+### Finance multi-agent (reference: FC2 / Container F)
+
+```
+MISS:  ingress → cache_gate → researcher → tool → writer → validator
+HIT:   ingress → cache_gate ──────────────→ writer → validator
+```
+
+See [`FINANCE_MULTIAGENT_CHORUS.md`](FINANCE_MULTIAGENT_CHORUS.md) — conditional routing after `cache_gate` is the critical performance fix.
+
+### Healthcare multi-agent (reference: HC2)
+
+```
+intake → retrieve ─┐
+                   ├→ analyze → safety → writer
+      drug_check ──┘
+```
+
+- **`analyze`** = reasoning hop (structured `reasoning` JSON)
+- **`safety`** = evaluator / abstain gate
+- Cache restores facts into state before `analyze` runs
+
+```python
+# Simplified analyze hop pattern (see benchmark/hc2/nodes.py)
+def analyze_node(state):
+    hop_artifacts = state.get("hop_artifacts") or {}
+    retrieved = state.get("retrieved") or []
+    artifact = llm_json(system=ANALYZE_SYSTEM, user=analyze_handoff_plain(hop_artifacts, retrieved))
+    return {
+        "analysis": artifact.get("reasoning"),
+        "hop_artifacts": {**hop_artifacts, "analyze": artifact},
+        "rule_chain": ["analyze=complete"],
+    }
+```
+
+---
+
+## 14. Measuring & tuning
+
+### Thresholds — measure, don't guess
+
+```bash
+python -m benchmark.run_profiler    # sensitivity / volatility probes → CacheProfile suggestions
+chorusgraph-audit --log queries.jsonl   # estimate hit rate on your traffic (no API key)
+```
+
+Finance benchmarks use measured coarse/verify thresholds via `chorusgraph.cache_gate.thresholds.measured_thresholds()` — not demo defaults (0.82/0.85).
+
+### Route Ledger — production tuning
+
+```python
+from chorusgraph import SqliteLedgerSink, wrap
+
+wrapped = wrap(compiled, tenant_id="t", graph_id="prod", sink=SqliteLedgerSink(".chorusgraph/ledger.db"))
+wrapped.invoke(state)
+for step in wrapped.last_ledger.steps:
+    print(step.node, step.duration_ms, step.cache_hit, step.cache_score, step.rule_chain)
+```
+
+After a pilot:
+
+```bash
+chorusgraph-audit --list-runs --ledger-db .chorusgraph/ledger.db
+chorusgraph-audit --ledger <run_id> --ledger-db .chorusgraph/ledger.db
+```
+
+### Performance checklist
+
+| Check | Finance | Healthcare |
+|-------|---------|------------|
+| Embed once per turn | ✅ `vector_ingress` | ✅ vector ingress |
+| Cache gate before LLM | ✅ whole-answer | ✅ facts-only |
+| Conditional skip on hit | ✅ → writer | ✅ prefill retrieve |
+| Judgment always fresh | N/A | ✅ analyze/safety |
+| Parallel independent hops | optional | ✅ retrieve ∥ drug_check |
+| Quality-gated seed | recommended | **required** |
+| Retrieval backend | keyword OK for FX | **PrismRAG** for guidelines |
+| Ledger on every run | ✅ `wrap()` | ✅ `wrap()` |
+
+### Pattern selection guide
+
+| Task shape | Use |
+|------------|-----|
+| Fixed pipeline, known roles | Graph nodes only |
+| 1–N tool calls, order unknown | `Agent(pattern="react")` |
+| Decomposable into explicit steps | `Agent(pattern="plan_solve")` |
+| Draft must pass validator | `Agent(pattern="reflection")` or dedicated validator node |
+| Repeat / paraphrase queries | `cache_gate` + correct `CacheProfile` |
+
+---
+
+## 15. Further reading
 
 - [`docs/COMPOSE.md`](COMPOSE.md) — pluggable backends + `ChorusStack`
+- [`docs/CACHE_PROFILES.md`](CACHE_PROFILES.md) — domain archetypes A–D
 - [`docs/TERMINOLOGY.md`](TERMINOLOGY.md) — **ChorusGraph vs LangGraph boundaries**
-- [`docs/ENGINE_DESIGN_v0.1.md`](ENGINE_DESIGN_v0.1.md) — engine architecture
-- [`benchmark/SCENARIOS.md`](../benchmark/SCENARIOS.md) — MVP matrix
+- [`docs/FINANCE_MULTIAGENT_CHORUS.md`](FINANCE_MULTIAGENT_CHORUS.md) — FC2 topology
+- [`docs/ENGINE_DESIGN_v0.1.md`](ENGINE_DESIGN_v0.1.md) — engine + agent patterns layer
+- [`docs/DESIGN_v0.2.md`](DESIGN_v0.2.md) §7.5–7.8 — planning policy design
+- [`benchmark/SCENARIOS.md`](../benchmark/SCENARIOS.md) — MVP matrix + profile table
 - [`benchmark/results/mvp_scenarios/README.md`](../benchmark/results/mvp_scenarios/README.md) — archived runs

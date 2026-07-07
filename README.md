@@ -65,9 +65,12 @@ print(out)  # {'reply': 'Hello, ChorusGraph'}
 ```
 
 ```bash
-chorusgraph-demo                              # bundled walkthrough
+chorusgraph-demo                              # routing + ledger (LLM-free)
+chorusgraph-finance-patterns                # ReAct / Plan-Solve / Reflection (needs GEMINI_API_KEY)
 chorusgraph-audit --log your_queries.jsonl    # simulated cache hit rate (no API key)
 ```
+
+**Developer guide:** [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md) — planning & reasoning, domain performance (finance vs healthcare), code examples.
 
 Full install guide: [`docs/INSTALL.md`](docs/INSTALL.md) · AI IDE prompts: [`docs/AI_IDE_PROMPTS.md`](docs/AI_IDE_PROMPTS.md)
 
@@ -88,6 +91,7 @@ Full install guide: [`docs/INSTALL.md`](docs/INSTALL.md) · AI IDE prompts: [`do
 | **Observability** | Structured JSON logs, OpenTelemetry traces, health/metrics endpoints |
 | **Multi-tenant guards** | Tenant isolation, resource limits, leakage tests |
 | **Cold audit CLI** | `chorusgraph-audit` — estimate cache savings from query logs (no LLM calls) |
+| **Agent patterns** | ReAct, Plan-Solve, Reflection via `chorusgraph.agents.Agent` — graph = plan |
 | **Benchmark matrix** | 8 scenarios (FL/FC/HL/HC) with fairness disclosure |
 | **Deploy packaging** | Dockerfile, docker-compose, k8s manifests |
 

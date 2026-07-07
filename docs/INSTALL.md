@@ -68,11 +68,14 @@ out = g.compile(stack=stack).invoke({"name": "ChorusGraph"})
 print(out)  # {'reply': 'Hello, ChorusGraph'}
 ```
 
-Run the bundled demo:
+Run the bundled demos:
 
 ```bash
-chorusgraph-demo
+chorusgraph-demo                    # routing + Route Ledger (LLM-free)
+chorusgraph-finance-patterns        # ReAct, Plan-Solve, Reflection (needs GEMINI_API_KEY)
 ```
+
+**Planning & domain performance:** [`DEVELOPER_GUIDE.md`](DEVELOPER_GUIDE.md) §10–14 — no separate planner box; finance vs healthcare cache strategies with code examples.
 
 ### Pre-install audit (no API key)
 
