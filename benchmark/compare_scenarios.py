@@ -63,11 +63,17 @@ class NormalizedRow:
 
     @property
     def valid(self) -> bool:
+        # Exclude only unmeasurable infra failures (quota). Agent/tool errors stay in the
+        # denominator so LangGraph exceptions and ChorusGraph inline node failures compare fairly.
         if self.error:
             if "429" in self.error or "RESOURCE_EXHAUSTED" in self.error:
                 return False
-            return False
-        return self.llm_calls > 0 or self.cache_hit or len(str(self.row_id)) > 0
+        return (
+            self.llm_calls > 0
+            or self.cache_hit
+            or bool(self.error)
+            or len(str(self.row_id)) > 0
+        )
 
 
 def normalize_row(row: RowLike, *, scenario: str) -> NormalizedRow:

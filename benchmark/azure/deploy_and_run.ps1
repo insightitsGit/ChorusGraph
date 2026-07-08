@@ -7,8 +7,8 @@ param(
     [string]$ContainerName = "chorus-mvp-benchmark",
     [string]$ImageTag = "chorusgraph-mvp-benchmark:latest",
     [string]$Location = "eastus",
-    [int]$Cpu = 4,
-    [double]$MemoryGb = 8,
+    [int]$Cpu = 0,
+    [double]$MemoryGb = 0,
     [int]$Tasks = 12,
     [ValidateSet("", "light", "mid", "heavy")]
     [string]$Tier = "",
@@ -20,7 +20,8 @@ param(
     [string]$StorageResourceGroup = "rg-insightits-prod",
     [string]$BlobContainer = "benchmark-results",
     [switch]$SkipBuild,
-    [switch]$Wait
+    [switch]$Wait,
+    [switch]$Cleanup
 )
 
 $ErrorActionPreference = "Stop"
@@ -45,7 +46,25 @@ if (-not $geminiKey) {
     Write-Error "GEMINI_API_KEY not set in environment or .env"
 }
 
-$runId = (Get-Date).ToUniversalTime().ToString("yyyyMMdd_HHmmss")
+# Tier presets (see benchmark/tiers.py)
+$tierTasks = @{ light = 40; mid = 100; heavy = 300 }
+$tierCpu = @{ light = 4; mid = 4; heavy = 4 }
+$tierMemory = @{ light = 8; mid = 8; heavy = 16 }
+
+if ($Tier -and $tierTasks.ContainsKey($Tier)) {
+    if ($Cpu -le 0) { $Cpu = $tierCpu[$Tier] }
+    if ($MemoryGb -le 0) { $MemoryGb = $tierMemory[$Tier] }
+    $tierTaskCount = $tierTasks[$Tier]
+    if (-not $ContainerName -or $ContainerName -eq "chorus-mvp-benchmark") {
+        $ContainerName = "chorus-mvp-benchmark-$Tier"
+    }
+} else {
+    if ($Cpu -le 0) { $Cpu = 4 }
+    if ($MemoryGb -le 0) { $MemoryGb = 8 }
+    $tierTaskCount = $Tasks
+}
+
+$runId = if ($Tier) { "${Tier}_$(Get-Date -Format 'yyyyMMdd_HHmmss')" } else { (Get-Date).ToUniversalTime().ToString("yyyyMMdd_HHmmss") }
 $loginServer = az acr show -n $AcrName -g $AcrResourceGroup --query loginServer -o tsv
 $image = "$loginServer/$ImageTag"
 
@@ -54,7 +73,8 @@ Write-Host "    ACR:       $loginServer"
 Write-Host "    Image:     $image"
 Write-Host "    Container: $ContainerName ($ResourceGroup)"
 Write-Host "    Run ID:    $runId"
-Write-Host "    Scenarios: $Scenarios | Tier: $(if ($Tier) { $Tier } else { 'custom' }) | Tasks: $Tasks | Seed: $Seed | Temp: $Temperature"
+$tierLabel = if ($Tier) { "$Tier ($tierTaskCount tasks/scenario)" } else { "custom ($Tasks tasks)" }
+Write-Host "    Scenarios: $Scenarios | Tier: $tierLabel | Seed: $Seed | CPU: $Cpu | Memory: ${MemoryGb}GB | Temp: $Temperature"
 
 if (-not $SkipBuild) {
     Write-Host "`n==> Building image in ACR (az acr build)..."
@@ -168,6 +188,12 @@ if ($Wait) {
     if ($report) {
         Write-Host "`n========== COMPARISON REPORT =========="
         Get-Content $report.FullName
+    }
+
+    if ($Cleanup) {
+        Write-Host "`n==> Cleanup: deleting container $ContainerName (stop compute billing)..."
+        az container delete -g $ResourceGroup -n $ContainerName --yes -o none 2>$null
+        Write-Host "    Container deleted."
     }
 }
 

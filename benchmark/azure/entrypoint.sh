@@ -24,7 +24,7 @@ echo "  scenarios: $SCENARIOS"
 echo "  tier:      ${TIER:-custom}"
 echo "  tasks:     $TASKS"
 echo "  seed:      $SEED"
-  echo "  band:      $BAND"
+echo "  band:      $BAND"
 NO_CACHE="${BENCHMARK_NO_CACHE:-0}"
 CACHE_ARGS=()
 if [[ "$NO_CACHE" == "1" || "$NO_CACHE" == "true" ]]; then

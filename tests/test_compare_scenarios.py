@@ -79,6 +79,41 @@ def test_comparison_report_honest_mode_banner():
     assert "0% cache hits" in md
 
 
+def test_finance_multi_error_rows_count_in_success_denominator():
+    """Agent/tool errors must not be dropped from LangGraph rows only (FC2 fairness)."""
+    tool_err = "Disallowed arguments for compound_interest: ['annual_rate']"
+    results = {
+        "FL2": [
+            _row("t0", "FL2", latency=100, success=False, cost=0.001, llm=1),
+            TaskMeasurement(
+                task_id="t1",
+                session_id="s1",
+                container="FL2",
+                message="compound",
+                variant="novel",
+                latency_ms=50,
+                llm_calls=0,
+                tokens_in=0,
+                tokens_out=0,
+                cost_usd=0.0,
+                task_success=False,
+                answer="",
+                error=tool_err,
+            ),
+        ],
+        "FC2": [
+            _row("t0", "FC2", latency=90, success=True, cost=0.0009, llm=1),
+            _row("t1", "FC2", latency=80, success=False, cost=0.0008, llm=1),
+        ],
+    }
+    group = compare_all_groups(results)["groups"]["finance_multi"]
+    assert group["n_langgraph"] == 2
+    assert group["n_chorusgraph"] == 2
+    success = next(m for m in group["metrics"] if m["metric"] == "task_success_rate")
+    assert success["langgraph"]["point"] == 0.0
+    assert success["chorusgraph"]["point"] == 0.5
+
+
 def test_all_four_groups_when_data_present():
     base = [_row("x1", "FL1", latency=100, success=True, cost=0.001, llm=1)]
     results = {

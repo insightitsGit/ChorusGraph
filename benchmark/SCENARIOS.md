@@ -27,7 +27,18 @@ python -m benchmark.run_scenarios --tier mid --scenarios all     # 100 tasks —
 python -m benchmark.run_scenarios --tier heavy --scenarios all  # 300 tasks — scale
 ```
 
-Azure: pass `-Tier light` to `benchmark/azure/deploy_and_run.ps1` or set `BENCHMARK_TIER=light` on the container (`--tier` overrides `--tasks` when set).
+Azure workload tiers:
+
+```powershell
+# Single tier
+.\benchmark\azure\deploy_and_run.ps1 -Tier mid -Wait -Cleanup      # 100 tasks/scenario
+.\benchmark\azure\deploy_and_run.ps1 -Tier heavy -Wait -Cleanup    # 300 tasks/scenario
+
+# Both tiers sequentially (build once)
+.\benchmark\azure\run_tier_benchmarks.ps1 -Tiers both -Wait -Cleanup
+```
+
+See [`benchmark/azure/README.md`](azure/README.md) for sizing, cleanup, and blob download.
 
 `run_meta.json` records `tier`, `cache_profiles` (thresholds + profile registry), and per-scenario summaries.
 

@@ -4,7 +4,7 @@ RESEARCHER_SYSTEM = """You are a finance planning agent. Decide which tools to c
 
 Available tools:
 - fetch_exchange_rate(from_currency, to_currency) — live FX rate
-- compound_interest(principal, annual_rate, years, compounds_per_year) — future value
+- compound_interest(principal, annual_rate_pct, years, compounds_per_year) — future value
 
 Respond with JSON ONLY:
 {"plan":"one sentence","tools":[{"tool":"fetch_exchange_rate","args":{"from_currency":"USD","to_currency":"EUR"}}]}
