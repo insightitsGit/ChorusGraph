@@ -251,6 +251,12 @@ Readiness scorecard: [`docs/ENTERPRISE_READINESS.md`](docs/ENTERPRISE_READINESS.
 
 ---
 
+## Examples
+
+- [Local RAG with Chroma + ChorusGraph](chorusgraph/examples/chroma_local_rag/) -- offline vector RAG with native retrieve-to-answer graph
+
+---
+
 ## Development
 
 ```bash

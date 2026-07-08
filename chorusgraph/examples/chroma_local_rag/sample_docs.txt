@@ -1,0 +1,9 @@
+Refund Policy: Customers may request a full refund within 30 days of purchase if they are not satisfied. Refunds are processed to the original payment method within 5-7 business days. Digital subscriptions are refundable only within the first 14 days.
+
+Remote Work Policy: Employees may work remotely up to three days per week with manager approval. Core collaboration hours are 10:00 AM to 3:00 PM in the employee local timezone. All remote workers must use company-approved VPN and endpoint security tools.
+
+Paid Time Off: Full-time employees receive 20 days of paid time off per year, accrued monthly. Unused PTO rolls over up to 5 days into the next calendar year. PTO requests require at least two weeks notice except for emergencies.
+
+Data Security Policy: Company data must not be stored on personal devices or unsanctioned cloud services. Employees must report suspected security incidents within one hour to security@example.com. Passwords must be at least 12 characters and rotated every 90 days.
+
+Expense Reimbursement: Business expenses over $25 require an itemized receipt submitted within 30 days. Travel must be pre-approved for amounts exceeding $500. Meal reimbursements are capped at $75 per day on domestic trips.
