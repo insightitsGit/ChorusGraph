@@ -12,6 +12,14 @@ All notable changes to ChorusGraph are documented here (semver).
 - **E8:** Product Dockerfile, docker-compose, k8s manifest, deploy docs.
 - **E9:** Frozen public API (`chorusgraph/public.py`), stability guarantee, API 1.0 docs.
 
+## [Unreleased]
+
+### Changed
+- **Docs & website:** canonical MVP benchmark updated to Azure run `mid_20260708_111539` (100 tasks/scenario) with latency/LLM summary (`benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md`). Supersedes `20260704_212111` for public claims. Benchmark-only fixes (`eeba2ad`); no library release.
+
+### Added
+- **Benchmark results archive:** `azure_light_20260708_101409`, `azure_mid_20260708_111539`, pre-fix baselines, consolidated latency/LLM summary.
+
 ## [1.0.3] — 2026-07-06
 
 ### Added

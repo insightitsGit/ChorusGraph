@@ -6,7 +6,8 @@ MVP scenario matrix (FL1–HC2) runs on **Azure Container Instances** — not VM
 
 | Tier | Tasks / scenario | Total scenario-runs (×8) | Use |
 |------|------------------|--------------------------|-----|
-| `light` | 40 | 320 | Smoke / CI (previous canonical run) |
+| `light` | 40 | 320 | Smoke / CI |
+| `mid` | 100 | 800 | **Canonical regression** (latest: `mid_20260708_111539`) |
 | **`mid`** | **100** | **800** | Regression |
 | **`heavy`** | **300** | **2400** | Scale / threshold calibration |
 

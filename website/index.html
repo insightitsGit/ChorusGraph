@@ -28,9 +28,9 @@
         <h1>Ship production agents without the integration tax.</h1>
         <p class="sub">You're paying to re-answer the same question — and you still can't replay why the agent said it. ChorusGraph is one runtime: semantic cache, retrieval, memory, checkpoints, and Route Ledger audit.</p>
         <div class="proof-strip">
-          <span><strong>+30 pp</strong> healthcare multi-agent</span>
-          <span><strong>100%</strong> finance single</span>
-          <span><strong>329</strong> tests, no API keys</span>
+          <span><strong>+26 pp</strong> healthcare multi-agent</span>
+          <span><strong>98%</strong> finance single</span>
+          <span><strong>329+</strong> tests, no API keys</span>
           <span><code>pip install chorusgraph</code></span>
         </div>
         <div class="cta-row">
@@ -54,17 +54,18 @@
 
     <section id="proof">
       <div class="container">
-        <h2>Proof (verified Azure run 20260704_212111)</h2>
+        <h2>Proof (verified Azure run mid_20260708_111539)</h2>
+        <p class="footnote" style="margin-bottom:1rem">100 tasks/scenario · real Gemini · benchmark-only methodology fixes (no library release)</p>
         <table>
           <thead><tr><th>Scenario</th><th>LangGraph</th><th>ChorusGraph</th></tr></thead>
           <tbody>
-            <tr><td>Finance single</td><td>87.5%</td><td><strong>100%</strong></td></tr>
-            <tr><td>Finance multi</td><td>75%</td><td><strong>87.5%</strong></td></tr>
-            <tr><td>Healthcare single</td><td>72.5%</td><td>72.5% (tie — honest)</td></tr>
-            <tr><td>Healthcare multi</td><td>57.5%</td><td><strong>87.5%</strong></td></tr>
+            <tr><td>Finance single</td><td>87.0%</td><td><strong>98.0%</strong></td></tr>
+            <tr><td>Finance multi</td><td>87.0%</td><td><strong>94.0%</strong></td></tr>
+            <tr><td>Healthcare single</td><td>74.0%</td><td><strong>79.0%</strong></td></tr>
+            <tr><td>Healthcare multi</td><td>59.0%</td><td><strong>85.0%</strong></td></tr>
           </tbody>
         </table>
-        <p class="footnote">Zero errors. Real Gemini. Full methodology: <a href="benchmarks.html">benchmarks</a> · <a href="https://github.com/insightitsGit/ChorusGraph/blob/master/benchmark/FAIRNESS_H9.md">fairness disclosure</a></p>
+        <p class="footnote">LLM calls −48% to −76% on finance; full latency tables: <a href="https://github.com/insightitsGit/ChorusGraph/blob/master/benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md">summary</a> · <a href="benchmarks.html">benchmarks</a> · <a href="https://github.com/insightitsGit/ChorusGraph/blob/master/benchmark/FAIRNESS_H9.md">fairness disclosure</a></p>
       </div>
     </section>
 

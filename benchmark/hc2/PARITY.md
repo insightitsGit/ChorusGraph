@@ -1,14 +1,16 @@
 # HC2 vs HL2 — success gap and Prism Resonance
 
-Canonical run `20260704_212111` (40 tasks, 40% repeat band, Azure ACI, commit `f43f532`):
+Canonical run **`mid_20260708_111539`** (100 tasks, Azure ACI, benchmark fix commit `eeba2ad`):
 
 | Metric | HL2 | HC2 |
 |--------|-----|-----|
-| Task success | **57.5%** | **87.5%** |
-| Cache hit rate | 0% | **25%** |
-| Abstain rate | 10% | **5%** |
-| Mean LLM calls | 3.85 | **3.48** |
-| Mean latency | 11,150 ms | 11,546 ms |
+| Task success | **59.0%** | **85.0%** |
+| Cache hit rate | 0% | **51%** |
+| Abstain rate | 16% | **2%** |
+| Mean LLM calls | 3.82 | **3.15** |
+| Mean latency | 10,296 ms | 10,753 ms |
+
+Prior smoke run `20260704_212111` (40 tasks): HL2 57.5% → HC2 87.5% (+30 pp).
 
 HC2 **wins on success** after Bug-1 fix (663edf7): facts-only cache + depth-aware judgment replay. Lower cache hit vs pre-fix run `20260703_042206` (62.5%) is intentional — `cache_payload_sufficient` rejects shallow hits that inflated cache but hurt accuracy.
 

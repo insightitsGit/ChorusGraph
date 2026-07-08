@@ -186,27 +186,31 @@ ChorusGraph is the **integration runtime** for the Prism family — PrismLang, P
 
 ## Benchmarks
 
-Fair A/B vs competent LangGraph baselines — same model, tools, prompts, workload. Canonical run: **`20260704_212111`** (post–HC2 Bug-1 fix). See [`benchmark/FAIRNESS_H9.md`](benchmark/FAIRNESS_H9.md).
+Fair A/B vs competent LangGraph baselines — same model, tools, prompts, workload. **Canonical regression run:** **`mid_20260708_111539`** (100 tasks/scenario, Azure ACI). Smoke: `light_20260708_101409` (40 tasks). See [`benchmark/FAIRNESS_H9.md`](benchmark/FAIRNESS_H9.md) and [`benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md`](benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md).
 
-### Task success (LangGraph → ChorusGraph)
+July 2026 methodology fixes (benchmark-only — **no library release**): FL2 researcher prompt uses `annual_rate_pct` (matches tool schema); comparison script counts agent/tool errors in LangGraph success denominators. Supersedes pre-fix runs that inflated FL2 vs FC2.
+
+### Task success (LangGraph → ChorusGraph) — mid tier, n=100
 
 | Scenario | LangGraph | ChorusGraph | Delta |
 |----------|-----------|-------------|-------|
-| Finance single (FL1→FC1) | 87.5% | **100%** | +12.5 pp |
-| Finance multi (FL2→FC2) | 75% | **87.5%** | +12.5 pp |
-| Healthcare single (HL1→HC1) | 72.5% | 72.5% | tie |
-| Healthcare multi (HL2→HC2) | 57.5% | **87.5%** | **+30 pp** |
+| Finance single (FL1→FC1) | 87.0% | **98.0%** | +11.0 pp |
+| Finance multi (FL2→FC2) | 87.0% | **94.0%** | +7.0 pp |
+| Healthcare single (HL1→HC1) | 74.0% | **79.0%** | +5.0 pp |
+| Healthcare multi (HL2→HC2) | 59.0% | **85.0%** | **+26 pp** |
 
-### Cost and LLM calls (portfolio, equal-weight)
+### LLM calls and latency (mid tier, mean per task)
 
-| Metric | Overall | Finance | Healthcare |
-|--------|---------|---------|------------|
-| Fewer LLM calls | **~44%** | **~66%** | **~22%** |
-| Lower modeled Gemini cost | **~35%** | **~64%** | **~6%** |
+| Scenario | LLM calls (L → C) | Mean latency ms (L → C) | Cache hit (C) |
+|----------|-------------------|-------------------------|---------------|
+| FL1 / FC1 | 3.24 → **0.77** (−76%) | 4760 → **1348** (−72%) | 52% |
+| FL2 / FC2 | 2.03 → **0.69** (−66%) | 3269 → **1085** (−67%) | 40% |
+| HL1 / HC1 | 3.00 → **1.56** (−48%) | 7036 → **3990** (−43%) | 60% |
+| HL2 / HC2 | 3.82 → **3.15** (−18%) | 10296 → 10753 (tie) | 51% |
 
-Healthcare multi saves modest cost by design (facts-only cache, judgment hops always re-run). Lead with accuracy (+30 pp), not cost. Do **not** use pre-fix run `20260703_042206` for HC2 cost claims.
+Healthcare multi saves fewer LLM calls by design (facts-only cache, judgment hops re-run). Lead with accuracy (+26 pp), not cost.
 
-Full report: [`benchmark/results/azure_20260704_212111/.../COMPARISON_REPORT.md`](benchmark/results/azure_20260704_212111/mvp_scenarios/20260704_212111/20260704_212111/COMPARISON_REPORT.md) · audit numbers: [`handoffs/handoffbackaudit.md`](handoffs/handoffbackaudit.md)
+Full report: [`benchmark/results/azure_mid_20260708_111539/.../COMPARISON_REPORT.md`](benchmark/results/azure_mid_20260708_111539/mvp_scenarios/mid_20260708_111539/COMPARISON_REPORT.md) · latency/LLM tables: [`benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md`](benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md)
 
 ```bash
 pip install -e ".[benchmark,gemini]"

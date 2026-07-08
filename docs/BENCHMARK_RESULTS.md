@@ -1,4 +1,28 @@
-# ChorusGraph A/B Benchmark Results (H10)
+# ChorusGraph A/B Benchmark Results
+
+## MVP matrix — Azure (canonical)
+
+**Latest regression run:** `mid_20260708_111539` · 100 tasks/scenario · seed 42 · Azure ACI · real Gemini
+
+| Pair | LangGraph success | ChorusGraph success | LLM calls (L → C) | Mean latency ms (L → C) |
+|------|-------------------|---------------------|--------------------|-------------------------|
+| FL1 / FC1 | 87.0% | **98.0%** | 3.24 → **0.77** | 4760 → **1348** |
+| FL2 / FC2 | 87.0% | **94.0%** | 2.03 → **0.69** | 3269 → **1085** |
+| HL1 / HC1 | 74.0% | **79.0%** | 3.00 → **1.56** | 7036 → **3990** |
+| HL2 / HC2 | 59.0% | **85.0%** | 3.82 → **3.15** | 10296 → 10753 |
+
+- Full report: [`benchmark/results/azure_mid_20260708_111539/mvp_scenarios/mid_20260708_111539/COMPARISON_REPORT.md`](../benchmark/results/azure_mid_20260708_111539/mvp_scenarios/mid_20260708_111539/COMPARISON_REPORT.md)
+- Latency + LLM tables: [`benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md`](../benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md)
+- Archive index: [`benchmark/results/mvp_scenarios/README.md`](../benchmark/results/mvp_scenarios/README.md)
+- Methodology: [`BENCHMARK.md`](BENCHMARK.md) · fairness: [`benchmark/FAIRNESS_H9.md`](../benchmark/FAIRNESS_H9.md)
+
+**Benchmark-only fixes (July 2026, commit `eeba2ad`):** FL2 prompt `annual_rate_pct`; fair LangGraph success denominator. **No library version bump required.**
+
+Smoke (40 tasks): `light_20260708_101409`. Heavy (300 tasks): `heavy_20260708_124337` (scale tier).
+
+---
+
+## H10 FX workload (local, sliced metrics)
 
 **Methodology:** [`BENCHMARK.md`](BENCHMARK.md) · **Fairness:** [`benchmark/FAIRNESS_H9.md`](../benchmark/FAIRNESS_H9.md)
 

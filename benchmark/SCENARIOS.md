@@ -69,7 +69,7 @@ python -m benchmark.run_scenarios --scenarios single --tasks 12
 
 Results land in `benchmark/results/mvp_scenarios/` as `{fl1,fc1,...}.jsonl`, `run_meta.json`, **`comparison.json`**, and **`COMPARISON_REPORT.md`**.
 
-**Archived runs:** see [`benchmark/results/mvp_scenarios/README.md`](results/mvp_scenarios/README.md) — latest canonical run is `20260704_212111` (40 tasks, Azure ACI, post-HC2 Bug-1 fix).
+**Archived runs:** see [`benchmark/results/mvp_scenarios/README.md`](results/mvp_scenarios/README.md) — latest canonical run is **`mid_20260708_111539`** (100 tasks, Azure ACI, post-fix prompt + fair comparison). Smoke: `light_20260708_101409` (40 tasks).
 
 Sample corpora: see [`benchmark/data/SAMPLE_DATA.md`](data/SAMPLE_DATA.md) (20 healthcare cases, 11 finance intents, 5 memory profiles).
 

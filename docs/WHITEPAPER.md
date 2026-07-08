@@ -12,15 +12,15 @@ Teams shipping LLM agents face the same hidden tax: glue a graph framework to a 
 
 **ChorusGraph** is a native agent runtime that ships those layers as one product with **four swappable ports** (cache, memory, tools, retrieval). You install with pip, run graphs on `chorusgraph.core.Graph` (not LangGraph for product paths), and swap backends — Redis cache, PrismRAG vector retrieval, custom tool registries — without rewriting orchestration.
 
-**Measured outcomes** (canonical Azure benchmark `20260704_212111`, 40 tasks, real Gemini):
+**Measured outcomes** (canonical Azure benchmark `mid_20260708_111539`, 100 tasks/scenario, real Gemini):
 
 | Scenario | LangGraph baseline | ChorusGraph | Delta |
 |----------|-------------------|-------------|-------|
-| Finance single (FL1→FC1) | 87.5% | **100%** | +12.5 pp |
-| Finance multi (FL2→FC2) | 75% | **87.5%** | +12.5 pp |
-| Healthcare multi (HL2→HC2) | 57.5% | **87.5%** | **+30 pp** |
+| Finance single (FL1→FC1) | 87.0% | **98.0%** | +11.0 pp |
+| Finance multi (FL2→FC2) | 87.0% | **94.0%** | +7.0 pp |
+| Healthcare multi (HL2→HC2) | 59.0% | **85.0%** | **+26 pp** |
 
-Zero benchmark errors. Healthcare retrieval uses the **PrismRAG plug-in** (Chroma + optional taxonomy remap) as a first-class library backend — not benchmark-only scaffolding.
+Finance scenarios: ~66–76% fewer LLM calls and ~67–72% lower mean latency vs LangGraph (semantic cache). Benchmark-only methodology fixes July 2026; no library version bump.
 
 **Enterprise 1.0** adds CI without live API keys, resilience, security controls, observability, durable SQLite graph store, tenant isolation, Docker/k8s packaging, and a frozen public API.
 
@@ -182,23 +182,23 @@ Implement `RetrievalBackend` protocol — pgvector, OpenSearch, enterprise searc
 
 ### 5.1 MVP matrix (Azure, canonical)
 
-Run ID: **`20260704_212111`** · 8 scenarios · verified against raw JSONL
+Run ID: **`mid_20260708_111539`** · 100 tasks/scenario · 8 scenarios · verified against raw JSONL
 
 | Pair | LangGraph | ChorusGraph | Notes |
 |------|-----------|-------------|-------|
-| FL1 / FC1 | 87.5% | 100% | Finance single |
-| FL2 / FC2 | 75% | 87.5% | Finance multi-agent |
-| HL1 / HC1 | 72.5% | 72.5% | Healthcare single (tie) |
-| HL2 / HC2 | 57.5% | **87.5%** | **+30 pp** healthcare multi |
+| FL1 / FC1 | 87.0% | **98.0%** | Finance single |
+| FL2 / FC2 | 87.0% | **94.0%** | Finance multi-agent (fair paired comparison) |
+| HL1 / HC1 | 74.0% | **79.0%** | Healthcare single |
+| HL2 / HC2 | 59.0% | **85.0%** | **+26 pp** healthcare multi |
 
-HC2 uses library PrismRAG retrieval + depth-aware cache routing (H21 profiles).
+**Efficiency (mid tier, mean per task):** finance scenarios cut LLM calls ~66–76% and mean latency ~67–72% vs LangGraph (40–52% cache hit). Healthcare multi: higher success with comparable latency.
 
-**Reproduce it yourself** — don't take the table on faith:
+Benchmark-only fixes July 2026 (`eeba2ad`): FL2 `annual_rate_pct` prompt; fair success denominators. No `chorusgraph` library change.
+
+**Reproduce:**
 ```bash
-python -m benchmark.run_scenarios --tier light --temperature 0.0 --seed 42
+python -m benchmark.run_scenarios --tier mid --temperature 0.0 --seed 42
 ```
-Real Gemini calls, same seed, same 40-task matrix. A number a skeptical reader can regenerate on their
-own machine is worth more than any polished chart — this is a deliberate choice, not an afterthought.
 
 ### 5.2 H10 sliced metrics (FX workload)
 

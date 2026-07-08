@@ -328,4 +328,5 @@ See `benchmark/healthcare/retrieval.py` for mapping + corpus wiring.
 - [`COMPOSE.md`](COMPOSE.md) — `ChorusStack` architecture
 - [`DEVELOPER_GUIDE.md`](DEVELOPER_GUIDE.md) — graph patterns
 - [`WHITEPAPER.md`](WHITEPAPER.md) — product thesis + benchmark proof
+- [`BENCHMARK_RESULTS.md`](BENCHMARK_RESULTS.md) — canonical Azure MVP matrix (`mid_20260708_111539`) + H10 slices
 - [`RELEASE.md`](RELEASE.md) — semver, tags, SBOM

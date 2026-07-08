@@ -23,10 +23,36 @@
     <section>
       <div class="container">
         <h1>Honest benchmarks</h1>
-        <p>Azure run <code>20260704_212111</code> — real Gemini, zero errors. Healthcare single-agent is a tie (disclosed).</p>
+        <p>Azure run <code>mid_20260708_111539</code> — 100 tasks/scenario, real Gemini, fair paired comparison. Benchmark-only fixes July 2026 (prompt + reporting); no library version bump.</p>
+
+        <h2 style="margin-top:2rem">Task success (LangGraph → ChorusGraph)</h2>
+        <table>
+          <thead><tr><th>Scenario</th><th>LangGraph</th><th>ChorusGraph</th></tr></thead>
+          <tbody>
+            <tr><td>Finance single (FL1/FC1)</td><td>87.0%</td><td><strong>98.0%</strong></td></tr>
+            <tr><td>Finance multi (FL2/FC2)</td><td>87.0%</td><td><strong>94.0%</strong></td></tr>
+            <tr><td>Healthcare single (HL1/HC1)</td><td>74.0%</td><td><strong>79.0%</strong></td></tr>
+            <tr><td>Healthcare multi (HL2/HC2)</td><td>59.0%</td><td><strong>85.0%</strong></td></tr>
+          </tbody>
+        </table>
+
+        <h2 style="margin-top:2rem">LLM calls &amp; latency (mean per task)</h2>
+        <table>
+          <thead><tr><th>Scenario</th><th>LLM calls (L → C)</th><th>Mean latency ms (L → C)</th><th>Cache hit (C)</th></tr></thead>
+          <tbody>
+            <tr><td>FL1 / FC1</td><td>3.24 → <strong>0.77</strong></td><td>4760 → <strong>1348</strong></td><td>52%</td></tr>
+            <tr><td>FL2 / FC2</td><td>2.03 → <strong>0.69</strong></td><td>3269 → <strong>1085</strong></td><td>40%</td></tr>
+            <tr><td>HL1 / HC1</td><td>3.00 → <strong>1.56</strong></td><td>7036 → <strong>3990</strong></td><td>60%</td></tr>
+            <tr><td>HL2 / HC2</td><td>3.82 → <strong>3.15</strong></td><td>10296 → 10753</td><td>51%</td></tr>
+          </tbody>
+        </table>
+
         <h2 style="margin-top:2rem">Reproduce</h2>
-        <pre>python -m benchmark.run_scenarios --help
-# See docs/BENCHMARK.md and benchmark/results/azure_20260704_212111/</pre>
+        <pre>pip install -e ".[benchmark,gemini]"
+python -m benchmark.run_scenarios --tier mid --scenarios all --seed 42
+# Azure: .\benchmark\azure\deploy_and_run.ps1 -Tier mid -Wait -Cleanup</pre>
+        <p>Full report: <a href="https://github.com/insightitsGit/ChorusGraph/blob/master/benchmark/results/azure_mid_20260708_111539/mvp_scenarios/mid_20260708_111539/COMPARISON_REPORT.md">COMPARISON_REPORT.md</a> · <a href="https://github.com/insightitsGit/ChorusGraph/blob/master/benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md">latency summary</a> · <a href="https://github.com/insightitsGit/ChorusGraph/blob/master/docs/BENCHMARK.md">methodology</a></p>
+
         <h2 style="margin-top:2rem">H10 repeat band (FX, 40% repeat)</h2>
         <p>Median latency ~8× lower on repeat FX band (575 ms vs 4498 ms). Sliced metric — see <a href="https://github.com/insightitsGit/ChorusGraph/blob/master/benchmark/FAIRNESS_H9.md">FAIRNESS_H9.md</a>.</p>
       </div>

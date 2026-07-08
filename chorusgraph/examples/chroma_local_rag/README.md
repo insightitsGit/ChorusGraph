@@ -46,4 +46,7 @@ The Route Ledger records the hop path for audit (`retrieve -> answer`).
 
 ## Benchmarks
 
-Published A/B results vs LangGraph baselines: [docs/BENCHMARK_RESULTS.md](https://github.com/insightitsGit/ChorusGraph/blob/master/docs/BENCHMARK_RESULTS.md)
+Published A/B results vs LangGraph baselines (canonical Azure run `mid_20260708_111539`, 100 tasks/scenario):
+
+- Task success + latency + LLM calls: [benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md](https://github.com/insightitsGit/ChorusGraph/blob/master/benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md)
+- Full methodology: [docs/BENCHMARK_RESULTS.md](https://github.com/insightitsGit/ChorusGraph/blob/master/docs/BENCHMARK_RESULTS.md)

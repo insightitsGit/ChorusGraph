@@ -82,5 +82,9 @@ This spec covers **A vs B** fairness. Multi-agent rigs (C/D healthcare, E/F fina
 
 Distinguish **library behavior** (proven in B + F) from **benchmark wiring mistakes** (pre-fix F, healthcare D).
 
+## Canonical MVP results (Azure)
+
+Latest regression: **`mid_20260708_111539`** (100 tasks/scenario). See [`benchmark/results/mvp_scenarios/README.md`](../benchmark/results/mvp_scenarios/README.md) and [`benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md`](../benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md).
+
 ---
 *Methodology only · the benchmark is built in H8, run/analyzed in H9.*

@@ -10,7 +10,7 @@
 | Dimension | Status |
 |---|---|
 | Architecture / native engine | ✅ Solid — LangGraph confined to baselines |
-| Benchmark proof | ✅ Full 8-scenario matrix verified (`20260704_212111`) |
+| Benchmark proof | ✅ Full 8-scenario matrix verified (`mid_20260708_111539`, 100 tasks/scenario) |
 | Functional test suite | ✅ **329+ passing** — deterministic CI tier (no live keys) |
 | CI/CD + release engineering | ✅ GitHub Actions: pytest, ruff, mypy, coverage, SBOM |
 | Code-quality gates | 🟡 **Partial** — ruff/mypy on tests + package; full `chorusgraph/` ruff deferred |

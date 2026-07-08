@@ -63,4 +63,4 @@ All values are **mean per task** with 95% CI in brackets. Latency in **milliseco
 - `benchmark/results/azure_light_20260708_101409/mvp_scenarios/light_20260708_101409/COMPARISON_REPORT.md`
 - `benchmark/results/azure_mid_20260708_111539/mvp_scenarios/mid_20260708_111539/COMPARISON_REPORT.md`
 
-Heavy post-fix run: `heavy_20260708_124337` (in progress at time of writing).
+Heavy post-fix run: `heavy_20260708_124337` (300 tasks/scenario — scale tier; add results when complete).
