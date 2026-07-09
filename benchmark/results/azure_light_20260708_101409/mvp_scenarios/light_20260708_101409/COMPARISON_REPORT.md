@@ -1,7 +1,7 @@
 # LangGraph vs ChorusGraph — Group Comparisons
 
 Each row compares **ChorusGraph − LangGraph** within one domain/mode pair.
-Winner uses non-overlapping 95% CIs when possible; otherwise point estimate (marginal).
+Winner uses non-overlapping 95% CIs when possible; otherwise point estimate (marginal). Embeds / task is inconclusive when only one side has an embed path; tokens in / task is inconclusive when CIs overlap.
 For **abstain rate**, **latency**, **LLM calls**, and **cost**, lower is better.
 
 ## Finance Single (FL1 vs FC1)
@@ -76,7 +76,7 @@ Paired tasks: **40** (same task/case IDs)
 
 ## Healthcare Single (HL1 vs HC1)
 
-**Overall:** chorusgraph (Chorus wins 8 metrics, LangGraph wins 2 metrics)
+**Overall:** chorusgraph (Chorus wins 8 metrics, LangGraph wins 1 metrics)
 
 ### Key metrics
 
@@ -100,7 +100,7 @@ Paired tasks: **40** (same task/case IDs)
 | Cost / task | 0.0003 [0.0003, 0.0004] | 0.0003 [0.0002, 0.0003] | -0.0001 [-0.0001, -0.0000] | **chorusgraph** |
 | Cache hit rate | 0.0% [0.0%, 8.8%] | 42.5% [27.2%, 57.8%] | — | **chorusgraph** |
 | LLM calls on cache hit | — | 1.00 [1.00, 1.00] | — | **inconclusive** |
-| Tokens in / task | 971.88 [851.27, 1101.38] | 1174.75 [970.74, 1410.23] | — | **langgraph** |
+| Tokens in / task | 971.88 [851.27, 1101.38] | 1174.75 [970.74, 1410.23] | — | **inconclusive** |
 | Tokens out / task | 331.02 [295.87, 370.66] | 191.05 [147.09, 235.40] | — | **chorusgraph** |
 | Tool calls / task | 1.38 [1.20, 1.60] | 0.7000 [0.4750, 0.9250] | — | **chorusgraph** |
 | Error rate | 0.0% [0.0%, 8.8%] | 0.0% [0.0%, 8.8%] | — | **tie** |
@@ -111,7 +111,7 @@ Paired tasks: **40** (same task/case IDs)
 
 ## Healthcare Multi (HL2 vs HC2)
 
-**Overall:** chorusgraph (Chorus wins 6 metrics, LangGraph wins 5 metrics)
+**Overall:** chorusgraph (Chorus wins 6 metrics, LangGraph wins 4 metrics)
 
 ### Key metrics
 
@@ -135,7 +135,7 @@ Paired tasks: **40** (same task/case IDs)
 | Cost / task | 0.0003 [0.0003, 0.0004] | 0.0003 [0.0003, 0.0004] | 0.0000 [-0.0000, 0.0000] | **langgraph** |
 | Cache hit rate | 0.0% [0.0%, 8.8%] | 25.0% [9.8%, 40.2%] | — | **chorusgraph** |
 | LLM calls on cache hit | — | 2.50 [1.70, 3.30] | — | **inconclusive** |
-| Tokens in / task | 858.27 [693.78, 1024.96] | 1051.15 [834.86, 1267.48] | — | **langgraph** |
+| Tokens in / task | 858.27 [693.78, 1024.96] | 1051.15 [834.86, 1267.48] | — | **inconclusive** |
 | Tokens out / task | 295.27 [251.67, 340.00] | 265.07 [221.15, 310.13] | — | **chorusgraph** |
 | Tool calls / task | 0.8750 [0.6500, 1.1000] | 0.7750 [0.5500, 1.0250] | — | **chorusgraph** |
 | Error rate | 0.0% [0.0%, 8.8%] | 0.0% [0.0%, 8.8%] | — | **tie** |

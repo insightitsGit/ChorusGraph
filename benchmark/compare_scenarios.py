@@ -179,6 +179,9 @@ def _winner(
             return "langgraph"
     if abs(chorus_ci.point - lang_ci.point) < 1e-9:
         return "tie"
+    # Overlapping CIs — tokens_in mixes cache-hit vs full-LLM paths; not a fair win
+    if metric == "tokens_in_per_task":
+        return "inconclusive"
     # Marginal — point estimate favors one side but CIs overlap
     if lower_is_better:
         return "chorusgraph" if chorus_ci.point < lang_ci.point else "langgraph"
@@ -440,7 +443,9 @@ def format_comparison_report(comparison: Dict[str, Any], *, cache_enabled: bool 
         "# LangGraph vs ChorusGraph — Group Comparisons",
         "",
         "Each row compares **ChorusGraph − LangGraph** within one domain/mode pair.",
-        "Winner uses non-overlapping 95% CIs when possible; otherwise point estimate (marginal).",
+        "Winner uses non-overlapping 95% CIs when possible; otherwise point estimate (marginal). "
+        "Embeds / task is inconclusive when only one side has an embed path; "
+        "tokens in / task is inconclusive when CIs overlap.",
         "For **abstain rate**, **latency**, **LLM calls**, and **cost**, lower is better.",
         "",
     ]

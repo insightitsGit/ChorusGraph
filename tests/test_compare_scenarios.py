@@ -172,6 +172,33 @@ def test_embed_count_inconclusive_when_only_one_side_has_embed_path():
     assert group["scorecard"]["langgraph_wins"] == 0
 
 
+def test_tokens_in_inconclusive_when_cis_overlap():
+    """Overlapping tokens_in CIs are not decisive — cache vs full-LLM paths differ."""
+    from benchmark.compare_scenarios import MetricCI, _winner
+
+    lang = MetricCI(
+        point=817.7966666666666,
+        lower95=758.7360833333333,
+        upper95=875.6495833333332,
+        n=300,
+        method="bootstrap_2000",
+    )
+    chorus = MetricCI(
+        point=898.9,
+        lower95=827.2155,
+        upper95=965.7044166666667,
+        n=300,
+        method="bootstrap_2000",
+    )
+    assert chorus.point > lang.point
+    assert _winner(lang, chorus, lower_is_better=True, metric="tokens_in_per_task") == "inconclusive"
+
+    # Non-overlapping CIs still produce a clear winner
+    clear_lang = MetricCI(point=500.0, lower95=480.0, upper95=520.0, n=100, method="bootstrap_2000")
+    clear_chorus = MetricCI(point=900.0, lower95=880.0, upper95=920.0, n=100, method="bootstrap_2000")
+    assert _winner(clear_lang, clear_chorus, lower_is_better=True, metric="tokens_in_per_task") == "langgraph"
+
+
 def test_abstain_rate_lower_is_better():
     """Lower abstain is better — ChorusGraph should win when it abstains less."""
     results = {
