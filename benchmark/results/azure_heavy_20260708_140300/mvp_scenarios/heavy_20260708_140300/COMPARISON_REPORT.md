@@ -2,6 +2,7 @@
 
 Each row compares **ChorusGraph − LangGraph** within one domain/mode pair.
 Winner uses non-overlapping 95% CIs when possible; otherwise point estimate (marginal).
+For **abstain rate**, **latency**, **LLM calls**, and **cost**, lower is better.
 
 ## Finance Single (FL1 vs FC1)
 
@@ -75,7 +76,7 @@ Paired tasks: **300** (same task/case IDs)
 
 ## Healthcare Single (HL1 vs HC1)
 
-**Overall:** chorusgraph (Chorus wins 10 metrics, LangGraph wins 1 metrics)
+**Overall:** chorusgraph (Chorus wins 11 metrics, LangGraph wins 0 metrics)
 
 ### Key metrics
 
@@ -104,13 +105,13 @@ Paired tasks: **300** (same task/case IDs)
 | Tool calls / task | 1.28 [1.21, 1.36] | 0.2900 [0.2333, 0.3467] | — | **chorusgraph** |
 | Error rate | 0.0% [0.0%, 1.3%] | 0.0% [0.0%, 1.3%] | — | **tie** |
 | Embeds / task | 0.0000 [0.0000, 0.0000] | 0.0000 [0.0000, 0.0000] | — | **tie** |
-| Abstain rate | 34.3% [28.8%, 39.9%] | 23.3% [18.2%, 28.4%] | — | **langgraph** |
+| Abstain rate | 34.3% [28.8%, 39.9%] | 23.3% [18.2%, 28.4%] | — | **chorusgraph** |
 
 Paired tasks: **300** (same task/case IDs)
 
 ## Healthcare Multi (HL2 vs HC2)
 
-**Overall:** chorusgraph (Chorus wins 9 metrics, LangGraph wins 3 metrics)
+**Overall:** chorusgraph (Chorus wins 10 metrics, LangGraph wins 2 metrics)
 
 ### Key metrics
 
@@ -139,6 +140,6 @@ Paired tasks: **300** (same task/case IDs)
 | Tool calls / task | 0.8833 [0.8000, 0.9667] | 0.4800 [0.4100, 0.5500] | — | **chorusgraph** |
 | Error rate | 0.0% [0.0%, 1.3%] | 0.0% [0.0%, 1.3%] | — | **tie** |
 | Embeds / task | 0.0000 [0.0000, 0.0000] | 7.37 [7.02, 7.72] | — | **langgraph** |
-| Abstain rate | 14.7% [10.2%, 19.1%] | 3.0% [0.4%, 5.6%] | — | **langgraph** |
+| Abstain rate | 14.7% [10.2%, 19.1%] | 3.0% [0.4%, 5.6%] | — | **chorusgraph** |
 
 Paired tasks: **300** (same task/case IDs)

@@ -199,7 +199,7 @@ METRIC_SPECS: Tuple[Tuple[str, bool, str], ...] = (
     ("tool_calls_per_task", True, "calls"),
     ("error_rate", True, "rate"),
     ("embed_count_per_task", True, "embeds"),
-    ("abstain_rate", False, "rate"),
+    ("abstain_rate", True, "rate"),
 )
 
 
@@ -430,6 +430,7 @@ def format_comparison_report(comparison: Dict[str, Any], *, cache_enabled: bool 
         "",
         "Each row compares **ChorusGraph − LangGraph** within one domain/mode pair.",
         "Winner uses non-overlapping 95% CIs when possible; otherwise point estimate (marginal).",
+        "For **abstain rate**, **latency**, **LLM calls**, and **cost**, lower is better.",
         "",
     ]
     if cache_enabled is False:

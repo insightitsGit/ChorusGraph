@@ -128,3 +128,43 @@ def test_all_four_groups_when_data_present():
     }
     cmp = compare_all_groups(results)
     assert set(cmp["groups"].keys()) == {"finance_single", "finance_multi"}
+
+
+def test_abstain_rate_lower_is_better():
+    """Lower abstain is better — ChorusGraph should win when it abstains less."""
+    results = {
+        "HL1": [
+            {
+                "case_id": f"t{i}",
+                "container": "HL1",
+                "variant": "novel",
+                "latency_ms": 5000,
+                "llm_calls": 3,
+                "tokens_in": 100,
+                "tokens_out": 50,
+                "cost_usd": 0.001,
+                "task_success": i % 2 == 0,
+                "abstained": True,
+            }
+            for i in range(20)
+        ],
+        "HC1": [
+            {
+                "case_id": f"t{i}",
+                "container": "HC1",
+                "variant": "novel",
+                "latency_ms": 4000,
+                "llm_calls": 2,
+                "tokens_in": 100,
+                "tokens_out": 50,
+                "cost_usd": 0.0008,
+                "task_success": True,
+                "abstained": i < 5,
+            }
+            for i in range(20)
+        ],
+    }
+    group = compare_all_groups(results)["groups"]["healthcare_single"]
+    abstain = next(m for m in group["metrics"] if m["metric"] == "abstain_rate")
+    assert abstain["winner"] == "chorusgraph"
+    assert abstain["chorusgraph"]["point"] < abstain["langgraph"]["point"]
