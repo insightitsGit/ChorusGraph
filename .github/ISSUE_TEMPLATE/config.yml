@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/insightitsGit/ChorusGraph/tree/master/docs
+    about: Install guide, developer guide, terminology, and deploy docs
+  - name: Security advisory (private)
+    url: https://github.com/insightitsGit/ChorusGraph/security/advisories/new
+    about: Report a vulnerability privately — do not use public issues
+  - name: Discussions
+    url: https://github.com/insightitsGit/ChorusGraph/issues
+    about: Search existing issues before opening a new one

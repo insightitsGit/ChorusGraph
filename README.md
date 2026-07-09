@@ -311,7 +311,7 @@ pytest -m live            # live Gemini (needs GEMINI_API_KEY)
 ruff check tests .github
 ```
 
-Contributing workflow: [`docs/WORKFLOW.md`](docs/WORKFLOW.md) · process: [`docs/PROCESS.md`](docs/PROCESS.md)
+Contributing: [`CONTRIBUTING.md`](CONTRIBUTING.md) · workflow: [`docs/WORKFLOW.md`](docs/WORKFLOW.md) · process: [`docs/PROCESS.md`](docs/PROCESS.md)
 
 ---
 
@@ -357,6 +357,14 @@ Details: [`docs/WHITEPAPER.md`](docs/WHITEPAPER.md) §9 · [`docs/ENTERPRISE_REA
 
 Apache-2.0 — see [LICENSE](LICENSE).
 
+## Community
+
+| | |
+|---|---|
+| [Contributing](CONTRIBUTING.md) | Dev setup, PR checklist, FC/HC vs FL/HL rules |
+| [Code of conduct](CODE_OF_CONDUCT.md) | Contributor Covenant |
+| [Security policy](SECURITY.md) | Private vulnerability reporting |
+
 Built by [Insight IT Solutions](https://github.com/insightitsGit). Dogfooded in production agent hubs. Part of the Prism family (PrismLang, PrismCache, PrismCortex, PrismRAG).
 
-**Questions / enterprise:** open a GitHub issue or see [`docs/WHITEPAPER.md`](docs/WHITEPAPER.md) for commercial framing.
+**Questions / enterprise:** open a [GitHub issue](https://github.com/insightitsGit/ChorusGraph/issues) or see [`docs/WHITEPAPER.md`](docs/WHITEPAPER.md) for commercial framing.

@@ -1,0 +1,62 @@
+name: Feature request
+description: Suggest an enhancement or new capability
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the problem and proposed solution. For orchestration changes,
+        note whether the feature belongs on the **native** path (`chorusgraph.core.Graph`)
+        or a **LangGraph baseline** only — see [`docs/TERMINOLOGY.md`](https://github.com/insightitsGit/ChorusGraph/blob/master/docs/TERMINOLOGY.md).
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / use case
+      description: What pain point does this solve? Who is the user?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How should ChorusGraph behave? Which ports or modules are involved?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Primary layer
+      options:
+        - Core engine / Graph API
+        - ChorusStack / compose
+        - Semantic cache
+        - RetrievalBackend
+        - Memory / Cortex
+        - Route ledger / observability
+        - Persistence / checkpoints
+        - Security / enterprise
+        - Benchmarks / tooling
+        - Documentation / DX
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other designs, workarounds, or competing approaches
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope notes
+      options:
+        - label: This should be native ChorusGraph (FC/HC path), not LangGraph-only
+        - label: Willing to contribute a PR
+        - label: Requires public API / stability review (see docs/STABILITY.md)

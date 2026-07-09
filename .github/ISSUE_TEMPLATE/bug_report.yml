@@ -1,0 +1,88 @@
+name: Bug report
+description: Report incorrect behavior, test failures, or regressions
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. For **security vulnerabilities**, use a
+        [private security advisory](https://github.com/insightitsGit/ChorusGraph/security/advisories/new)
+        instead of this form.
+
+  - type: input
+    id: version
+    attributes:
+      label: ChorusGraph version
+      description: Output of `python -c "import chorusgraph; print(chorusgraph.__version__)"`
+      placeholder: e.g. 1.0.3
+    validations:
+      required: true
+
+  - type: dropdown
+    id: python
+    attributes:
+      label: Python version
+      options:
+        - "3.11"
+        - "3.12"
+        - "3.13"
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Core engine / scheduler
+        - Cache gate
+        - Retrieval (PrismRAG / keyword)
+        - Memory / Cortex
+        - Route ledger / checkpoints
+        - Security / multi-tenant
+        - Benchmarks (FC/HC native)
+        - Benchmarks (FL/HL baseline)
+        - Docs / packaging / CI
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: What did you expect vs what actually happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Minimal code, CLI command, or test name
+      placeholder: |
+        1. pip install ...
+        2. Run ...
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / traceback
+      description: Paste relevant output. Redact API keys and tenant data.
+      render: shell
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-submit checklist
+      options:
+        - label: I searched existing issues and did not find a duplicate
+          required: true
+        - label: I am not reporting a security vulnerability in this public issue
+          required: true
