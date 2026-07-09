@@ -12,6 +12,7 @@
 | HL2 / HC2 | 59.0% | **85.0%** | 3.82 → **3.15** | 10296 → 10753 |
 
 - Full report: [`benchmark/results/azure_mid_20260708_111539/mvp_scenarios/mid_20260708_111539/COMPARISON_REPORT.md`](../benchmark/results/azure_mid_20260708_111539/mvp_scenarios/mid_20260708_111539/COMPARISON_REPORT.md)
+- Raw traces: [`results.tar.gz`](../benchmark/results/azure_mid_20260708_111539/mvp_scenarios/mid_20260708_111539/results.tar.gz) · [`run_meta.json`](../benchmark/results/azure_mid_20260708_111539/mvp_scenarios/mid_20260708_111539/run_meta.json)
 - Latency + LLM tables: [`benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md`](../benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md)
 - Archive index: [`benchmark/results/mvp_scenarios/README.md`](../benchmark/results/mvp_scenarios/README.md)
 - Methodology: [`BENCHMARK.md`](BENCHMARK.md) · fairness: [`benchmark/FAIRNESS_H9.md`](../benchmark/FAIRNESS_H9.md)
@@ -32,6 +33,8 @@ Smoke (40 tasks): `light_20260708_101409`. Scale (300 tasks): `heavy_20260708_14
 | HL2 / HC2 | 62.3% | **77.3%** | 3.85 → **2.67** | 10354 → **9537** |
 
 Full report: [`benchmark/results/azure_heavy_20260708_140300/mvp_scenarios/heavy_20260708_140300/COMPARISON_REPORT.md`](../benchmark/results/azure_heavy_20260708_140300/mvp_scenarios/heavy_20260708_140300/COMPARISON_REPORT.md)
+
+Raw traces: [`results.tar.gz`](../benchmark/results/azure_heavy_20260708_140300/mvp_scenarios/heavy_20260708_140300/results.tar.gz) · [`run_meta.json`](../benchmark/results/azure_heavy_20260708_140300/mvp_scenarios/heavy_20260708_140300/run_meta.json)
 
 Invalid quota run `heavy_20260708_124337` — do not cite.
 

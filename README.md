@@ -3,7 +3,7 @@
 [![CI](https://github.com/insightitsGit/ChorusGraph/actions/workflows/ci.yml/badge.svg)](https://github.com/insightitsGit/ChorusGraph/actions/workflows/ci.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.0.2-informational)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.0.3-informational)](CHANGELOG.md)
 
 **Native agent runtime with semantic cache, swappable retrieval (PrismRAG), auditable memory, and enterprise hardening — one pip install, five plug-in ports.**
 
@@ -186,9 +186,19 @@ ChorusGraph is the **integration runtime** for the Prism family — PrismLang, P
 
 ## Benchmarks
 
-Fair A/B vs competent LangGraph baselines — same model, tools, prompts, workload. **Canonical regression run:** **`mid_20260708_111539`** (100 tasks/scenario). **Scale tier:** **`heavy_20260708_140300`** (300 tasks). Smoke: `light_20260708_101409` (40 tasks). See [`benchmark/FAIRNESS_H9.md`](benchmark/FAIRNESS_H9.md) and [`benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md`](benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md).
+Fair A/B vs competent LangGraph baselines — same model, tools, prompts, workload.
 
-July 2026 methodology fixes (benchmark-only — **no library release**): FL2 researcher prompt uses `annual_rate_pct` (matches tool schema); comparison script counts agent/tool errors in LangGraph success denominators. Supersedes pre-fix runs that inflated FL2 vs FC2.
+| Tier | Run ID | Tasks/scenario | Role |
+|------|--------|----------------|------|
+| **Mid (canonical)** | **`mid_20260708_111539`** | 100 | Primary regression + outreach proof |
+| **Heavy (scale)** | **`heavy_20260708_140300`** | 300 | Scale validation + whitepaper / diligence |
+| Smoke | `light_20260708_101409` | 40 | CI / quick regression |
+
+**Start here:** [`docs/BENCHMARK_RESULTS.md`](docs/BENCHMARK_RESULTS.md) · archive index: [`benchmark/results/mvp_scenarios/README.md`](benchmark/results/mvp_scenarios/README.md) · machine pointer: [`benchmark/results/mvp_scenarios/latest.json`](benchmark/results/mvp_scenarios/latest.json)
+
+Methodology: [`benchmark/FAIRNESS_H9.md`](benchmark/FAIRNESS_H9.md) · consolidated tables: [`benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md`](benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md)
+
+July 2026 methodology fixes (benchmark-only — **no library release**): FL2 researcher prompt uses `annual_rate_pct` (matches tool schema); comparison script counts agent/tool errors in LangGraph success denominators. Supersedes pre-fix runs that inflated FL2 vs FC2. **Do not cite** invalid quota run `heavy_20260708_124337`.
 
 ### Task success (LangGraph → ChorusGraph) — mid tier, n=100
 
@@ -199,6 +209,15 @@ July 2026 methodology fixes (benchmark-only — **no library release**): FL2 res
 | Healthcare single (HL1→HC1) | 74.0% | **79.0%** | +5.0 pp |
 | Healthcare multi (HL2→HC2) | 59.0% | **85.0%** | **+26 pp** |
 
+### Task success — heavy tier, n=300
+
+| Scenario | LangGraph | ChorusGraph | Delta |
+|----------|-----------|-------------|-------|
+| Finance single (FL1→FC1) | 90.0% | **96.7%** | +6.7 pp |
+| Finance multi (FL2→FC2) | 89.0% | **93.0%** | +4.0 pp |
+| Healthcare single (HL1→HC1) | 73.7% | **84.0%** | +10.3 pp |
+| Healthcare multi (HL2→HC2) | 62.3% | **77.3%** | **+15 pp** |
+
 ### LLM calls and latency (mid tier, mean per task)
 
 | Scenario | LLM calls (L → C) | Mean latency ms (L → C) | Cache hit (C) |
@@ -208,9 +227,28 @@ July 2026 methodology fixes (benchmark-only — **no library release**): FL2 res
 | HL1 / HC1 | 3.00 → **1.56** (−48%) | 7036 → **3990** (−43%) | 60% |
 | HL2 / HC2 | 3.82 → **3.15** (−18%) | 10296 → 10753 (tie) | 51% |
 
-Healthcare multi saves fewer LLM calls by design (facts-only cache, judgment hops re-run). Lead with accuracy (+26 pp), not cost.
+### LLM calls and latency (heavy tier, mean per task)
 
-Full report: [`benchmark/results/azure_mid_20260708_111539/.../COMPARISON_REPORT.md`](benchmark/results/azure_mid_20260708_111539/mvp_scenarios/mid_20260708_111539/COMPARISON_REPORT.md) · heavy scale: [`azure_heavy_20260708_140300`](benchmark/results/azure_heavy_20260708_140300/mvp_scenarios/heavy_20260708_140300/COMPARISON_REPORT.md) · latency/LLM charts: [`BENCHMARK_LATENCY_LLM_SUMMARY.md`](benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md)
+| Scenario | LLM calls (L → C) | Mean latency ms (L → C) | Cache hit (C) |
+|----------|-------------------|-------------------------|---------------|
+| FL1 / FC1 | 3.33 → **0.80** (−76%) | 4972 → **1318** (−73%) | 49.7% |
+| FL2 / FC2 | 2.04 → **0.75** (−63%) | 3081 → **1335** (−57%) | 34.7% |
+| HL1 / HC1 | 2.94 → **1.33** (−55%) | 7105 → **3812** (−46%) | 72.7% |
+| HL2 / HC2 | 3.85 → **2.67** (−31%) | 10354 → **9537** (−8%; p95 tie) | 79.0% |
+
+Healthcare multi saves fewer LLM calls by design (facts-only cache, judgment hops re-run). Lead with accuracy (+26 pp mid / +15 pp heavy), not cost; disclose HC2 p95 wall-clock tie.
+
+### Full reports and raw data (reproducible artifacts)
+
+Each run ships a human report, run metadata, and a tarball of per-task JSONL traces.
+
+| Tier | Comparison report | Raw results (`results.tar.gz`) | Run metadata |
+|------|-------------------|-------------------------------|--------------|
+| Light (40) | [`light_20260708_101409/COMPARISON_REPORT.md`](benchmark/results/azure_light_20260708_101409/mvp_scenarios/light_20260708_101409/COMPARISON_REPORT.md) | [`results.tar.gz`](benchmark/results/azure_light_20260708_101409/mvp_scenarios/light_20260708_101409/results.tar.gz) | [`run_meta.json`](benchmark/results/azure_light_20260708_101409/mvp_scenarios/light_20260708_101409/run_meta.json) |
+| **Mid (100)** | [`mid_20260708_111539/COMPARISON_REPORT.md`](benchmark/results/azure_mid_20260708_111539/mvp_scenarios/mid_20260708_111539/COMPARISON_REPORT.md) | [`results.tar.gz`](benchmark/results/azure_mid_20260708_111539/mvp_scenarios/mid_20260708_111539/results.tar.gz) | [`run_meta.json`](benchmark/results/azure_mid_20260708_111539/mvp_scenarios/mid_20260708_111539/run_meta.json) |
+| **Heavy (300)** | [`heavy_20260708_140300/COMPARISON_REPORT.md`](benchmark/results/azure_heavy_20260708_140300/mvp_scenarios/heavy_20260708_140300/COMPARISON_REPORT.md) | [`results.tar.gz`](benchmark/results/azure_heavy_20260708_140300/mvp_scenarios/heavy_20260708_140300/results.tar.gz) | [`run_meta.json`](benchmark/results/azure_heavy_20260708_140300/mvp_scenarios/heavy_20260708_140300/run_meta.json) |
+
+Extract raw traces: `tar -xzf results.tar.gz` — contains per-scenario `*.jsonl` and `comparison.json`.
 
 ```bash
 pip install -e ".[benchmark,gemini]"
@@ -247,6 +285,7 @@ Readiness scorecard: [`docs/ENTERPRISE_READINESS.md`](docs/ENTERPRISE_READINESS.
 | [`docs/COMPOSE.md`](docs/COMPOSE.md) | `ChorusStack` composition patterns |
 | [`docs/WHITEPAPER.md`](docs/WHITEPAPER.md) | Product thesis + technical depth |
 | [`docs/BENCHMARK.md`](docs/BENCHMARK.md) | Fairness methodology |
+| [`docs/BENCHMARK_RESULTS.md`](docs/BENCHMARK_RESULTS.md) | Published A/B results (mid + heavy) + artifact links |
 | [`docs/CACHE_PROFILES.md`](docs/CACHE_PROFILES.md) | Safe replay policies by domain |
 | [`docs/STABILITY.md`](docs/STABILITY.md) | 1.0 API stability guarantee |
 | [`docs/TERMINOLOGY.md`](docs/TERMINOLOGY.md) | ChorusGraph vs LangGraph naming policy |

@@ -22,7 +22,18 @@ Canonical store for the **8-scenario matrix** (FL1/FC1/FL2/FC2/HL1/HC1/HL2/HC2) 
 
 **Smoke run (40 tasks):** `light_20260708_101409` — [`../azure_light_20260708_101409/`](../azure_light_20260708_101409/)
 
-**Heavy run (300 tasks):** `heavy_20260708_140300` — [`../azure_heavy_20260708_140300/`](../azure_heavy_20260708_140300/)
+**Heavy run (300 tasks):** `heavy_20260708_140300` — [`../azure_heavy_20260708_140300/`](../azure_heavy_20260708_140300/) · [report](../azure_heavy_20260708_140300/mvp_scenarios/heavy_20260708_140300/COMPARISON_REPORT.md) · [raw `results.tar.gz`](../azure_heavy_20260708_140300/mvp_scenarios/heavy_20260708_140300/results.tar.gz) · [`run_meta.json`](../azure_heavy_20260708_140300/mvp_scenarios/heavy_20260708_140300/run_meta.json)
+
+### Headline results (run `heavy_20260708_140300`, n=300)
+
+| Group | Task success (L → C) | Mean latency (L → C) | LLM calls (L → C) | Cache hit (C) |
+|-------|----------------------|------------------------|-------------------|---------------|
+| Finance single (FL1 vs FC1) | 90.0% → **96.7%** | 4972 → 1318 ms | 3.33 → 0.80 | 49.7% |
+| Finance multi (FL2 vs FC2) | 89.0% → **93.0%** | 3081 → 1335 ms | 2.04 → 0.75 | 34.7% |
+| Healthcare single (HL1 vs HC1) | 73.7% → **84.0%** | 7105 → 3812 ms | 2.94 → 1.33 | 72.7% |
+| Healthcare multi (HL2 vs HC2) | 62.3% → **77.3%** | 10354 → 9537 ms | 3.85 → 2.67 | 79.0% |
+
+HC2 at scale: **+15 pp** success, ~31% fewer LLM calls; p95 wall-clock ~tie — disclose.
 
 **Blob backup:** `stinsightitsprod01/benchmark-results/mvp_scenarios/mid_20260708_111539/`
 
