@@ -191,12 +191,19 @@ def test_tokens_in_inconclusive_when_cis_overlap():
         method="bootstrap_2000",
     )
     assert chorus.point > lang.point
-    assert _winner(lang, chorus, lower_is_better=True, metric="tokens_in_per_task") == "inconclusive"
+    assert (
+        _winner(lang, chorus, lower_is_better=True, metric="tokens_in_per_task") == "inconclusive"
+    )
 
     # Non-overlapping CIs still produce a clear winner
     clear_lang = MetricCI(point=500.0, lower95=480.0, upper95=520.0, n=100, method="bootstrap_2000")
-    clear_chorus = MetricCI(point=900.0, lower95=880.0, upper95=920.0, n=100, method="bootstrap_2000")
-    assert _winner(clear_lang, clear_chorus, lower_is_better=True, metric="tokens_in_per_task") == "langgraph"
+    clear_chorus = MetricCI(
+        point=900.0, lower95=880.0, upper95=920.0, n=100, method="bootstrap_2000"
+    )
+    assert (
+        _winner(clear_lang, clear_chorus, lower_is_better=True, metric="tokens_in_per_task")
+        == "langgraph"
+    )
 
 
 def test_abstain_rate_lower_is_better():
