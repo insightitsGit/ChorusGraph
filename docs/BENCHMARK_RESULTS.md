@@ -18,7 +18,22 @@
 
 **Benchmark-only fixes (July 2026, commit `eeba2ad`):** FL2 prompt `annual_rate_pct`; fair LangGraph success denominator. **No library version bump required.**
 
-Smoke (40 tasks): `light_20260708_101409`. Heavy (300 tasks): `heavy_20260708_124337` (scale tier).
+Smoke (40 tasks): `light_20260708_101409`. Scale (300 tasks): `heavy_20260708_140300`.
+
+## MVP matrix — Azure scale tier (heavy)
+
+**Scale run:** `heavy_20260708_140300` · 300 tasks/scenario · seed 42 · Azure ACI (16 GB)
+
+| Pair | LangGraph success | ChorusGraph success | LLM calls (L → C) | Mean latency ms (L → C) |
+|------|-------------------|---------------------|--------------------|-------------------------|
+| FL1 / FC1 | 90.0% | **96.7%** | 3.33 → **0.80** | 4972 → **1318** |
+| FL2 / FC2 | 89.0% | **93.0%** | 2.04 → **0.75** | 3081 → **1335** |
+| HL1 / HC1 | 73.7% | **84.0%** | 2.94 → **1.33** | 7105 → **3812** |
+| HL2 / HC2 | 62.3% | **77.3%** | 3.85 → **2.67** | 10354 → **9537** |
+
+Full report: [`benchmark/results/azure_heavy_20260708_140300/mvp_scenarios/heavy_20260708_140300/COMPARISON_REPORT.md`](../benchmark/results/azure_heavy_20260708_140300/mvp_scenarios/heavy_20260708_140300/COMPARISON_REPORT.md)
+
+Invalid quota run `heavy_20260708_124337` — do not cite.
 
 ---
 

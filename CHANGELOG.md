@@ -19,6 +19,8 @@ All notable changes to ChorusGraph are documented here (semver).
 
 ### Added
 - **Benchmark results archive:** `azure_light_20260708_101409`, `azure_mid_20260708_111539`, pre-fix baselines, consolidated latency/LLM summary.
+- **Heavy scale run:** `heavy_20260708_140300` (300 tasks/scenario, all pairs complete).
+- **`scripts/swap_gemini_key.py`:** rotate `GEMINI_API_KEY` when quota is exhausted.
 
 ## [1.0.3] — 2026-07-06
 

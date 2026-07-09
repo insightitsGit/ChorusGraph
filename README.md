@@ -186,7 +186,7 @@ ChorusGraph is the **integration runtime** for the Prism family — PrismLang, P
 
 ## Benchmarks
 
-Fair A/B vs competent LangGraph baselines — same model, tools, prompts, workload. **Canonical regression run:** **`mid_20260708_111539`** (100 tasks/scenario, Azure ACI). Smoke: `light_20260708_101409` (40 tasks). See [`benchmark/FAIRNESS_H9.md`](benchmark/FAIRNESS_H9.md) and [`benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md`](benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md).
+Fair A/B vs competent LangGraph baselines — same model, tools, prompts, workload. **Canonical regression run:** **`mid_20260708_111539`** (100 tasks/scenario). **Scale tier:** **`heavy_20260708_140300`** (300 tasks). Smoke: `light_20260708_101409` (40 tasks). See [`benchmark/FAIRNESS_H9.md`](benchmark/FAIRNESS_H9.md) and [`benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md`](benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md).
 
 July 2026 methodology fixes (benchmark-only — **no library release**): FL2 researcher prompt uses `annual_rate_pct` (matches tool schema); comparison script counts agent/tool errors in LangGraph success denominators. Supersedes pre-fix runs that inflated FL2 vs FC2.
 
@@ -210,7 +210,7 @@ July 2026 methodology fixes (benchmark-only — **no library release**): FL2 res
 
 Healthcare multi saves fewer LLM calls by design (facts-only cache, judgment hops re-run). Lead with accuracy (+26 pp), not cost.
 
-Full report: [`benchmark/results/azure_mid_20260708_111539/.../COMPARISON_REPORT.md`](benchmark/results/azure_mid_20260708_111539/mvp_scenarios/mid_20260708_111539/COMPARISON_REPORT.md) · latency/LLM tables: [`benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md`](benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md)
+Full report: [`benchmark/results/azure_mid_20260708_111539/.../COMPARISON_REPORT.md`](benchmark/results/azure_mid_20260708_111539/mvp_scenarios/mid_20260708_111539/COMPARISON_REPORT.md) · heavy scale: [`azure_heavy_20260708_140300`](benchmark/results/azure_heavy_20260708_140300/mvp_scenarios/heavy_20260708_140300/COMPARISON_REPORT.md) · latency/LLM charts: [`BENCHMARK_LATENCY_LLM_SUMMARY.md`](benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md)
 
 ```bash
 pip install -e ".[benchmark,gemini]"

@@ -22,7 +22,7 @@ Canonical store for the **8-scenario matrix** (FL1/FC1/FL2/FC2/HL1/HC1/HL2/HC2) 
 
 **Smoke run (40 tasks):** `light_20260708_101409` — [`../azure_light_20260708_101409/`](../azure_light_20260708_101409/)
 
-**Heavy run (300 tasks):** `heavy_20260708_124337` — in progress / see [`../azure_heavy_*`](../)
+**Heavy run (300 tasks):** `heavy_20260708_140300` — [`../azure_heavy_20260708_140300/`](../azure_heavy_20260708_140300/)
 
 **Blob backup:** `stinsightitsprod01/benchmark-results/mvp_scenarios/mid_20260708_111539/`
 
@@ -51,6 +51,7 @@ Do **not** quote pre-fix `mid_20260707_220458` FL2 vs FC2 success (inflated FL2,
 | Run ID | Tasks | Notes | Path |
 |--------|-------|-------|------|
 | **mid_20260708_111539** | 100 | **Canonical** — post-fix regression | [`../azure_mid_20260708_111539/`](../azure_mid_20260708_111539/) |
+| **heavy_20260708_140300** | 300 | **Scale** — post-fix, 300 paired tasks/scenario | [`../azure_heavy_20260708_140300/`](../azure_heavy_20260708_140300/) |
 | light_20260708_101409 | 40 | Smoke / CI | [`../azure_light_20260708_101409/`](../azure_light_20260708_101409/) |
 | mid_20260707_220458 | 100 | Pre-fix (invalid FL2/FC2 comparison) | [`../azure_mid_20260707_220458/`](../azure_mid_20260707_220458/) |
 | heavy_20260707_235024 | 300 | Pre-fix heavy baseline | [`../azure_heavy_20260707_235024/`](../azure_heavy_20260707_235024/) |
