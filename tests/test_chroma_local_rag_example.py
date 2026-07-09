@@ -9,13 +9,14 @@ import pytest
 chromadb = pytest.importorskip("chromadb")
 
 from chorusgraph.compose import ChorusStack
-
 from chorusgraph.examples.chroma_local_rag.graph import (
     build_retrieval_backend,
     load_corpus,
 )
 
-_SAMPLE = Path(__file__).resolve().parents[1] / "chorusgraph/examples/chroma_local_rag/sample_docs.txt"
+_SAMPLE = (
+    Path(__file__).resolve().parents[1] / "chorusgraph/examples/chroma_local_rag/sample_docs.txt"
+)
 
 
 def test_retrieve_handler_returns_chunks():
