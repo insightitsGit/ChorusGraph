@@ -148,14 +148,25 @@ def _ci_dict(ci: MetricCI) -> Dict[str, Any]:
     }
 
 
+def _identically_zero(ci: MetricCI) -> bool:
+    """True when every sampled task had value 0 (not merely n=0 / no data)."""
+    return ci.n > 0 and ci.point == 0.0 and ci.upper95 == 0.0
+
+
 def _winner(
     lang_ci: MetricCI,
     chorus_ci: MetricCI,
     *,
     lower_is_better: bool,
+    metric: str = "",
 ) -> Winner:
     if lang_ci.n == 0 or chorus_ci.n == 0:
         return "inconclusive"
+    if metric == "embed_count_per_task":
+        lang_zero = _identically_zero(lang_ci)
+        chorus_zero = _identically_zero(chorus_ci)
+        if lang_zero != chorus_zero:
+            return "inconclusive"
     if lower_is_better:
         if chorus_ci.upper95 < lang_ci.lower95:
             return "chorusgraph"
@@ -264,7 +275,7 @@ def _compare_pair_core(
             continue
         if name == "cache_hit_rate" and c_ci.n == 0 and l_ci.point == 0:
             continue
-        winner = _winner(l_ci, c_ci, lower_is_better=lower_is_better)
+        winner = _winner(l_ci, c_ci, lower_is_better=lower_is_better, metric=name)
         if winner == "chorusgraph":
             chorus_wins += 1
         elif winner == "langgraph":

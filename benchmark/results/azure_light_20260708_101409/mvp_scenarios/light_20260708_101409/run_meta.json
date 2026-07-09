@@ -2612,7 +2612,7 @@
             },
             "delta_chorus_minus_lang": null,
             "lower_is_better": true,
-            "winner": "langgraph",
+            "winner": "inconclusive",
             "unit": "embeds"
           },
           {
@@ -2639,7 +2639,7 @@
         ],
         "scorecard": {
           "chorusgraph_wins": 10,
-          "langgraph_wins": 1,
+          "langgraph_wins": 0,
           "overall_winner": "chorusgraph"
         },
         "by_variant": {
@@ -2969,7 +2969,7 @@
                 },
                 "delta_chorus_minus_lang": null,
                 "lower_is_better": true,
-                "winner": "langgraph",
+                "winner": "inconclusive",
                 "unit": "embeds"
               },
               {
@@ -2996,7 +2996,7 @@
             ],
             "scorecard": {
               "chorusgraph_wins": 9,
-              "langgraph_wins": 1,
+              "langgraph_wins": 0,
               "overall_winner": "chorusgraph"
             }
           },
@@ -3326,7 +3326,7 @@
                 },
                 "delta_chorus_minus_lang": null,
                 "lower_is_better": true,
-                "winner": "langgraph",
+                "winner": "inconclusive",
                 "unit": "embeds"
               },
               {
@@ -3353,7 +3353,7 @@
             ],
             "scorecard": {
               "chorusgraph_wins": 6,
-              "langgraph_wins": 2,
+              "langgraph_wins": 1,
               "overall_winner": "chorusgraph"
             }
           },
@@ -3683,7 +3683,7 @@
                 },
                 "delta_chorus_minus_lang": null,
                 "lower_is_better": true,
-                "winner": "langgraph",
+                "winner": "inconclusive",
                 "unit": "embeds"
               },
               {
@@ -3710,7 +3710,7 @@
             ],
             "scorecard": {
               "chorusgraph_wins": 8,
-              "langgraph_wins": 1,
+              "langgraph_wins": 0,
               "overall_winner": "chorusgraph"
             }
           },
@@ -4040,7 +4040,7 @@
                 },
                 "delta_chorus_minus_lang": null,
                 "lower_is_better": true,
-                "winner": "langgraph",
+                "winner": "inconclusive",
                 "unit": "embeds"
               },
               {
@@ -4067,7 +4067,7 @@
             ],
             "scorecard": {
               "chorusgraph_wins": 7,
-              "langgraph_wins": 1,
+              "langgraph_wins": 0,
               "overall_winner": "chorusgraph"
             }
           },
@@ -4397,7 +4397,7 @@
                 },
                 "delta_chorus_minus_lang": null,
                 "lower_is_better": true,
-                "winner": "langgraph",
+                "winner": "inconclusive",
                 "unit": "embeds"
               },
               {
@@ -4424,7 +4424,7 @@
             ],
             "scorecard": {
               "chorusgraph_wins": 10,
-              "langgraph_wins": 1,
+              "langgraph_wins": 0,
               "overall_winner": "chorusgraph"
             }
           }
@@ -6186,7 +6186,7 @@
             },
             "delta_chorus_minus_lang": null,
             "lower_is_better": true,
-            "winner": "langgraph",
+            "winner": "inconclusive",
             "unit": "embeds"
           },
           {
@@ -6213,8 +6213,8 @@
         ],
         "scorecard": {
           "chorusgraph_wins": 6,
-          "langgraph_wins": 6,
-          "overall_winner": "tie"
+          "langgraph_wins": 5,
+          "overall_winner": "chorusgraph"
         },
         "by_variant": {
           "exact_repeat": {
@@ -6563,7 +6563,7 @@
                 },
                 "delta_chorus_minus_lang": null,
                 "lower_is_better": true,
-                "winner": "langgraph",
+                "winner": "inconclusive",
                 "unit": "embeds"
               },
               {
@@ -6590,7 +6590,7 @@
             ],
             "scorecard": {
               "chorusgraph_wins": 10,
-              "langgraph_wins": 2,
+              "langgraph_wins": 1,
               "overall_winner": "chorusgraph"
             }
           },

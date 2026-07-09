@@ -41,7 +41,7 @@ Paired tasks: **40** (same task/case IDs)
 
 ## Finance Multi (FL2 vs FC2)
 
-**Overall:** chorusgraph (Chorus wins 10 metrics, LangGraph wins 1 metrics)
+**Overall:** chorusgraph (Chorus wins 10 metrics, LangGraph wins 0 metrics)
 
 ### Key metrics
 
@@ -69,7 +69,7 @@ Paired tasks: **40** (same task/case IDs)
 | Tokens out / task | 124.50 [116.20, 134.80] | 52.02 [37.80, 67.20] | — | **chorusgraph** |
 | Tool calls / task | 0.9250 [0.8244, 1.0250] | 0.5250 [0.3500, 0.7000] | — | **chorusgraph** |
 | Error rate | 0.0% [0.0%, 8.8%] | 0.0% [0.0%, 8.8%] | — | **tie** |
-| Embeds / task | 0.0000 [0.0000, 0.0000] | 8.40 [7.80, 9.00] | — | **langgraph** |
+| Embeds / task | 0.0000 [0.0000, 0.0000] | 8.40 [7.80, 9.00] | — | **inconclusive** |
 | Abstain rate | 0.0% [0.0%, 8.8%] | 0.0% [0.0%, 8.8%] | — | **tie** |
 
 Paired tasks: **40** (same task/case IDs)
@@ -111,7 +111,7 @@ Paired tasks: **40** (same task/case IDs)
 
 ## Healthcare Multi (HL2 vs HC2)
 
-**Overall:** tie (Chorus wins 6 metrics, LangGraph wins 6 metrics)
+**Overall:** chorusgraph (Chorus wins 6 metrics, LangGraph wins 5 metrics)
 
 ### Key metrics
 
@@ -139,7 +139,7 @@ Paired tasks: **40** (same task/case IDs)
 | Tokens out / task | 295.27 [251.67, 340.00] | 265.07 [221.15, 310.13] | — | **chorusgraph** |
 | Tool calls / task | 0.8750 [0.6500, 1.1000] | 0.7750 [0.5500, 1.0250] | — | **chorusgraph** |
 | Error rate | 0.0% [0.0%, 8.8%] | 0.0% [0.0%, 8.8%] | — | **tie** |
-| Embeds / task | 0.0000 [0.0000, 0.0000] | 9.03 [8.03, 10.03] | — | **langgraph** |
+| Embeds / task | 0.0000 [0.0000, 0.0000] | 9.03 [8.03, 10.03] | — | **inconclusive** |
 | Abstain rate | 12.5% [0.0%, 26.1%] | 2.5% [0.0%, 12.9%] | — | **chorusgraph** |
 
 Paired tasks: **40** (same task/case IDs)

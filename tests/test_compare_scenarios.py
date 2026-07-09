@@ -130,6 +130,48 @@ def test_all_four_groups_when_data_present():
     assert set(cmp["groups"].keys()) == {"finance_single", "finance_multi"}
 
 
+def test_embed_count_inconclusive_when_only_one_side_has_embed_path():
+    """LangGraph baseline has no embed path — 0 vs N embeds is not a competitive win."""
+    results = {
+        "FL2": [
+            {
+                "case_id": f"t{i}",
+                "container": "FL2",
+                "variant": "novel",
+                "latency_ms": 1000,
+                "llm_calls": 2,
+                "tokens_in": 100,
+                "tokens_out": 50,
+                "cost_usd": 0.001,
+                "task_success": True,
+                "embed_count": 0,
+            }
+            for i in range(20)
+        ],
+        "FC2": [
+            {
+                "case_id": f"t{i}",
+                "container": "FC2",
+                "variant": "novel",
+                "latency_ms": 800,
+                "llm_calls": 1,
+                "tokens_in": 100,
+                "tokens_out": 50,
+                "cost_usd": 0.0008,
+                "task_success": True,
+                "embed_count": 8,
+            }
+            for i in range(20)
+        ],
+    }
+    group = compare_all_groups(results)["groups"]["finance_multi"]
+    embeds = next(m for m in group["metrics"] if m["metric"] == "embed_count_per_task")
+    assert embeds["winner"] == "inconclusive"
+    assert embeds["langgraph"]["point"] == 0.0
+    assert embeds["chorusgraph"]["point"] == 8.0
+    assert group["scorecard"]["langgraph_wins"] == 0
+
+
 def test_abstain_rate_lower_is_better():
     """Lower abstain is better — ChorusGraph should win when it abstains less."""
     results = {
