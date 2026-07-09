@@ -136,6 +136,53 @@ Required chunk keys: `id`, `topic`, `text`, `source`, `category_slug`, `score`.
 
 ---
 
+## Companion: PrismGuard
+
+[PrismGuard](https://pypi.org/project/prismguard/) ([**0.1.4**](https://pypi.org/project/prismguard/0.1.4/)) is an **optional companion package** for prompt-injection firewalling. It is **not** one of the five `ChorusStack` ports — install it separately and wire a guard node in your graph.
+
+| | ChorusGraph ports | PrismGuard |
+|--|-------------------|------------|
+| Install | `pip install chorusgraph` (+ extras) | `pip install "prismguard[prism,guard-model]==0.1.4"` |
+| Wiring | `with_cache` / `with_retrieval` / … | Graph node via `make_guard_handler` |
+| Role | Orchestration, cache, RAG, memory | Pre-LLM input check (+ optional output scan) |
+
+```bash
+pip install chorusgraph "prismguard[prism,guard-model]==0.1.4"
+prismguard-model download   # ~705 MB ONNX from GitHub Release v0.1.2
+```
+
+```python
+from chorusgraph import Graph, START, END, ChorusStack
+from chorusgraph.core.node import dict_node_adapter
+from prismguard.integrations.chorusgraph import (
+    create_checker_from_env,
+    make_guard_handler,
+    route_after_guard,
+)
+
+checker = create_checker_from_env()
+guard_fn = make_guard_handler(checker)
+
+g = Graph(tenant_id="acme", graph_id="guarded")
+g.add_node("guard", dict_node_adapter(guard_fn, hop="guard"))
+# g.add_conditional_edges("guard", route_after_guard, {"end": END, "continue": "retrieve"})
+# Place guard before cache-gated / retrieve hops
+```
+
+**Order:** guard → retrieve / LLM. Blocked prompts should not seed the semantic cache.
+
+After the writer / LLM hop, call PrismGuard’s `scan_output(answer)` if you need response exfiltration checks.
+
+| Resource | URL |
+|----------|-----|
+| PyPI (latest) | https://pypi.org/project/prismguard/ |
+| PyPI 0.1.4 | https://pypi.org/project/prismguard/0.1.4/ |
+| GitHub | https://github.com/insightitsGit/PrismGuard |
+| Integration guide | https://github.com/insightitsGit/PrismGuard/blob/main/docs/integration-guide.md |
+| ONNX model release | https://github.com/insightitsGit/PrismGuard/releases/tag/v0.1.2 |
+
+---
+
 ## Compose API exports
 
 ```python
@@ -154,7 +201,7 @@ from chorusgraph.compose import (
 
 ## Related docs
 
-- [`INSTALL.md`](INSTALL.md) — pip extras, step-by-step PrismRAG guide
+- [`INSTALL.md`](INSTALL.md) — pip extras, step-by-step PrismRAG guide, PrismGuard companion install
 - [`COMPOSE.md`](COMPOSE.md) — fixed vs swappable layers
 - [`CACHE_PROFILES.md`](CACHE_PROFILES.md) — retrieve hop cache archetypes
 - [`handoffs/handoffPrismRagPlugin.md`](../handoffs/handoffPrismRagPlugin.md) — design handoff

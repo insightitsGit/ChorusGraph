@@ -182,6 +182,38 @@ Full plug-in guide: [`docs/PLUGINS.md`](docs/PLUGINS.md)
 
 ChorusGraph is the **integration runtime** for the Prism family — PrismLang, PrismCache, PrismCortex, PrismRAG ship as defaults or opt-in extras, not separate science projects.
 
+### Companion: PrismGuard (prompt-injection firewall)
+
+[PrismGuard](https://pypi.org/project/prismguard/) ([0.1.4](https://pypi.org/project/prismguard/0.1.4/)) is a **separate package** — not a `ChorusStack` port. Install it alongside ChorusGraph when you want an auditable prompt-injection check before retrieve / LLM hops:
+
+```bash
+pip install chorusgraph "prismguard[prism,guard-model]==0.1.4"
+prismguard-model download   # ~705 MB ONNX — not in the wheel; from GitHub Release v0.1.2
+```
+
+```python
+from prismguard.integrations.chorusgraph import (
+    create_checker_from_env,
+    make_guard_handler,
+    route_after_guard,
+)
+
+checker = create_checker_from_env()  # once per process
+guard = make_guard_handler(checker)
+# START → guard → [blocked → END | retrieve → …]
+# Wire with Graph.add_node("guard", dict_node_adapter(guard, hop="guard"))
+# Place guard before cache-gated hops so blocked prompts never seed cache
+```
+
+| Link | URL |
+|------|-----|
+| PyPI | https://pypi.org/project/prismguard/ · [0.1.4](https://pypi.org/project/prismguard/0.1.4/) |
+| GitHub | https://github.com/insightitsGit/PrismGuard |
+| Integration guide | https://github.com/insightitsGit/PrismGuard/blob/main/docs/integration-guide.md |
+| ONNX model release | https://github.com/insightitsGit/PrismGuard/releases/tag/v0.1.2 |
+
+See also [`docs/PLUGINS.md`](docs/PLUGINS.md#companion-prismguard).
+
 ---
 
 ## Benchmarks
@@ -365,6 +397,6 @@ Apache-2.0 — see [LICENSE](LICENSE).
 | [Code of conduct](CODE_OF_CONDUCT.md) | Contributor Covenant |
 | [Security policy](SECURITY.md) | Private vulnerability reporting |
 
-Built by [Insight IT Solutions](https://github.com/insightitsGit). Dogfooded in production agent hubs. Part of the Prism family (PrismLang, PrismCache, PrismCortex, PrismRAG).
+Built by [Insight IT Solutions](https://github.com/insightitsGit). Dogfooded in production agent hubs. Part of the Prism family (PrismLang, PrismCache, PrismCortex, PrismRAG, [PrismGuard 0.1.4](https://pypi.org/project/prismguard/0.1.4/)).
 
 **Questions / enterprise:** open a [GitHub issue](https://github.com/insightitsGit/ChorusGraph/issues) or see [`docs/WHITEPAPER.md`](docs/WHITEPAPER.md) for commercial framing.

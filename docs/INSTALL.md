@@ -18,6 +18,10 @@ pip install "chorusgraph[dev,gemini,retrieval]"
 
 # Enterprise deploy extras
 pip install "chorusgraph[postgres,cortex,gemini,retrieval]"
+
+# Optional companion — prompt-injection firewall (separate package, not a ChorusStack port)
+pip install "prismguard[prism,guard-model]==0.1.4"
+prismguard-model download
 ```
 
 Verify:
@@ -48,6 +52,23 @@ python -m pytest --version   # if dev extra installed
 Lockfile for reproducible installs: `requirements-lock.txt` (see [`RELEASE.md`](RELEASE.md)).
 
 **LangGraph is not a dependency of ChorusGraph's own code.** `pip install chorusgraph` gives you the native engine only — the scheduler and all four ports never import LangGraph. (`prismlang`, a core dependency, uses LangGraph internally for its own checkpointing utilities, so it will still show up in a dependency-tree scan — that's `prismlang`'s implementation detail, not something ChorusGraph's engine calls.) Install `chorusgraph[benchmark]` when running FL*/HL* comparison scenarios or compat conformance tests.
+
+### Companion package: PrismGuard
+
+[PrismGuard](https://pypi.org/project/prismguard/) ([0.1.4](https://pypi.org/project/prismguard/0.1.4/)) is **not** a `chorusgraph[...]` extra. Install it next to ChorusGraph when you want a prompt-injection guard node:
+
+```bash
+pip install chorusgraph "prismguard[prism,guard-model]==0.1.4"
+prismguard-model download   # ONNX weights — https://github.com/insightitsGit/PrismGuard/releases/tag/v0.1.2
+```
+
+| Resource | URL |
+|----------|-----|
+| PyPI | https://pypi.org/project/prismguard/ · [0.1.4](https://pypi.org/project/prismguard/0.1.4/) |
+| GitHub | https://github.com/insightitsGit/PrismGuard |
+| Integration guide | https://github.com/insightitsGit/PrismGuard/blob/main/docs/integration-guide.md |
+
+Wire with `prismguard.integrations.chorusgraph.make_guard_handler` — see [`PLUGINS.md`](PLUGINS.md#companion-prismguard).
 
 ---
 
@@ -324,7 +345,7 @@ See `benchmark/healthcare/retrieval.py` for mapping + corpus wiring.
 
 ## Next reads
 
-- [`PLUGINS.md`](PLUGINS.md) — all four ports
+- [`PLUGINS.md`](PLUGINS.md) — stack ports + PrismGuard companion
 - [`COMPOSE.md`](COMPOSE.md) — `ChorusStack` architecture
 - [`DEVELOPER_GUIDE.md`](DEVELOPER_GUIDE.md) — graph patterns
 - [`WHITEPAPER.md`](WHITEPAPER.md) — product thesis + benchmark proof
