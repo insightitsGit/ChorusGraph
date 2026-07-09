@@ -7,7 +7,7 @@
   "comparison_report": "benchmark/results/azure_mid_20260708_111539/mvp_scenarios/mid_20260708_111539/COMPARISON_REPORT.md",
   "latency_llm_summary": "benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md",
   "smoke_run_id": "light_20260708_101409",
-  "heavy_run_id": "heavy_20260708_124337",
+  "heavy_run_id": "heavy_20260708_140300",
   "supersedes": "20260704_212111",
   "benchmark_fix_commit": "eeba2ad",
   "library_change_required": false

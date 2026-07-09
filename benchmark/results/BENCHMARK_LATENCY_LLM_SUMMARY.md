@@ -51,16 +51,36 @@ All values are **mean per task** with 95% CI in brackets. Latency in **milliseco
 
 ---
 
+---
+
+## Heavy tier — `heavy_20260708_140300` (300 paired tasks/scenario, scale)
+
+| Scenario | Engine | Success | LLM calls/task | Mean latency | p50 latency | p95 latency | Cache hit |
+|----------|--------|---------|----------------|--------------|-------------|-------------|-----------|
+| FL1 vs FC1 | LangGraph | 90.0% | 3.33 [3.20, 3.48] | 4972 [4713, 5266] | 4009 [3934, 4128] | 9784 [9126, 11253] | 0.0% |
+| FL1 vs FC1 | ChorusGraph | **96.7%** | **0.80 [0.69, 0.92]** | **1318 [1134, 1525]** | **49 [36, 99]** | **5141 [4076, 6199]** | **49.7%** |
+| FL2 vs FC2 | LangGraph | 89.0% | 2.04 [2.02, 2.07] | 3081 [2883, 3294] | 2530 [2477, 2584] | 6363 [5749, 9343] | 0.0% |
+| FL2 vs FC2 | ChorusGraph | **93.0%** | **0.75 [0.68, 0.82]** | **1335 [1167, 1515]** | **1273 [1221, 1351]** | **5370 [3201, 6245]** | **34.7%** |
+| HL1 vs HC1 | LangGraph | 73.7% | 2.94 [2.84, 3.05] | 7105 [6628, 7648] | 5951 [5607, 6670] | 16468 [14797, 18235] | 0.0% |
+| HL1 vs HC1 | ChorusGraph | **84.0%** | **1.33 [1.26, 1.40]** | **3812 [3616, 4031]** | **3422 [3229, 3595]** | **8218 [5633, 8560]** | **72.7%** |
+| HL2 vs HC2 | LangGraph | 62.3% | 3.85 [3.68, 4.03] | 10354 [9724, 10952] | 10669 [9834, 11962] | 18030 [17306, 18976] | 0.0% |
+| HL2 vs HC2 | ChorusGraph | **77.3%** | **2.67 [2.49, 2.84]** | **9537 [8892, 10191]** | **9339 [8576, 10254]** | 17970 [17139, 19813] | **79.0%** |
+
+Runtime ~3h 41m on Azure ACI (4 vCPU / 16 GB). API key `...MnR0` after quota exhaustion on benchmark key.
+
+---
+
 ## Headline takeaways
 
-1. **Finance (FL1/FL2):** ChorusGraph cuts LLM calls ~65–76% and mean latency ~67–72% vs LangGraph, driven by 40–52% cache hit rates.
-2. **Healthcare single (HL1):** ~48% fewer LLM calls, ~43% lower mean latency; success +5pp on mid tier.
-3. **Healthcare multi (HL2):** ChorusGraph wins on success (+26pp mid) and fewer LLM calls, but mean/p95 latency remain comparable or slightly higher (multi-agent + Cortex embeds).
-4. **Cache hits = zero LLM calls** on finance scenarios; healthcare cache hits still incur ~1–2 LLM calls (abstain/validation path).
+1. **Finance (FL1/FL2):** ChorusGraph cuts LLM calls ~63–76% and mean latency ~57–73% vs LangGraph at 300 tasks.
+2. **Healthcare single (HL1):** +10pp success, ~55% fewer LLM calls, ~46% lower mean latency at scale.
+3. **Healthcare multi (HL2):** +15pp success, ~31% fewer LLM calls, ~8% lower mean latency (p95 tie).
+4. **Mid vs heavy trends hold** — numbers stable from 100 → 300 tasks (canonical regression remains mid tier for CI speed).
 
 ## Source reports
 
 - `benchmark/results/azure_light_20260708_101409/mvp_scenarios/light_20260708_101409/COMPARISON_REPORT.md`
 - `benchmark/results/azure_mid_20260708_111539/mvp_scenarios/mid_20260708_111539/COMPARISON_REPORT.md`
+- `benchmark/results/azure_heavy_20260708_140300/mvp_scenarios/heavy_20260708_140300/COMPARISON_REPORT.md`
 
-Heavy post-fix run: `heavy_20260708_124337` (300 tasks/scenario — scale tier; add results when complete).
+Invalid run (quota): `heavy_20260708_124337` — do not cite.
