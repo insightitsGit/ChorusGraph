@@ -12,6 +12,8 @@ pip install chorusgraph
 chorusgraph-demo
 ```
 
+**Interactive demo (Product Hunt / launch):** [insightitsGit.github.io/ChorusGraph/demo.html](https://insightitsGit.github.io/ChorusGraph/demo.html) — click-through walkthrough, no API key for steps 1–3.
+
 > **ChorusGraph** = native engine + Prism stack · **LangGraph** = optional baseline for A/B comparison only ([`docs/TERMINOLOGY.md`](docs/TERMINOLOGY.md))
 
 ---

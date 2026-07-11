@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Interactive ChorusGraph demo — native agent runtime, Route Ledger, semantic cache, and verified benchmarks. No API key required for the first steps." />
+  <title>Interactive Demo — ChorusGraph</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .demo-hero { padding: 3rem 0 2rem; }
+    .demo-hero h1 { font-size: clamp(1.75rem, 4vw, 2.5rem); margin-bottom: 0.75rem; }
+    .demo-layout { display: grid; grid-template-columns: 240px 1fr; gap: 1.5rem; align-items: start; }
+    @media (max-width: 768px) { .demo-layout { grid-template-columns: 1fr; } }
+    .step-nav { list-style: none; margin: 0; padding: 0; }
+    .step-nav li { margin-bottom: 0.35rem; }
+    .step-nav button {
+      width: 100%; text-align: left; padding: 0.65rem 0.85rem;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--muted); font: inherit; cursor: pointer;
+    }
+    .step-nav button:hover { border-color: var(--accent); color: var(--text); }
+    .step-nav button.active {
+      border-color: var(--accent); color: var(--text);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+    .step-nav button.done { color: var(--accent); }
+    .step-panel { display: none; }
+    .step-panel.active { display: block; }
+    .step-panel h2 { margin-bottom: 0.75rem; }
+    .step-panel p { margin-bottom: 1rem; }
+    .terminal {
+      background: #0a0e12; border: 1px solid var(--border); border-radius: 10px;
+      padding: 1rem 1.1rem; font-family: var(--mono); font-size: 0.8rem;
+      line-height: 1.45; color: #94a3b8; overflow-x: auto; white-space: pre-wrap;
+      margin: 1rem 0;
+    }
+    .terminal .prompt { color: var(--accent); }
+    .terminal .out { color: #e2e8f0; }
+    .demo-controls { display: flex; gap: 0.75rem; margin-top: 1.5rem; flex-wrap: wrap; }
+    .progress { font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem; }
+    .highlight { color: var(--accent); font-weight: 600; }
+    .embed-note {
+      background: var(--surface); border: 1px dashed var(--border);
+      border-radius: 10px; padding: 1rem; margin-top: 1.5rem; font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <nav>
+        <a class="logo" href="index.html">Chorus<span>Graph</span></a>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="demo.html">Demo</a></li>
+          <li><a href="plugins/prismrag.html">PrismRAG</a></li>
+          <li><a href="benchmarks.html">Benchmarks</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+          <li><a href="https://github.com/insightitsGit/ChorusGraph/tree/master/docs">Docs</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="demo-hero">
+      <div class="container">
+        <h1>Interactive demo — ChorusGraph in 90 seconds</h1>
+        <p class="sub">Click through the launch story: native graph engine, Route Ledger audit, cache savings, and verified benchmarks. Steps 1–3 run locally with <strong>no API key</strong>.</p>
+        <div class="proof-strip">
+          <span><strong>LLM-free</strong> demo CLI</span>
+          <span><strong>Apache-2.0</strong></span>
+          <span><code>pip install chorusgraph</code></span>
+        </div>
+      </div>
+    </section>
+
+    <section style="padding-top:0">
+      <div class="container demo-layout">
+        <ol class="step-nav" id="step-nav" aria-label="Demo steps"></ol>
+
+        <div id="step-panels">
+          <article class="step-panel active" data-step="0">
+            <p class="progress">Step 1 of 6</p>
+            <h2>The problem</h2>
+            <p>Production agents usually glue six systems together — orchestration, cache, vector DB, checkpoints, observability, audit. Repeat questions burn tokens; compliance asks <em>why</em> the agent answered, and logs are not enough.</p>
+            <div class="grid-3">
+              <div class="card"><h3>Token burn</h3><p>Every similar intent re-hits the model.</p></div>
+              <div class="card"><h3>Audit gap</h3><p>No per-hop decision trace.</p></div>
+              <div class="card"><h3>Integration tax</h3><p>LangGraph + Redis + Pinecone + …</p></div>
+            </div>
+          </article>
+
+          <article class="step-panel" data-step="1">
+            <p class="progress">Step 2 of 6</p>
+            <h2>Install — one package</h2>
+            <p>ChorusGraph is a <span class="highlight">native</span> runtime (not a LangGraph wrapper). Python 3.11+.</p>
+            <div class="terminal"><span class="prompt">$</span> pip install chorusgraph
+<span class="prompt">$</span> python -c "import chorusgraph; print(chorusgraph.__version__)"
+<span class="out">1.0.3</span></div>
+            <p class="footnote">Optional: <code>pip install "chorusgraph[retrieval,gemini]"</code> for PrismRAG + live Gemini examples.</p>
+          </article>
+
+          <article class="step-panel" data-step="2">
+            <p class="progress">Step 3 of 6</p>
+            <h2>Run the demo — no API key</h2>
+            <p><code>chorusgraph-demo</code> exercises routing, envelopes, and conditional edges on the native <code>Graph</code> engine.</p>
+            <div class="terminal"><span class="prompt">$</span> chorusgraph-demo
+<span class="out">=== short path (message='hi') ===
+{
+  "result": { "response": "short:hi", "route": "short_path", ... },
+  "ledger": { "run_id": "...", "steps": [ ... ] },
+  "persisted_match": true
+}
+
+=== long path (message='hello world!') ===
+{
+  "result": { "response": "long:hello world!", "route": "long_path", ... },
+  ...
+}</span></div>
+            <p>Same graph, two routes — scored by message length. This is the native BSP scheduler, not LangGraph.</p>
+          </article>
+
+          <article class="step-panel" data-step="3">
+            <p class="progress">Step 4 of 6</p>
+            <h2>Route Ledger — replay every hop</h2>
+            <p>Every node publishes artifacts with <code>rule_chain</code> and category. The ledger persists for audit and replay.</p>
+            <div class="terminal"><span class="out">"steps": [
+  { "hop": "analyze", "category_slug": "general", ... },
+  { "hop": "route_decision", "rule_chain": ["score_gt_5", "route=long_path"], ... },
+  { "hop": "long_path", "category_slug": "long_path", ... }
+]</span></div>
+            <p>Production teams use this for “why did the agent say that?” — sovereignty-friendly, no third-party trace cloud required.</p>
+          </article>
+
+          <article class="step-panel" data-step="4">
+            <p class="progress">Step 5 of 6</p>
+            <h2>Measure cache savings (offline)</h2>
+            <p><code>chorusgraph-audit</code> simulates semantic cache hit rate from a query log — no live LLM calls.</p>
+            <div class="terminal"><span class="prompt">$</span> chorusgraph-audit --log your_queries.jsonl
+<span class="out">Estimated cache hit rate: 42%
+Projected LLM call reduction: 38%
+...</span></div>
+            <p>Pair with staging traffic before you flip cache on in production.</p>
+          </article>
+
+          <article class="step-panel" data-step="5">
+            <p class="progress">Step 6 of 6</p>
+            <h2>Verified benchmarks</h2>
+            <p>Paired Azure runs vs LangGraph baselines — same tasks, only orchestration differs. Canonical mid tier: <code>mid_20260708_111539</code>.</p>
+            <table>
+              <thead><tr><th>Scenario</th><th>LangGraph</th><th>ChorusGraph</th></tr></thead>
+              <tbody>
+                <tr><td>Finance single</td><td>87%</td><td><strong>98%</strong></td></tr>
+                <tr><td>Finance multi</td><td>87%</td><td><strong>94%</strong></td></tr>
+                <tr><td>Healthcare single</td><td>74%</td><td><strong>79%</strong></td></tr>
+                <tr><td>Healthcare multi</td><td>59%</td><td><strong>85%</strong></td></tr>
+              </tbody>
+            </table>
+            <p class="footnote">Full tables: <a href="benchmarks.html">benchmarks page</a> · <a href="https://github.com/insightitsGit/ChorusGraph/blob/master/benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md">latency summary</a></p>
+            <div class="cta-row">
+              <a class="btn btn-primary" href="https://github.com/insightitsGit/ChorusGraph">Star on GitHub</a>
+              <a class="btn btn-secondary" href="https://github.com/insightitsGit/ChorusGraph/blob/master/docs/INSTALL.md">Install guide</a>
+              <a class="btn btn-secondary" href="mailto:contact@insightits.com?subject=Agent%20Stack%20Audit&utm_source=demo&utm_medium=cta&utm_campaign=producthunt">Book an audit</a>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <div class="container">
+        <div class="demo-controls">
+          <button type="button" class="btn btn-secondary" id="btn-prev" disabled>← Previous</button>
+          <button type="button" class="btn btn-primary" id="btn-next">Next →</button>
+        </div>
+        <div class="embed-note">
+          <strong>Product Hunt / embed:</strong> Use this URL as your interactive demo link —
+          <a id="demo-canonical-url" href="demo.html"></a>.
+          Optional: record this walkthrough in <a href="https://www.producthunt.com/launch/guide">Supademo or Arcade</a> and embed on this page later.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <p>Insight IT Solutions · Apache-2.0 · <a href="https://github.com/insightitsGit/ChorusGraph">GitHub</a></p>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      const labels = [
+        "1. The problem",
+        "2. Install",
+        "3. chorusgraph-demo",
+        "4. Route Ledger",
+        "5. chorusgraph-audit",
+        "6. Benchmarks",
+      ];
+      const nav = document.getElementById("step-nav");
+      const panels = Array.from(document.querySelectorAll(".step-panel"));
+      let current = 0;
+
+      labels.forEach(function (label, i) {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = label;
+        btn.dataset.step = String(i);
+        btn.addEventListener("click", function () { go(i); });
+        li.appendChild(btn);
+        nav.appendChild(li);
+      });
+
+      const prev = document.getElementById("btn-prev");
+      const next = document.getElementById("btn-next");
+
+      function go(i) {
+        current = Math.max(0, Math.min(panels.length - 1, i));
+        panels.forEach(function (p, idx) {
+          p.classList.toggle("active", idx === current);
+        });
+        nav.querySelectorAll("button").forEach(function (b, idx) {
+          b.classList.toggle("active", idx === current);
+          b.classList.toggle("done", idx < current);
+        });
+        prev.disabled = current === 0;
+        next.textContent = current === panels.length - 1 ? "Done ✓" : "Next →";
+      }
+
+      prev.addEventListener("click", function () { go(current - 1); });
+      next.addEventListener("click", function () {
+        if (current < panels.length - 1) go(current + 1);
+      });
+
+      var canonical = document.getElementById("demo-canonical-url");
+      canonical.href = window.location.href.split("#")[0];
+      canonical.textContent = canonical.href;
+
+      go(0);
+    })();
+  </script>
+</body>
+</html>
