@@ -111,6 +111,36 @@ stack = ChorusStack.defaults(tenant_id="acme").with_retrieval(backend)
 retrieve_node = stack.to_retrieve_handler(topic="policy", top_k=6)
 ```
 
+### Optional: warm chunk vectors (next-release improvement)
+
+**When to use:** Production RAG hubs that reuse a stable knowledge corpus across turns (site KB,
+guidelines, docs agents). Especially when catalog/DB rows change independently of markdown docs.
+
+**Benefits:** Lower retrieve latency (no per-turn corpus re-encode), predictable cold starts via
+worker `warm_retrieval()`, separate invalidation domains (`kb_markdown` vs `catalog`), and opt-in
+rerank that never silently re-embeds chunks. Does **not** replace L1 `cache_gate` or education
+short-circuits. Defaults remain 1.0.x-compatible until you enable the flags.
+
+```python
+backend.index(markdown_corpus, partition="kb_markdown", version="docs-2026-07-13")
+backend.index(catalog_rows, partition="catalog", version="cat-42")
+
+stack = ChorusStack.defaults(tenant_id="acme").with_retrieval(backend)
+stack.warm_retrieval(partition="kb_markdown")
+assert stack.retrieval_ready(partition="kb_markdown")
+
+retrieve_node = stack.to_retrieve_handler(
+    topic="site_kb",
+    top_k=6,
+    partition="kb_markdown",
+    rerank_policy="vectors_only",      # or "require" in prod/CI
+    require_chunk_vectors=True,
+)
+# After warm retrieve: backend.stats().corpus_embeds == 0; query_embeds increments per call
+```
+
+See [`ADR-005-warm-chunk-vectors.md`](ADR-005-warm-chunk-vectors.md).
+
 ### Degradation matrix
 
 | Condition | Behavior |
@@ -122,17 +152,22 @@ retrieve_node = stack.to_retrieve_handler(topic="policy", top_k=6)
 ### Protocol (bring your own backend)
 
 ```python
-from chorusgraph.compose.ports import RetrievalBackend, is_retrieval_backend
+from chorusgraph.compose.ports import RetrievalBackend, RetrievalStats, is_retrieval_backend
 
 class MyBackend:
     name = "custom"
     _chorusgraph_retrieval_backend = True
 
-    def index(self, corpus): ...
-    def retrieve(self, topic, query, *, top_k=6) -> list[dict]: ...
+    def index(self, corpus, *, partition="default", version=None): ...
+    def retrieve(self, topic, query, *, top_k=6, partition=None) -> list[dict]: ...
+    def warm(self, *, partition=None): ...
+    def is_ready(self, *, partition=None) -> bool: ...
+    def stats(self) -> RetrievalStats: ...
 ```
 
 Required chunk keys: `id`, `topic`, `text`, `source`, `category_slug`, `score`.
+Warm vector path should also attach `vector_64` (len 64). `warm` / `is_ready` / `stats` are
+optional for custom backends; stack helpers no-op when missing.
 
 ---
 

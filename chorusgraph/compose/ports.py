@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Protocol, Sequence, runtime_checka
 import numpy as np
 
 from chorusgraph.cache_gate.backend import CacheCandidate
+from chorusgraph.compose.retrieval_stats import RetrievalStats
 from chorusgraph.sections.models import CacheProfile
 
 
@@ -118,15 +119,44 @@ class RetrievalBackend(Protocol):
     """
     L2 retrieval port — default: keyword stand-in (zero dependencies).
     Swap for ``PrismRAGRetrievalBackend`` for vector search + taxonomy remap.
+
+    Optional warm chunk-vector APIs (``warm``, ``is_ready``, ``stats``, partition /
+    version on ``index``) are additive for the next-release opt-in path. Built-in
+    adapters implement them; custom backends may omit them (stack helpers no-op).
     """
 
     name: str
 
-    def retrieve(self, topic: str, query: str, *, top_k: int = 6) -> List[Dict[str, Any]]:
-        """Return ranked chunks: at least {id, topic, text, source, category_slug, score}."""
+    def retrieve(
+        self,
+        topic: str,
+        query: str,
+        *,
+        top_k: int = 6,
+        partition: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Return ranked chunks: at least {id, topic, text, source, category_slug, score}.
 
-    def index(self, corpus: Sequence[Dict[str, Any]]) -> None:
+        Vector warm path should also attach ``vector_64`` (len 64) when available.
+        """
+
+    def index(
+        self,
+        corpus: Sequence[Dict[str, Any]],
+        *,
+        partition: str = "default",
+        version: Optional[str] = None,
+    ) -> None:
         """(Re)build the backend index from {id, topic, text, source} records."""
+
+    def warm(self, *, partition: Optional[str] = None) -> None:
+        """Ensure partition(s) are indexed; idempotent. Corpus embeds only on miss/version change."""
+
+    def is_ready(self, *, partition: Optional[str] = None) -> bool:
+        """True when partition(s) are warm enough to serve retrieve without cold index."""
+
+    def stats(self) -> RetrievalStats:
+        """Query/corpus embed counters and partition versions."""
 
 
 def is_cache_backend(obj: Any) -> bool:
@@ -142,6 +172,7 @@ __all__ = [
     "MemoryBackend",
     "PersistenceBackend",
     "RetrievalBackend",
+    "RetrievalStats",
     "ToolBackend",
     "is_cache_backend",
     "is_retrieval_backend",

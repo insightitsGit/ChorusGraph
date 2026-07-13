@@ -77,6 +77,6 @@ def test_resonance_rerank_orders_by_score():
         chunks=chunks,
         top_k=2,
     )
-    assert len(ranked) == 2
-    assert "resonance_score" in ranked[0]
-    assert ranked[0]["resonance_score"] >= ranked[1]["resonance_score"]
+    assert len(ranked[0]) == 2
+    assert "resonance_score" in ranked[0][0]
+    assert ranked[0][0]["resonance_score"] >= ranked[0][1]["resonance_score"]

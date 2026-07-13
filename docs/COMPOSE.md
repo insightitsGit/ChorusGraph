@@ -71,6 +71,12 @@ stack = ChorusStack.defaults(tenant_id="acme").with_retrieval(backend)
 retrieve_node = stack.to_retrieve_handler(topic="policy", top_k=6)
 ```
 
+**Optional warm chunk vectors** (opt-in, defaults unchanged): index with `partition`/`version`,
+call `stack.warm_retrieval()` at worker boot, and use
+`to_retrieve_handler(..., rerank_policy="vectors_only")`. Use when RAG reuses a stable KB and you
+need lower latency / catalog-vs-docs invalidation isolation. Details: [`PLUGINS.md`](PLUGINS.md),
+[`ADR-005-warm-chunk-vectors.md`](ADR-005-warm-chunk-vectors.md).
+
 Enterprise Postgres persistence (offline license required):
 
 ```python

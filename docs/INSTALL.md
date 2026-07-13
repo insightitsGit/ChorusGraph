@@ -228,6 +228,17 @@ prism.index(corpus)
 stack = ChorusStack.defaults(tenant_id="acme").with_retrieval(prism)
 ```
 
+**Optional — warm chunk vectors** (when RAG reuses a stable KB and you care about retrieve latency):
+
+```python
+prism.index(corpus, partition="kb_markdown", version="v1")
+stack.warm_retrieval(partition="kb_markdown")
+assert stack.retrieval_ready(partition="kb_markdown")
+# later: to_retrieve_handler(..., partition="kb_markdown", rerank_policy="vectors_only")
+```
+
+See [`ADR-005-warm-chunk-vectors.md`](ADR-005-warm-chunk-vectors.md) for use cases and benefits.
+
 **Graceful degradation:**
 
 - No `chromadb` → logs warning, uses internal keyword backend

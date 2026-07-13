@@ -169,12 +169,25 @@ class ChorusStack:
         topic: str = "knowledge",
         top_k: int = 6,
         runtime: Any = None,
+        partition: Optional[str] = None,
+        rerank_policy: str = "embed_missing",
+        require_chunk_vectors: bool = False,
     ) -> Any:
-        """Build retrieve node wired to ``resolve_retrieval()``."""
+        """Build retrieve node wired to ``resolve_retrieval()``.
+
+        Optional warm chunk-vector knobs (``partition``, ``rerank_policy``,
+        ``require_chunk_vectors``) default to 1.0.x-compatible behavior.
+        """
         from chorusgraph.nodes.retrieve import RetrieveConfig, make_retrieve_handler
 
         backend = self.resolve_retrieval()
-        cfg = RetrieveConfig(category_slug=topic, top_k=top_k)
+        cfg = RetrieveConfig(
+            category_slug=topic,
+            top_k=top_k,
+            rerank_policy=rerank_policy,  # type: ignore[arg-type]
+            require_chunk_vectors=require_chunk_vectors,
+            partition=partition,
+        )
         cache = None
         if runtime is not None:
             cache = getattr(runtime, "cache", None)
@@ -184,9 +197,35 @@ class ChorusStack:
                 cache = cache_backend.cache
 
         def _retrieve_fn(t: str, q: str):
-            return list(backend.retrieve(t or topic, q, top_k=top_k))
+            return list(
+                backend.retrieve(t or topic, q, top_k=top_k, partition=partition)
+            )
 
         return make_retrieve_handler(_retrieve_fn, cache=cache, config=cfg)
+
+    def warm_retrieval(self, partition: Optional[str] = None) -> "ChorusStack":
+        """Idempotent L2 warm — delegates to backend ``warm`` when present."""
+        backend = self.resolve_retrieval()
+        warm = getattr(backend, "warm", None)
+        if callable(warm):
+            warm(partition=partition)
+        return self
+
+    def retrieval_ready(self, partition: Optional[str] = None) -> bool:
+        """True when retrieval partition(s) are warm (or backend has no readiness API)."""
+        backend = self.resolve_retrieval()
+        ready = getattr(backend, "is_ready", None)
+        if callable(ready):
+            return bool(ready(partition=partition))
+        return True
+
+    def retrieval_stats(self) -> Any:
+        """Return backend ``RetrievalStats`` when available."""
+        backend = self.resolve_retrieval()
+        stats_fn = getattr(backend, "stats", None)
+        if callable(stats_fn):
+            return stats_fn()
+        return None
 
 
 __all__ = ["ChorusStack"]

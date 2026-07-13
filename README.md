@@ -169,6 +169,10 @@ stack = (
 
 Full plug-in guide: [`docs/PLUGINS.md`](docs/PLUGINS.md)
 
+**Optional (next release):** [Warm chunk vectors](docs/ADR-005-warm-chunk-vectors.md) — index corpus
+once by partition, warm at boot, query-only retrieve with `vector_64` for free Resonance rerank.
+Enable via `warm_retrieval()` + `rerank_policy="vectors_only"`. Defaults stay 1.0.x-compatible.
+
 ---
 
 ## Prism ecosystem

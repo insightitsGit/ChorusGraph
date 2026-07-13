@@ -1,6 +1,11 @@
 """ChorusGraph built-in node primitives."""
 
-from chorusgraph.nodes.retrieve import RetrieveConfig, make_retrieve_handler, resonance_rerank
+from chorusgraph.nodes.retrieve import (
+    MissingChunkVectorError,
+    RetrieveConfig,
+    make_retrieve_handler,
+    resonance_rerank,
+)
 from chorusgraph.nodes.roles import (
     Node,
     ResearcherNode,
@@ -17,6 +22,7 @@ from chorusgraph.nodes.tool import (
 )
 
 __all__ = [
+    "MissingChunkVectorError",
     "Node",
     "ResearcherNode",
     "RetrieveConfig",

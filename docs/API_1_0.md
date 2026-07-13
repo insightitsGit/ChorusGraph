@@ -29,6 +29,17 @@
 
 Import via `chorusgraph.compose` — see [`docs/INSTALL.md`](INSTALL.md) and [`docs/PLUGINS.md`](PLUGINS.md).
 
+### Additive (optional warm chunk vectors)
+
+| Symbol / API | Purpose |
+|--------------|---------|
+| `index(..., partition=, version=)` | Encode corpus once per partition/version |
+| `warm_retrieval()` / `retrieval_ready()` / `retrieval_stats()` | Boot-time L2 warmth on `ChorusStack` |
+| `to_retrieve_handler(..., rerank_policy=, require_chunk_vectors=, partition=)` | Opt-in no-silent-re-embed rerank |
+| `RetrievalStats` | `query_embeds` / `corpus_embeds` counters |
+
+Defaults preserve 1.0.x (`rerank_policy="embed_missing"`). See [`ADR-005-warm-chunk-vectors.md`](ADR-005-warm-chunk-vectors.md).
+
 ## Agents & planning (1.0)
 
 | Symbol | Purpose |

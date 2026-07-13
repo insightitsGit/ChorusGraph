@@ -14,6 +14,15 @@ All notable changes to ChorusGraph are documented here (semver).
 
 ## [Unreleased]
 
+### Added
+- **Optional warm chunk vectors (L2):** for production RAG that reuses a knowledge corpus, index
+  once by `partition`/`version`, warm at worker boot (`ChorusStack.warm_retrieval` /
+  `retrieval_ready`), attach `vector_64` on retrieve, and opt into `rerank_policy="vectors_only"`
+  (or `require`) so Resonance rerank never silently re-embeds chunks. Cuts multi-second corpus
+  re-encode taxes and keeps markdown warm when the product catalog changes. **Defaults preserve
+  1.0.x behavior** (`rerank_policy="embed_missing"`). See [`docs/ADR-005-warm-chunk-vectors.md`](docs/ADR-005-warm-chunk-vectors.md)
+  and [`docs/PLUGINS.md`](docs/PLUGINS.md).
+
 ### Fixed
 - **Benchmark comparison:** `abstain_rate` now uses `lower_is_better=True` (fewer refusals wins). Regenerated `COMPARISON_REPORT.md` for light/mid/heavy canonical runs.
 
