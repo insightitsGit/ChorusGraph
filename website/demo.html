@@ -70,7 +70,7 @@
         <div class="proof-strip">
           <span><strong>LLM-free</strong> demo CLI</span>
           <span><strong>Apache-2.0</strong></span>
-          <span><code>pip install chorusgraph</code></span>
+          <span><code>pip install "chorusgraph==1.1.0"</code></span>
         </div>
       </div>
     </section>
@@ -95,10 +95,10 @@
             <p class="progress">Step 2 of 6</p>
             <h2>Install — one package</h2>
             <p>ChorusGraph is a <span class="highlight">native</span> runtime (not a LangGraph wrapper). Python 3.11+.</p>
-            <div class="terminal"><span class="prompt">$</span> pip install chorusgraph
+            <div class="terminal"><span class="prompt">$</span> pip install "chorusgraph==1.1.0"
 <span class="prompt">$</span> python -c "import chorusgraph; print(chorusgraph.__version__)"
 <span class="out">1.1.0</span></div>
-            <p class="footnote">Optional: <code>pip install "chorusgraph[retrieval,gemini]"</code> for PrismRAG + live Gemini examples.</p>
+            <p class="footnote">Optional: <code>pip install "chorusgraph[retrieval,gemini]"</code> for PrismRAG + live Gemini examples. <strong>1.1.0</strong> adds optional <a href="https://github.com/insightitsGit/ChorusGraph/blob/master/docs/ADR-005-warm-chunk-vectors.md">warm chunk vectors</a> for RAG speed.</p>
           </article>
 
           <article class="step-panel" data-step="2">

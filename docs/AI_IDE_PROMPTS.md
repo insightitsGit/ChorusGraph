@@ -4,7 +4,7 @@ Copy one of these into Cursor, Claude Code, Windsurf, Copilot Chat, or any AI co
 shell + file access. The assistant installs ChorusGraph, wires it into your project, and verifies it
 runs — you don't type a single `pip` command yourself.
 
-Both prompts are grounded in the real, current `chorusgraph` 1.0.2 API — nothing invented. Prompt 2 is
+Both prompts are grounded in the real, current `chorusgraph` **1.1.0** API — nothing invented. Prompt 2 is
 explicit about what's an automated migration (LangGraph) versus a manual-translation guide (CrewAI),
 since no CrewAI adapter exists yet.
 
@@ -133,6 +133,6 @@ or the installed source if you're unsure whether something exists.
 
 ---
 
-*Both prompts assume `chorusgraph>=1.0.2` (verified working via a clean-room `pip install` + hello-world
+*Both prompts assume `chorusgraph>=1.1.0` (verified working via a clean-room `pip install` + hello-world
 run). If a newer version changes these APIs, `docs/STABILITY.md` documents the deprecation policy — the
 1.0 public surface is frozen, so these should keep working across patch/minor releases.*

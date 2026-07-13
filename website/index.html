@@ -32,7 +32,7 @@
           <span><strong>+26 pp</strong> healthcare multi-agent</span>
           <span><strong>98%</strong> finance single</span>
           <span><strong>329+</strong> tests, no API keys</span>
-          <span><code>pip install chorusgraph</code></span>
+          <span><code>pip install "chorusgraph==1.1.0"</code></span>
         </div>
         <div class="cta-row">
           <a class="btn btn-primary" href="demo.html">Try the interactive demo</a>
@@ -83,8 +83,10 @@
           <h3>Or let your AI IDE do it</h3>
           <p>Paste our Cursor/Claude Code prompt — it installs and wires ChorusGraph in your project. <a href="https://github.com/insightitsGit/ChorusGraph/blob/master/docs/AI_IDE_PROMPTS.md">AI IDE prompts</a></p>
         </div>
-        <pre>pip install chorusgraph
-python -c "import chorusgraph; from chorusgraph import Graph, ChorusStack; print(chorusgraph.__version__)"</pre>
+        <pre>pip install "chorusgraph==1.1.0"
+python -c "import chorusgraph; from chorusgraph import Graph, ChorusStack; print(chorusgraph.__version__)"
+# → 1.1.0</pre>
+        <p class="footnote" style="margin-top:0.75rem"><strong>New in 1.1.0:</strong> optional warm chunk vectors for RAG latency — <a href="https://github.com/insightitsGit/ChorusGraph/blob/master/docs/ADR-005-warm-chunk-vectors.md">ADR-005</a> · <a href="https://pypi.org/project/chorusgraph/1.1.0/">PyPI</a></p>
       </div>
     </section>
 

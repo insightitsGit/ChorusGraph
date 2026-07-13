@@ -147,7 +147,9 @@ def test_resonance_rerank_with_preattached_vectors_no_embed():
 
 def test_handler_rule_chain_includes_rerank_policy():
     backend = KeywordRetrievalBackend()
-    backend.index([{"id": "1", "topic": "kb", "text": "metformin egfr monitoring guide", "source": ""}])
+    backend.index(
+        [{"id": "1", "topic": "kb", "text": "metformin egfr monitoring guide", "source": ""}]
+    )
     stack = ChorusStack.defaults(tenant_id="handler-rules").with_retrieval(backend)
     handler = stack.to_retrieve_handler(
         topic="kb",
@@ -167,8 +169,18 @@ def test_prismrag_warm_path_corpus_embeds_once():
     from chorusgraph.embedders import PrismlangOnnxEmbedder
 
     corpus = [
-        {"id": "a", "topic": "cache", "text": "PrismCache caches LLM answers semantically", "source": "kb"},
-        {"id": "b", "topic": "cache", "text": "Warm vectors avoid re-encoding the corpus", "source": "kb"},
+        {
+            "id": "a",
+            "topic": "cache",
+            "text": "PrismCache caches LLM answers semantically",
+            "source": "kb",
+        },
+        {
+            "id": "b",
+            "topic": "cache",
+            "text": "Warm vectors avoid re-encoding the corpus",
+            "source": "kb",
+        },
     ]
     backend = PrismRAGRetrievalBackend(
         embedder=PrismlangOnnxEmbedder(),
@@ -205,7 +217,16 @@ def test_make_retrieve_handler_require_chunk_vectors():
     )
 
     def _fn(topic, query):
-        return [{"id": "1", "text": "no vector", "topic": topic, "source": "", "category_slug": "kb", "score": 1.0}]
+        return [
+            {
+                "id": "1",
+                "text": "no vector",
+                "topic": topic,
+                "source": "",
+                "category_slug": "kb",
+                "score": 1.0,
+            }
+        ]
 
     handler = make_retrieve_handler(_fn, cache=runtime.cache, config=cfg)
     raw = runtime.cache._embedder.embed("q")

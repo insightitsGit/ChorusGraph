@@ -16,7 +16,7 @@ body:
     attributes:
       label: ChorusGraph version
       description: Output of `python -c "import chorusgraph; print(chorusgraph.__version__)"`
-      placeholder: e.g. 1.0.3
+      placeholder: e.g. 1.1.0
     validations:
       required: true
 

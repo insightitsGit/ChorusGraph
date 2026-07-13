@@ -29,16 +29,16 @@
 
 from chorusgraph.compose import ChorusStack, PrismRAGRetrievalBackend
 
-stack = (
-    ChorusStack.defaults(tenant_id="acme")
-    .with_retrieval(PrismRAGRetrievalBackend(
-        embedder=...,
-        mapping=YOUR_MAPPING,
-    ))
-)
-stack.resolve_retrieval().index(YOUR_CORPUS)
-retrieve_node = stack.to_retrieve_handler(topic="policy", top_k=6)</pre>
-        <p>Vector search works without a license; taxonomy remap requires PrismRAG Pro license. Full guide: <a href="https://github.com/insightitsGit/ChorusGraph/blob/master/docs/INSTALL.md">INSTALL.md</a></p>
+backend = PrismRAGRetrievalBackend(embedder=..., mapping=YOUR_MAPPING)
+backend.index(YOUR_CORPUS)  # opt-in: partition="kb_markdown", version="..."
+
+stack = ChorusStack.defaults(tenant_id="acme").with_retrieval(backend)
+# stack.warm_retrieval(partition="kb_markdown")  # 1.1.0 — process boot
+retrieve_node = stack.to_retrieve_handler(
+    topic="policy", top_k=6,
+    # rerank_policy="vectors_only",  # 1.1.0 optional speed path
+)</pre>
+        <p>Vector search works without a license; taxonomy remap requires PrismRAG Pro license. <strong>1.1.0</strong> adds optional <a href="https://github.com/insightitsGit/ChorusGraph/blob/master/docs/ADR-005-warm-chunk-vectors.md">warm chunk vectors</a> for RAG latency. Full guide: <a href="https://github.com/insightitsGit/ChorusGraph/blob/master/docs/INSTALL.md">INSTALL.md</a></p>
       </div>
     </section>
   </main>
