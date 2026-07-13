@@ -3,7 +3,7 @@
 [![CI](https://github.com/insightitsGit/ChorusGraph/actions/workflows/ci.yml/badge.svg)](https://github.com/insightitsGit/ChorusGraph/actions/workflows/ci.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.0.3-informational)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.1.0-informational)](CHANGELOG.md)
 
 **Native agent runtime with semantic cache, swappable retrieval (PrismRAG), auditable memory, and enterprise hardening — one pip install, five plug-in ports.**
 
@@ -35,6 +35,7 @@ Building production LLM agents usually means gluing six systems: orchestration, 
 | Pain | ChorusGraph answer |
 |------|-------------------|
 | Repeat questions burn tokens | Two-stage semantic cache (coarse 64-d recall → full verify) |
+| RAG re-encodes the corpus every turn | Optional warm chunk vectors — index once per partition, query-only retrieve |
 | RAG is another integration project | `RetrievalBackend` plug-in — keyword default, PrismRAG vector opt-in |
 | “Why did the agent say that?” | Route Ledger + `rule_chain` on every hop |
 | Orchestration + ops duct tape | Native scheduler, health endpoints, Docker/k8s packaging |
@@ -85,6 +86,7 @@ Full install guide: [`docs/INSTALL.md`](docs/INSTALL.md) · AI IDE prompts: [`do
 | **Native graph engine** | BSP scheduler, envelope channels, conditional routing — no LangGraph on product paths |
 | **Semantic cache (L1)** | Two-stage gate: coarse recall → full verify; safe replay policies per domain |
 | **Retrieval (L2)** | Keyword default; `PrismRAGRetrievalBackend` for vector + taxonomy (opt-in extra) |
+| **Warm chunk vectors (L2)** | Optional: index once by partition/version, warm at boot, query-only retrieve — recommended for RAG latency ([ADR-005](docs/ADR-005-warm-chunk-vectors.md)) |
 | **Memory (L3)** | PrismCortex structured, replayable memory |
 | **Route Ledger** | Per-hop audit trail: cache hits, scores, durations, `rule_chain` |
 | **Checkpoints** | SQLite default; Postgres enterprise persistence (license-gated) |
@@ -140,7 +142,7 @@ Details: [`docs/COMPOSE.md`](docs/COMPOSE.md) · [`docs/DEVELOPER_GUIDE.md`](doc
 
 ## Plugin system
 
-Four swappable ports on [`ChorusStack`](chorusgraph/compose/stack.py) — engine and scheduler stay fixed.
+Four swappable ports on [`ChorusStack`](chorusgraph/compose/stack.py) (plus optional enterprise persistence) — engine and scheduler stay fixed.
 
 | Port | Default | Swap examples | Method |
 |------|---------|---------------|--------|
@@ -158,20 +160,19 @@ backend = PrismRAGRetrievalBackend(
     embedder=PrismlangOnnxEmbedder(),
     mapping={"categories": [...], "rules": [...]},
 )
-backend.index(your_corpus)
+backend.index(your_corpus)  # opt-in speed: partition="kb_markdown", version=...
 
 stack = (
     ChorusStack.defaults(tenant_id="acme")
     .with_retrieval(backend)
     .with_cache(RedisCacheBackend(tenant_id="acme", redis_url="redis://localhost:6379/0"))
 )
+# stack.warm_retrieval(partition="kb_markdown")  # process boot — see ADR-005
 ```
 
 Full plug-in guide: [`docs/PLUGINS.md`](docs/PLUGINS.md)
 
-**Optional (next release):** [Warm chunk vectors](docs/ADR-005-warm-chunk-vectors.md) — index corpus
-once by partition, warm at boot, query-only retrieve with `vector_64` for free Resonance rerank.
-Enable via `warm_retrieval()` + `rerank_policy="vectors_only"`. Defaults stay 1.0.x-compatible.
+**New in 1.1.0 (optional):** [Warm chunk vectors](docs/ADR-005-warm-chunk-vectors.md) — for production RAG that reuses a knowledge corpus, index once by partition/version, warm at worker boot, and retrieve with query-only embed (`vector_64` on chunks for free Resonance rerank). **Recommended when retrieve latency matters.** Enable via `warm_retrieval()` + `rerank_policy="vectors_only"`. Defaults stay 1.0.x-compatible — nothing above changes unless you opt in.
 
 ---
 
@@ -320,6 +321,7 @@ Readiness scorecard: [`docs/ENTERPRISE_READINESS.md`](docs/ENTERPRISE_READINESS.
 | [`docs/INSTALL.md`](docs/INSTALL.md) | pip extras, PrismRAG walkthrough, audit CLI |
 | [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md) | Build agents on native `Graph` |
 | [`docs/PLUGINS.md`](docs/PLUGINS.md) | Cache, memory, tools, retrieval ports |
+| [`docs/ADR-005-warm-chunk-vectors.md`](docs/ADR-005-warm-chunk-vectors.md) | Optional L2 warm chunk vectors (1.1.0) — use cases & benefits |
 | [`docs/COMPOSE.md`](docs/COMPOSE.md) | `ChorusStack` composition patterns |
 | [`docs/WHITEPAPER.md`](docs/WHITEPAPER.md) | Product thesis + technical depth |
 | [`docs/BENCHMARK.md`](docs/BENCHMARK.md) | Fairness methodology |
@@ -375,6 +377,8 @@ Lockfile: `requirements-lock.txt` · release notes: [`CHANGELOG.md`](CHANGELOG.m
 ## Roadmap
 
 **Shipped in 1.0:** native engine, semantic cache, retrieval plug-in, Route Ledger, SQLite persistence, benchmarks, deploy packaging, frozen public API.
+
+**Shipped in 1.1.0:** optional [warm chunk vectors](docs/ADR-005-warm-chunk-vectors.md) (L2) — partition/version index, `warm_retrieval`, query-only retrieve, opt-in `rerank_policy` for RAG latency.
 
 **Phase 2 (documented, in progress):**
 

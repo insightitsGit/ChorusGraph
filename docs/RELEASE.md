@@ -18,14 +18,30 @@ ChorusGraph uses **semver** (`MAJOR.MINOR.PATCH`) in `pyproject.toml`.
    cyclonedx-py environment -o sbom/release-sbom.json
    ```
 
-## Tag and publish
+## Build and publish to PyPI
 
 ```powershell
-git tag -a v0.9.2 -m "v0.9.2 — short summary"
-git push origin v0.9.2
+# From a clean tree after version bump + CHANGELOG
+python -m pip install -U build twine
+Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue
+python -m build
+python -m twine check dist/*
+python scripts/smoke_warm_chunk_vectors.py
+pytest tests/test_warm_chunk_vectors.py -q
+
+# Upload (needs PyPI token / credentials — do not commit tokens)
+python -m twine upload dist/*
 ```
 
-GitHub Actions builds from the tag; attach `sbom/release-sbom.json` to the release artifact if publishing wheels.
+## Tag after a successful upload
+
+```powershell
+git tag -a v1.1.0 -m "v1.1.0 — optional warm chunk vectors (L2)"
+git push origin master
+git push origin v1.1.0
+```
+
+Attach `sbom/release-sbom.json` to the GitHub release if you regenerate it for the tag.
 
 ## Test tiers
 

@@ -1,6 +1,6 @@
 # ADR-005: Optional warm chunk vectors (L2)
 
-**Status:** Accepted · opt-in for next minor release  
+**Status:** Accepted · shipped as opt-in in **1.1.0**  
 **Date:** 2026-07-13  
 **Related:** [`PLUGINS.md`](PLUGINS.md), [`COMPOSE.md`](COMPOSE.md), Website Hub dogfood RAG latency
 
