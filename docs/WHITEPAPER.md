@@ -338,7 +338,7 @@ For regulated production at scale, complete Phase 2 persistence and security val
 
 ---
 
-**Contact:** Insight IT Solutions · **License:** Apache-2.0 · **Package:** [pypi.org/project/chorusgraph](https://pypi.org/project/chorusgraph) *(when published)*
+**Contact:** Insight IT Solutions · **License:** Apache-2.0 · **Package:** [pypi.org/project/chorusgraph](https://pypi.org/project/chorusgraph/) · **Latest:** [1.1.0](https://pypi.org/project/chorusgraph/1.1.0/)
 
 **References:** `docs/INSTALL.md` · `docs/PLUGINS.md` · `docs/STABILITY.md` · `handoffs/handoffEback.md` · `handoffs/handoffProductLanding.md`
 

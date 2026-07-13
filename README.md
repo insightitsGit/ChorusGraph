@@ -1,14 +1,15 @@
 # ChorusGraph
 
 [![CI](https://github.com/insightitsGit/ChorusGraph/actions/workflows/ci.yml/badge.svg)](https://github.com/insightitsGit/ChorusGraph/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/chorusgraph.svg)](https://pypi.org/project/chorusgraph/1.1.0/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.1.0-informational)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.1.0-informational)](https://pypi.org/project/chorusgraph/1.1.0/)
 
 **Native agent runtime with semantic cache, swappable retrieval (PrismRAG), auditable memory, and enterprise hardening — one pip install, five plug-in ports.**
 
 ```bash
-pip install chorusgraph
+pip install "chorusgraph==1.1.0"
 chorusgraph-demo
 ```
 

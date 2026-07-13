@@ -1,6 +1,8 @@
 # ChorusGraph 1.0 Public API
 
-**Package:** `chorusgraph` · **Version:** 1.0.0
+**Package:** `chorusgraph` · **Version:** 1.0.0 (additive APIs through **1.1.0**)
+
+Latest package: [chorusgraph 1.1.0 on PyPI](https://pypi.org/project/chorusgraph/1.1.0/).
 
 ## Core runtime
 

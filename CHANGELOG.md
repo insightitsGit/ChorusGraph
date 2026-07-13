@@ -28,6 +28,8 @@ All notable changes to ChorusGraph are documented here (semver).
 
 ## [1.1.0] — 2026-07-13
 
+Published on PyPI: [chorusgraph 1.1.0](https://pypi.org/project/chorusgraph/1.1.0/).
+
 ### Added
 - **Optional warm chunk vectors (L2):** for production RAG that reuses a knowledge corpus, index
   once by `partition`/`version`, warm at worker boot (`ChorusStack.warm_retrieval` /

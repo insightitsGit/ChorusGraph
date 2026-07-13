@@ -1,6 +1,8 @@
 # Install ChorusGraph (pip)
 
-**Package:** `chorusgraph` · **Version:** 1.0.2 · **Python:** ≥3.11 · **License:** Apache-2.0
+**Package:** `chorusgraph` · **Version:** 1.1.0 · **Python:** ≥3.11 · **License:** Apache-2.0
+
+**PyPI:** [chorusgraph 1.1.0](https://pypi.org/project/chorusgraph/1.1.0/)
 
 ---
 
