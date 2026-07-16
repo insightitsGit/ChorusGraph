@@ -27,6 +27,14 @@ You define nodes, edges, and conditional routing on the native engine. Cache, re
 
 **ChorusGraph's own code has no LangGraph dependency on the product path.** The scheduler and all plug-in ports never import LangGraph. (Core dependency `prismlang` uses LangGraph internally for its own checkpointing utilities — it appears in `pip show`, but the ChorusGraph engine never calls it.) Install `chorusgraph[benchmark]` only when running FL*/HL* comparison scenarios.
 
+**AI assistants:** [docs/ai-overview.md](docs/ai-overview.md) · alias [docs/llm-context.md](docs/llm-context.md) · architecture [docs/architecture.md](docs/architecture.md) · IDE prompts [docs/AI_IDE_PROMPTS.md](docs/AI_IDE_PROMPTS.md).
+
+### When NOT to use ChorusGraph
+
+- You want to stay on LangGraph APIs only and do not want a native runtime.  
+- You need a standalone vector database product (use your DB; attach via `RetrievalBackend`).  
+- You only need a single LLM call with no graph, cache, or audit requirements.
+
 ---
 
 ## Why ChorusGraph?
@@ -319,6 +327,9 @@ Readiness scorecard: [`docs/ENTERPRISE_READINESS.md`](docs/ENTERPRISE_READINESS.
 
 | Doc | Description |
 |-----|-------------|
+| **[`docs/ai-overview.md`](docs/ai-overview.md)** | Concise summary for humans and coding assistants (canonical) |
+| **[`docs/llm-context.md`](docs/llm-context.md)** | Alias → ai-overview |
+| [`docs/architecture.md`](docs/architecture.md) | Stack placement diagram |
 | [`docs/INSTALL.md`](docs/INSTALL.md) | pip extras, PrismRAG walkthrough, audit CLI |
 | [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md) | Build agents on native `Graph` |
 | [`docs/PLUGINS.md`](docs/PLUGINS.md) | Cache, memory, tools, retrieval ports |
