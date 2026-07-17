@@ -70,13 +70,21 @@ jobs:
           cache: pip
       - name: Install security tools
         run: |
-          python -m pip install -U pip
+          python -m pip install -U pip "setuptools>=83"
           pip install -e ".[dev]"
           pip install bandit pip-audit
       - name: Bandit SAST
         run: bandit -r chorusgraph -ll -x tests
       - name: pip-audit SCA
-        run: pip-audit -r requirements-lock.txt || pip-audit
+        # chromadb PYSEC-2026-311 / GHSA-f4j7-r4q5-qw2c: no stable fix yet (last affected 1.5.9).
+        # We only use the client embed path for optional retrieval; ignore until upstream patches.
+        run: |
+          pip-audit -r requirements-lock.txt \
+            --ignore-vuln PYSEC-2026-311 \
+            --ignore-vuln GHSA-f4j7-r4q5-qw2c \
+          || pip-audit \
+            --ignore-vuln PYSEC-2026-311 \
+            --ignore-vuln GHSA-f4j7-r4q5-qw2c
       - name: Secrets scan (gitleaks)
         uses: gitleaks/gitleaks-action@v2
         env:
