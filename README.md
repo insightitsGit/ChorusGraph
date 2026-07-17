@@ -13,7 +13,7 @@ pip install "chorusgraph==1.1.0"
 chorusgraph-demo
 ```
 
-**Interactive demo (Product Hunt / launch):** [insightitsGit.github.io/ChorusGraph/demo.html](https://insightitsGit.github.io/ChorusGraph/demo.html) — click-through walkthrough, no API key for steps 1–3.
+**Interactive demo:** [insightitsGit.github.io/ChorusGraph/demo.html](https://insightitsGit.github.io/ChorusGraph/demo.html) — **PrismCache** miss/hit, **warm chunk vectors**, **PrismCortex** lifecycle, ReAct / Plan-Solve / Reflection, multi-agent. No API key for the story or for `chorusgraph-use-cases`.
 
 > **ChorusGraph** = native engine + Prism stack · **LangGraph** = optional baseline for A/B comparison only ([`docs/TERMINOLOGY.md`](docs/TERMINOLOGY.md))
 
@@ -78,11 +78,32 @@ print(out)  # {'reply': 'Hello, ChorusGraph'}
 
 ```bash
 chorusgraph-demo                              # routing + ledger (LLM-free)
-chorusgraph-finance-patterns                # ReAct / Plan-Solve / Reflection (needs GEMINI_API_KEY)
-chorusgraph-audit --log your_queries.jsonl    # simulated cache hit rate (no API key)
+chorusgraph-use-cases                         # patterns + multi-agent + cache + warm chunks + cortex
+chorusgraph-use-cases cache                   # L1 PrismCache: miss → seed → hit
+chorusgraph-use-cases warm_chunks             # L2 warm partitions (ADR-005)
+chorusgraph-use-cases cortex                  # L3 right lifecycle (teaching stub)
+chorusgraph-finance-patterns                  # live Gemini + cache_gate (needs GEMINI_API_KEY)
+chorusgraph-finance-memory                    # live Cortex + checkpoints (needs GEMINI_API_KEY)
+chorusgraph-audit --log your_queries.jsonl    # semantic gate on your logs (no API key)
 ```
 
+**Interactive demo:** [demo.html](https://insightitsGit.github.io/ChorusGraph/demo.html) — toggle cache miss/hit, warm chunks vs Cortex, pick a design pattern.
+
 **Developer guide:** [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md) — planning & reasoning, domain performance (finance vs healthcare), code examples.
+
+### Use cases (patterns, stack layers, multi-agent)
+
+| Design | CLI | Best for |
+|--------|-----|----------|
+| **Built-in cache (L1)** | `chorusgraph-use-cases cache` | Repeat / paraphrase — skip LLM on hit |
+| **Warm chunks (L2)** | `chorusgraph-use-cases warm_chunks` | Stable KB RAG — index once, query-only retrieve |
+| **PrismCortex (L3)** | `chorusgraph-use-cases cortex` | User/session facts — recall ingress, async digest |
+| **ReAct** | `chorusgraph-use-cases react` | Unknown tool order, exploration |
+| **Plan-and-Solve** | `chorusgraph-use-cases plan_solve` | Fixed checklist, known tools |
+| **Reflection** | `chorusgraph-use-cases reflection` | Draft must pass a validator |
+| **Multi-agent** | `chorusgraph-use-cases multi_agent` | Researcher → Writer → Validator role graph |
+
+`ChorusStack.defaults()` attaches **PrismCache** + **Cortex** memory by default. Opt into warm chunks with `index(partition=, version=)` + `warm_retrieval()`. Details: [`chorusgraph/examples/use_cases/`](chorusgraph/examples/use_cases/) · [`docs/CACHE_PROFILES.md`](docs/CACHE_PROFILES.md) · [`docs/ADR-005-warm-chunk-vectors.md`](docs/ADR-005-warm-chunk-vectors.md).
 
 Full install guide: [`docs/INSTALL.md`](docs/INSTALL.md) · AI IDE prompts: [`docs/AI_IDE_PROMPTS.md`](docs/AI_IDE_PROMPTS.md)
 
@@ -93,10 +114,10 @@ Full install guide: [`docs/INSTALL.md`](docs/INSTALL.md) · AI IDE prompts: [`do
 | Feature | Description |
 |---------|-------------|
 | **Native graph engine** | BSP scheduler, envelope channels, conditional routing — no LangGraph on product paths |
-| **Semantic cache (L1)** | Two-stage gate: coarse recall → full verify; safe replay policies per domain |
+| **Semantic cache (L1)** | Built-in PrismCache via `ChorusStack.defaults()` — two-stage gate; demo: `chorusgraph-use-cases cache` |
 | **Retrieval (L2)** | Keyword default; `PrismRAGRetrievalBackend` for vector + taxonomy (opt-in extra) |
-| **Warm chunk vectors (L2)** | Optional: index once by partition/version, warm at boot, query-only retrieve — recommended for RAG latency ([ADR-005](docs/ADR-005-warm-chunk-vectors.md)) |
-| **Memory (L3)** | PrismCortex structured, replayable memory |
+| **Warm chunk vectors (L2)** | Opt-in: `index(partition, version)` + `warm_retrieval` — demo: `chorusgraph-use-cases warm_chunks` ([ADR-005](docs/ADR-005-warm-chunk-vectors.md)) |
+| **Memory (L3)** | PrismCortex — recall at ingress, `schedule_digest` async; demo: `chorusgraph-use-cases cortex` · live: `chorusgraph-finance-memory` |
 | **Route Ledger** | Per-hop audit trail: cache hits, scores, durations, `rule_chain` |
 | **Checkpoints** | SQLite default; Postgres enterprise persistence (license-gated) |
 | **Tool registry** | Allowlisted tools with sandbox; MCP-compatible patterns |
@@ -105,6 +126,7 @@ Full install guide: [`docs/INSTALL.md`](docs/INSTALL.md) · AI IDE prompts: [`do
 | **Multi-tenant guards** | Tenant isolation, resource limits, leakage tests |
 | **Cold audit CLI** | `chorusgraph-audit` — estimate cache savings from query logs (no LLM calls) |
 | **Agent patterns** | ReAct, Plan-Solve, Reflection via `chorusgraph.agents.Agent` — graph = plan |
+| **Multi-agent roles** | Researcher / Writer / Validator on native `Graph` — FC2/HC2 + `chorusgraph-use-cases multi_agent` |
 | **Benchmark matrix** | 8 scenarios (FL/FC/HL/HC) with fairness disclosure |
 | **Deploy packaging** | Dockerfile, docker-compose, k8s manifests |
 
@@ -348,7 +370,9 @@ Readiness scorecard: [`docs/ENTERPRISE_READINESS.md`](docs/ENTERPRISE_READINESS.
 
 ## Examples
 
-- [Local RAG with Chroma + ChorusGraph](chorusgraph/examples/chroma_local_rag/) -- offline vector RAG with native retrieve-to-answer graph
+- [Use cases](chorusgraph/examples/use_cases/) — ReAct, Plan-Solve, Reflection, multi-agent, **PrismCache**, **warm chunks**, **PrismCortex** lifecycle (LLM-free CLI)
+- [Local RAG with Chroma + ChorusGraph](chorusgraph/examples/chroma_local_rag/) — offline vector RAG with native retrieve-to-answer graph
+- Interactive walkthrough: [website/demo.html](https://insightitsGit.github.io/ChorusGraph/demo.html) (cache miss/hit · warm chunks · Cortex)
 
 ---
 

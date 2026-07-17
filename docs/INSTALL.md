@@ -95,8 +95,14 @@ Run the bundled demos:
 
 ```bash
 chorusgraph-demo                    # routing + Route Ledger (LLM-free)
-chorusgraph-finance-patterns        # ReAct, Plan-Solve, Reflection (needs GEMINI_API_KEY)
+chorusgraph-use-cases               # patterns / multi-agent / cache / warm_chunks / cortex
+chorusgraph-use-cases warm_chunks   # L2 warm partitions (ADR-005)
+chorusgraph-use-cases cortex        # L3 PrismCortex lifecycle (teaching stub)
+chorusgraph-finance-patterns        # Gemini + cache_gate (needs GEMINI_API_KEY)
+chorusgraph-finance-memory          # Gemini + Cortex recall/digest (needs GEMINI_API_KEY)
 ```
+
+Interactive browser walkthrough: [`website/demo.html`](../website/demo.html) (cache · warm chunks · Cortex; also on GitHub Pages).
 
 **Planning & domain performance:** [`DEVELOPER_GUIDE.md`](DEVELOPER_GUIDE.md) §10–14 — no separate planner box; finance vs healthcare cache strategies with code examples.
 

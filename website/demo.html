@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Interactive ChorusGraph demo — native agent runtime, Route Ledger, semantic cache, and verified benchmarks. No API key required for the first steps." />
+  <meta name="description" content="Interactive ChorusGraph demo — built-in semantic cache, ReAct / Plan-and-Solve / Reflection, multi-agent roles, Route Ledger, and benchmarks. No API key for the walkthrough." />
   <title>Interactive Demo — ChorusGraph</title>
   <link rel="stylesheet" href="css/style.css" />
   <style>
     .demo-hero { padding: 3rem 0 2rem; }
     .demo-hero h1 { font-size: clamp(1.75rem, 4vw, 2.5rem); margin-bottom: 0.75rem; }
-    .demo-layout { display: grid; grid-template-columns: 240px 1fr; gap: 1.5rem; align-items: start; }
+    .demo-layout { display: grid; grid-template-columns: 260px 1fr; gap: 1.5rem; align-items: start; }
     @media (max-width: 768px) { .demo-layout { grid-template-columns: 1fr; } }
     .step-nav { list-style: none; margin: 0; padding: 0; }
     .step-nav li { margin-bottom: 0.35rem; }
@@ -43,6 +43,34 @@
       background: var(--surface); border: 1px dashed var(--border);
       border-radius: 10px; padding: 1rem; margin-top: 1.5rem; font-size: 0.9rem;
     }
+    .pattern-tabs {
+      display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0 1.25rem;
+    }
+    .pattern-tabs button {
+      padding: 0.5rem 0.9rem; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--surface); color: var(--muted); font: inherit; cursor: pointer;
+    }
+    .pattern-tabs button:hover { border-color: var(--accent); color: var(--text); }
+    .pattern-tabs button.active {
+      border-color: var(--accent); color: var(--text);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+    .pattern-pane { display: none; }
+    .pattern-pane.active { display: block; }
+    .pattern-pane h3 { margin: 0 0 0.5rem; font-size: 1.15rem; }
+    .meta-row {
+      display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.75rem 0 1rem;
+    }
+    .meta-row span {
+      background: var(--surface); border: 1px solid var(--border);
+      padding: 0.25rem 0.65rem; border-radius: 999px; font-size: 0.8rem; color: var(--muted);
+    }
+    .topo {
+      font-family: var(--mono); font-size: 0.85rem; color: var(--accent);
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 0.75rem 1rem; margin: 0.75rem 0 1rem;
+      overflow-x: auto;
+    }
   </style>
 </head>
 <body>
@@ -65,11 +93,13 @@
   <main>
     <section class="demo-hero">
       <div class="container">
-        <h1>Interactive demo — ChorusGraph in 90 seconds</h1>
-        <p class="sub">Click through the launch story: native graph engine, Route Ledger audit, cache savings, and verified benchmarks. Steps 1–3 run locally with <strong>no API key</strong>.</p>
+        <h1>Interactive demo — ChorusGraph</h1>
+        <p class="sub">Native engine with <strong>built-in semantic cache</strong>, optional <strong>warm chunk vectors</strong>, <strong>PrismCortex</strong> memory, agent patterns, multi-agent roles, and verified benchmarks. Walkthrough needs <strong>no API key</strong>; CLI stubs run offline too.</p>
         <div class="proof-strip">
-          <span><strong>LLM-free</strong> demo CLI</span>
-          <span><strong>Apache-2.0</strong></span>
+          <span><strong>Built-in</strong> PrismCache</span>
+          <span><strong>L2</strong> warm chunks</span>
+          <span><strong>L3</strong> PrismCortex</span>
+          <span><strong>LLM-free</strong> CLI demos</span>
           <span><code>pip install "chorusgraph==1.1.0"</code></span>
         </div>
       </div>
@@ -81,7 +111,7 @@
 
         <div id="step-panels">
           <article class="step-panel active" data-step="0">
-            <p class="progress">Step 1 of 6</p>
+            <p class="progress">Step 1 of 11</p>
             <h2>The problem</h2>
             <p>Production agents usually glue six systems together — orchestration, cache, vector DB, checkpoints, observability, audit. Repeat questions burn tokens; compliance asks <em>why</em> the agent answered, and logs are not enough.</p>
             <div class="grid-3">
@@ -92,18 +122,18 @@
           </article>
 
           <article class="step-panel" data-step="1">
-            <p class="progress">Step 2 of 6</p>
+            <p class="progress">Step 2 of 11</p>
             <h2>Install — one package</h2>
-            <p>ChorusGraph is a <span class="highlight">native</span> runtime (not a LangGraph wrapper). Python 3.11+.</p>
+            <p>ChorusGraph is a <span class="highlight">native</span> runtime (not a LangGraph wrapper). Python 3.11+. <code>ChorusStack.defaults()</code> attaches <span class="highlight">PrismCache</span> automatically — no Redis required to start.</p>
             <div class="terminal"><span class="prompt">$</span> pip install "chorusgraph==1.1.0"
-<span class="prompt">$</span> python -c "import chorusgraph; print(chorusgraph.__version__)"
-<span class="out">1.1.0</span></div>
-            <p class="footnote">Optional: <code>pip install "chorusgraph[retrieval,gemini]"</code> for PrismRAG + live Gemini examples. <strong>1.1.0</strong> adds optional <a href="https://github.com/insightitsGit/ChorusGraph/blob/master/docs/ADR-005-warm-chunk-vectors.md">warm chunk vectors</a> for RAG speed.</p>
+<span class="prompt">$</span> python -c "from chorusgraph import ChorusStack; print(ChorusStack.defaults().resolve_cache().name)"
+<span class="out">prism</span></div>
+            <p class="footnote">Swap later with <code>.with_cache(RedisCacheBackend(...))</code> — same graph code. Optional: <code>pip install "chorusgraph[gemini]"</code> for live LLM graphs.</p>
           </article>
 
           <article class="step-panel" data-step="2">
-            <p class="progress">Step 3 of 6</p>
-            <h2>Run the demo — no API key</h2>
+            <p class="progress">Step 3 of 11</p>
+            <h2>Run the routing demo — no API key</h2>
             <p><code>chorusgraph-demo</code> exercises routing, envelopes, and conditional edges on the native <code>Graph</code> engine.</p>
             <div class="terminal"><span class="prompt">$</span> chorusgraph-demo
 <span class="out">=== short path (message='hi') ===
@@ -111,43 +141,152 @@
   "result": { "response": "short:hi", "route": "short_path", ... },
   "ledger": { "run_id": "...", "steps": [ ... ] },
   "persisted_match": true
-}
-
-=== long path (message='hello world!') ===
-{
-  "result": { "response": "long:hello world!", "route": "long_path", ... },
-  ...
 }</span></div>
             <p>Same graph, two routes — scored by message length. This is the native BSP scheduler, not LangGraph.</p>
           </article>
 
           <article class="step-panel" data-step="3">
-            <p class="progress">Step 4 of 6</p>
+            <p class="progress">Step 4 of 11</p>
             <h2>Route Ledger — replay every hop</h2>
-            <p>Every node publishes artifacts with <code>rule_chain</code> and category. The ledger persists for audit and replay.</p>
+            <p>Every node publishes artifacts with <code>rule_chain</code> and category. Cache decisions land here too (<code>cache_hit</code>, scores, duration).</p>
             <div class="terminal"><span class="out">"steps": [
-  { "hop": "analyze", "category_slug": "general", ... },
-  { "hop": "route_decision", "rule_chain": ["score_gt_5", "route=long_path"], ... },
-  { "hop": "long_path", "category_slug": "long_path", ... }
+  { "hop": "cache_gate", "cache_hit": true, "rule_chain": ["cache_gate=hit"], ... },
+  { "hop": "writer", "category_slug": "writer", ... }
 ]</span></div>
             <p>Production teams use this for “why did the agent say that?” — sovereignty-friendly, no third-party trace cloud required.</p>
           </article>
 
           <article class="step-panel" data-step="4">
-            <p class="progress">Step 5 of 6</p>
+            <p class="progress">Step 5 of 11</p>
+            <h2>Built-in semantic cache</h2>
+            <p>L1 <span class="highlight">PrismCache</span> is on by default. <code>cache_gate</code> runs <strong>coarse 64-d recall → full verify</strong>. Toggle miss vs hit to see the product win.</p>
+            <div class="topo">MISS: ingress → cache_gate → tools / ReAct → writer → seed<br/>HIT:&nbsp;&nbsp;ingress → cache_gate → writer (skip LLM)</div>
+            <div class="pattern-tabs" id="cache-tabs" role="tablist" aria-label="Cache miss or hit">
+              <button type="button" class="active" data-cache="miss">1. Cold miss</button>
+              <button type="button" data-cache="hit">2. Warm hit</button>
+            </div>
+            <div id="cache-panes">
+              <div class="pattern-pane active" data-cache="miss">
+                <h3>Cold path — cache miss</h3>
+                <p>Empty cache → gate returns <code>MISS</code> → graph runs tools / agent → answer → <strong>seed</strong> PrismCache (quality-gated).</p>
+                <div class="terminal"><span class="prompt">$</span> chorusgraph-use-cases cache
+<span class="out">Turn 1 (cold): kind=miss is_hit=False
+  -> continue graph: tools / ReAct / writer, then seed cache
+Seeded PrismCache for: 'What is the USD to EUR exchange rate today?'</span></div>
+              </div>
+              <div class="pattern-pane" data-cache="hit">
+                <h3>Warm path — cache hit</h3>
+                <p>Same (or seeded paraphrase) query → gate returns <code>HIT</code> with score → route straight to writer. ~ms latency, 0 LLM tokens on repeats.</p>
+                <div class="terminal"><span class="out">Turn 2 (repeat): kind=hit is_hit=True score=1.0
+  cached value: {'from_currency': 'USD', 'to_currency': 'EUR', 'rate': 0.92, ...}
+  -> cache_gate routes straight to writer (skip LLM tools)
+Backend: prism (ChorusStack default)</span></div>
+              </div>
+            </div>
+            <div class="grid-3" style="margin-top:1rem">
+              <div class="card"><h3>Default</h3><p><code>PrismCacheBackend</code> — zero extra deps</p></div>
+              <div class="card"><h3>Swap</h3><p><code>RedisCacheBackend</code> via <code>with_cache()</code></p></div>
+              <div class="card"><h3>Profiles</h3><p>Finance: short TTL · Healthcare: facts-only</p></div>
+            </div>
+            <p class="footnote">CLI: <code>chorusgraph-use-cases cache</code> · Audit your logs: <code>chorusgraph-audit --log queries.jsonl</code> · Docs: <code>CACHE_PROFILES.md</code></p>
+          </article>
+
+          <article class="step-panel" data-step="5">
+            <p class="progress">Step 6 of 11</p>
+            <h2>Warm chunks (L2) &amp; PrismCortex (L3)</h2>
+            <p>L1 cache answers. L2 retrieves knowledge. L3 remembers <em>user/session facts</em>. Toggle to see the right recipe for each.</p>
+            <div class="pattern-tabs" id="l2l3-tabs" role="tablist" aria-label="Warm chunks or Cortex">
+              <button type="button" class="active" data-l2l3="warm">Warm chunk vectors</button>
+              <button type="button" data-l2l3="cortex">PrismCortex</button>
+            </div>
+            <div id="l2l3-panes">
+              <div class="pattern-pane active" data-l2l3="warm">
+                <h3>Index once · warm at boot · query-only retrieve</h3>
+                <p>Do <strong>not</strong> re-encode the KB every turn. Use partitions so a catalog bump never invalidates <code>kb_markdown</code>. ADR-005.</p>
+                <div class="topo">index(partition, version) → warm_retrieval → retrieve (query-only)<br/>rerank_policy="vectors_only" on PrismRAG</div>
+                <div class="terminal"><span class="prompt">$</span> chorusgraph-use-cases warm_chunks
+<span class="out">index kb_markdown=docs-v1, catalog=cat-v1
+warm_retrieval → retrieval_ready=True
+catalog → cat-v2  (kb_markdown still docs-v1)
+retrieve handler rule_chain includes partition=kb_markdown</span></div>
+              </div>
+              <div class="pattern-pane" data-l2l3="cortex">
+                <h3>Recall at ingress · digest off the hot path</h3>
+                <p><strong>Wrong:</strong> user prefs in L1 whole-answer cache · sync digest before response · dump full transcript every hop.<br/>
+                <strong>Right:</strong> <code>recall_structured</code> → confidence gate · <code>schedule_digest</code> async after the answer.</p>
+                <div class="topo">ingress recall_structured → hops → response → async schedule_digest</div>
+                <div class="terminal"><span class="prompt">$</span> chorusgraph-use-cases cortex
+<span class="out">Turn 1: schedule_digest (non-blocking)
+Turn 2: memory_confidence=0.91  memory_recall=User prefers moderate risk
+Unrelated query: None  (no fabricated fallback)
+Live: chorusgraph-finance-memory</span></div>
+              </div>
+            </div>
+            <p class="footnote">Warm: <code>docs/ADR-005-warm-chunk-vectors.md</code> · Cortex: <code>chorusgraph-finance-memory</code> / <code>CortexMemoryBackend</code></p>
+          </article>
+
+          <article class="step-panel" data-step="6">
+            <p class="progress">Step 7 of 11</p>
+            <h2>Use cases — pick a design</h2>
+            <p>Patterns, multi-agent, <span class="highlight">cache</span>, <span class="highlight">warm chunks</span>, and <span class="highlight">Cortex</span>. Click a tab, then run the matching CLI offline.</p>
+            <div class="pattern-tabs" id="pattern-tabs" role="tablist" aria-label="Design patterns"></div>
+            <div id="pattern-panes"></div>
+            <div class="terminal"><span class="prompt">$</span> chorusgraph-use-cases --list
+<span class="out">  [react] ...
+  [plan_solve] ...
+  [reflection] ...
+  [multi_agent] ...
+  [cache] Built-in semantic cache (miss then hit)
+  [warm_chunks] Warm chunk vectors (index once, query-only retrieve)
+  [cortex] PrismCortex L3 - recall at ingress, digest off the hot path</span>
+<span class="prompt">$</span> chorusgraph-use-cases cache
+<span class="prompt">$</span> chorusgraph-use-cases warm_chunks
+<span class="prompt">$</span> chorusgraph-use-cases cortex</div>
+            <p class="footnote">Source: <code>chorusgraph/examples/use_cases/</code> · live Gemini + cache gate: <code>chorusgraph-finance-patterns</code> · Cortex: <code>chorusgraph-finance-memory</code></p>
+          </article>
+
+          <article class="step-panel" data-step="7">
+            <p class="progress">Step 8 of 11</p>
+            <h2>Multi-agent — role pipeline</h2>
+            <p>When the plan is a <em>known</em> multi-hop pipeline, use role-typed nodes on the native graph — not a dynamic <code>Agent</code> loop. Production FC2/HC2 add <code>cache_gate</code> before the role chain.</p>
+            <div class="topo">START → researcher → writer → validator → END<br/>+ cache: ingress → cache_gate -[hit]→ writer | -[miss]→ researcher → …</div>
+            <div class="grid-3">
+              <div class="card"><h3>Researcher</h3><p>Plans what to gather; publishes <code>research_plan</code>.</p></div>
+              <div class="card"><h3>Writer</h3><p>Drafts the answer from the plan artifact.</p></div>
+              <div class="card"><h3>Validator</h3><p>Checks the draft; ledger records <code>ok=…</code>.</p></div>
+            </div>
+            <div class="terminal"><span class="prompt">$</span> chorusgraph-use-cases multi_agent
+<span class="out">Ledger path: researcher -&gt; writer -&gt; validator</span></div>
+            <p>See <code>docs/FINANCE_MULTIAGENT_CHORUS.md</code> for FC2 wiring with cache hit skip.</p>
+          </article>
+
+          <article class="step-panel" data-step="8">
+            <p class="progress">Step 9 of 11</p>
+            <h2>Live pattern graphs (optional Gemini)</h2>
+            <p>Full finance graphs wire <code>cache_gate</code> before ReAct / Plan-Solve / Reflection. Offline <code>chorusgraph-use-cases cache</code> is enough to see the gate.</p>
+            <div class="terminal"><span class="prompt">$</span> pip install "chorusgraph[gemini]"
+<span class="prompt">$</span> set GEMINI_API_KEY=...
+<span class="prompt">$</span> chorusgraph-finance-patterns
+<span class="out">=== REACT ===
+Ledger path: vector_ingress -&gt; cache_gate -&gt; react_agent -&gt; writer -&gt; ...
+(on repeat query: cache_gate -&gt; writer)</span></div>
+          </article>
+
+          <article class="step-panel" data-step="9">
+            <p class="progress">Step 10 of 11</p>
             <h2>Measure cache savings (offline)</h2>
-            <p><code>chorusgraph-audit</code> simulates semantic cache hit rate from a query log — no live LLM calls.</p>
+            <p><code>chorusgraph-audit</code> runs your query log through the <strong>real</strong> semantic gate — no live LLM calls — so you can estimate hit rate before production.</p>
             <div class="terminal"><span class="prompt">$</span> chorusgraph-audit --log your_queries.jsonl
 <span class="out">Estimated cache hit rate: 42%
 Projected LLM call reduction: 38%
 ...</span></div>
-            <p>Pair with staging traffic before you flip cache on in production.</p>
+            <p>Pair with staging traffic before you flip cache on in production. After a pilot, inspect measured hits from the Route Ledger.</p>
           </article>
 
-          <article class="step-panel" data-step="5">
-            <p class="progress">Step 6 of 6</p>
+          <article class="step-panel" data-step="10">
+            <p class="progress">Step 11 of 11</p>
             <h2>Verified benchmarks</h2>
-            <p>Paired Azure runs vs LangGraph baselines — same tasks, only orchestration differs. Canonical mid tier: <code>mid_20260708_111539</code>.</p>
+            <p>Paired Azure runs vs LangGraph baselines — same tasks, only orchestration differs. Cache is a major driver of finance multi-agent wins on repeats.</p>
             <table>
               <thead><tr><th>Scenario</th><th>LangGraph</th><th>ChorusGraph</th></tr></thead>
               <tbody>
@@ -157,11 +296,11 @@ Projected LLM call reduction: 38%
                 <tr><td>Healthcare multi</td><td>59%</td><td><strong>85%</strong></td></tr>
               </tbody>
             </table>
-            <p class="footnote">Full tables: <a href="benchmarks.html">benchmarks page</a> · <a href="https://github.com/insightitsGit/ChorusGraph/blob/master/benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md">latency summary</a></p>
+            <p class="footnote">Full tables: <a href="benchmarks.html">benchmarks page</a></p>
             <div class="cta-row">
               <a class="btn btn-primary" href="https://github.com/insightitsGit/ChorusGraph">Star on GitHub</a>
               <a class="btn btn-secondary" href="https://github.com/insightitsGit/ChorusGraph/blob/master/docs/INSTALL.md">Install guide</a>
-              <a class="btn btn-secondary" href="mailto:contact@insightits.com?subject=Agent%20Stack%20Audit&utm_source=demo&utm_medium=cta&utm_campaign=producthunt">Book an audit</a>
+              <a class="btn btn-secondary" href="https://github.com/insightitsGit/ChorusGraph/tree/master/chorusgraph/examples/use_cases">Use cases</a>
             </div>
           </article>
         </div>
@@ -175,7 +314,6 @@ Projected LLM call reduction: 38%
         <div class="embed-note">
           <strong>Product Hunt / embed:</strong> Use this URL as your interactive demo link —
           <a id="demo-canonical-url" href="demo.html"></a>.
-          Optional: record this walkthrough in <a href="https://www.producthunt.com/launch/guide">Supademo or Arcade</a> and embed on this page later.
         </div>
       </div>
     </section>
@@ -189,13 +327,168 @@ Projected LLM call reduction: 38%
 
   <script>
     (function () {
+      const patterns = [
+        {
+          id: "react",
+          label: "ReAct",
+          title: "Compare live FX rates",
+          domain: "Finance / rates",
+          when: "1-N tool calls, order unknown",
+          topo: "reason <-> tool -> finish -> writer",
+          why: "The agent decides which tools to call and in what order. Thought -> Action -> Observation until finish.",
+          stop: "finish=true or PlanPolicy max_steps",
+          cli: "chorusgraph-use-cases react",
+          sample: "Thought: Need USD/EUR first\nAction: fetch_exchange_rate(USD->EUR)\nObservation: rate=0.92\nFinish after GBP leg",
+        },
+        {
+          id: "plan_solve",
+          label: "Plan-and-Solve",
+          title: "Fetch rates, then cross-rate",
+          domain: "Finance / pricing",
+          when: "Decomposable tasks, known tool catalog",
+          topo: "planner -> step1 -> step2 -> ... -> writer",
+          why: "Emit a static checklist once, then execute sequentially - cacheable and auditable.",
+          stop: "All plan steps done (or on_step_failure)",
+          cli: "chorusgraph-use-cases plan_solve",
+          sample: "Plan:\n  1. fetch USD/EUR\n  2. fetch USD/GBP\n  3. compute EUR/GBP cross\nExecute -> summary",
+        },
+        {
+          id: "reflection",
+          label: "Reflection",
+          title: "Draft must pass rate validator",
+          domain: "Compliance-sensitive copy",
+          when: "Drafts with rates, citations, claims to verify",
+          topo: "draft -> validator <-> revise -> approved",
+          why: "Generator -> critic loop revises until a validator (or grounding guard) approves.",
+          stop: "Validator approves or max_revisions",
+          cli: "chorusgraph-use-cases reflection",
+          sample: "Draft wrong -> validator rejects -> revise with 0.92 / 0.79 -> approved",
+        },
+        {
+          id: "multi_agent",
+          label: "Multi-agent",
+          title: "Researcher -> Writer -> Validator",
+          domain: "Role orchestration",
+          when: "Known multi-hop pipeline with distinct roles",
+          topo: "START -> researcher -> writer -> validator -> END",
+          why: "Role-typed nodes on a fixed graph. Production FC2/HC2 put cache_gate before this chain.",
+          stop: "Graph reaches END",
+          cli: "chorusgraph-use-cases multi_agent",
+          sample: "researcher -> writer -> validator\nLedger records every role hop",
+        },
+        {
+          id: "cache",
+          label: "Cache",
+          title: "Built-in PrismCache (miss then hit)",
+          domain: "L1 semantic cache",
+          when: "Repeat / paraphrase queries",
+          topo: "cache_gate -[hit]-> writer | -[miss]-> tools then seed",
+          why: "ChorusStack.defaults() ships PrismCache. Two-stage gate: coarse 64-d recall -> full verify. Hits skip the LLM.",
+          stop: "Hit returns value; miss continues then seeds",
+          cli: "chorusgraph-use-cases cache",
+          sample: "Turn 1: MISS -> tools -> seed\nTurn 2: HIT score~1.0 -> writer (0 LLM tokens)\nBackend: prism",
+        },
+        {
+          id: "warm_chunks",
+          label: "Warm chunks",
+          title: "Warm chunk vectors (L2)",
+          domain: "L2 retrieval / ADR-005",
+          when: "Stable KB RAG; multi-replica ready probes",
+          topo: "index(partition,version) -> warm_retrieval -> query-only retrieve",
+          why: "Do not re-encode the corpus every turn. Partition isolation: catalog bumps must not invalidate kb_markdown.",
+          stop: "retrieval_ready(partition); same version index is a no-op",
+          cli: "chorusgraph-use-cases warm_chunks",
+          sample: "kb_markdown=docs-v1 ready\ncatalog -> cat-v2 (kb unchanged)\nrule_chain: partition=kb_markdown",
+        },
+        {
+          id: "cortex",
+          label: "Cortex",
+          title: "PrismCortex L3 lifecycle",
+          domain: "L3 memory",
+          when: "Personalized / cross-session facts",
+          topo: "ingress recall_structured -> hops -> async schedule_digest",
+          why: "User facts belong in Cortex, not L1 whole-answer cache. Digest never blocks the response path.",
+          stop: "confidence/freshness gate; empty recall = no fake fallback",
+          cli: "chorusgraph-use-cases cortex",
+          sample: "WRONG: L1 prefs / sync digest / full transcript\nRIGHT: recall -> confidence -> async digest\nLive: chorusgraph-finance-memory",
+        },
+      ];
+
+      const tabs = document.getElementById("pattern-tabs");
+      const panes = document.getElementById("pattern-panes");
+
+      patterns.forEach(function (p, i) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.setAttribute("role", "tab");
+        btn.textContent = p.label;
+        btn.dataset.pattern = p.id;
+        if (i === 0) btn.classList.add("active");
+        btn.addEventListener("click", function () { showPattern(p.id); });
+        tabs.appendChild(btn);
+
+        const pane = document.createElement("div");
+        pane.className = "pattern-pane" + (i === 0 ? " active" : "");
+        pane.dataset.pattern = p.id;
+        pane.innerHTML =
+          "<h3>" + p.title + "</h3>" +
+          "<div class=\"meta-row\">" +
+          "<span>" + p.domain + "</span>" +
+          "<span>" + p.when + "</span>" +
+          "</div>" +
+          "<p>" + p.why + "</p>" +
+          "<div class=\"topo\">" + p.topo + "</div>" +
+          "<p><strong>Stop:</strong> " + p.stop + "</p>" +
+          "<div class=\"terminal\"><span class=\"prompt\">$</span> " + p.cli +
+          "\n<span class=\"out\">" + p.sample + "</span></div>";
+        panes.appendChild(pane);
+      });
+
+      function showPattern(id) {
+        tabs.querySelectorAll("button").forEach(function (b) {
+          b.classList.toggle("active", b.dataset.pattern === id);
+        });
+        panes.querySelectorAll(".pattern-pane").forEach(function (pane) {
+          pane.classList.toggle("active", pane.dataset.pattern === id);
+        });
+      }
+
+      document.querySelectorAll("#cache-tabs button").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var id = btn.dataset.cache;
+          document.querySelectorAll("#cache-tabs button").forEach(function (b) {
+            b.classList.toggle("active", b.dataset.cache === id);
+          });
+          document.querySelectorAll("#cache-panes .pattern-pane").forEach(function (pane) {
+            pane.classList.toggle("active", pane.dataset.cache === id);
+          });
+        });
+      });
+
+      document.querySelectorAll("#l2l3-tabs button").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var id = btn.dataset.l2l3;
+          document.querySelectorAll("#l2l3-tabs button").forEach(function (b) {
+            b.classList.toggle("active", b.dataset.l2l3 === id);
+          });
+          document.querySelectorAll("#l2l3-panes .pattern-pane").forEach(function (pane) {
+            pane.classList.toggle("active", pane.dataset.l2l3 === id);
+          });
+        });
+      });
+
       const labels = [
         "1. The problem",
-        "2. Install",
+        "2. Install + PrismCache",
         "3. chorusgraph-demo",
         "4. Route Ledger",
-        "5. chorusgraph-audit",
-        "6. Benchmarks",
+        "5. Built-in cache",
+        "6. Warm chunks & Cortex",
+        "7. Use cases & patterns",
+        "8. Multi-agent",
+        "9. Live Gemini (opt.)",
+        "10. chorusgraph-audit",
+        "11. Benchmarks",
       ];
       const nav = document.getElementById("step-nav");
       const panels = Array.from(document.querySelectorAll(".step-panel"));

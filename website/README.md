@@ -7,10 +7,12 @@ Static Hormozi-style landing pages for ChorusGraph. Deploy to GitHub Pages, Netl
 | Path | Purpose |
 |------|---------|
 | `index.html` | Landing — Pain → Proof → Plan |
-| `demo.html` | **Interactive demo** — Product Hunt / launch walkthrough |
+| `demo.html` | **Interactive demo** — PrismCache, warm chunks, PrismCortex, patterns, multi-agent, ledger, benchmarks |
 | `plugins/prismrag.html` | PrismRAG plug-in story |
 | `pricing.html` | 3-tier pricing |
 | `benchmarks.html` | Verified results + repro command |
+
+The demo’s step 5 toggles **cache miss vs hit**; step 6 toggles **warm chunks vs PrismCortex**; step 7 has tabs for every use case. Matching offline CLI: `chorusgraph-use-cases` / `cache` / `warm_chunks` / `cortex`.
 
 ## Local preview
 
