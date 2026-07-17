@@ -3,729 +3,853 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Try ChorusGraph in the browser — pick ReAct, Plan-Solve, Reflection, multi-agent, PrismCache, warm chunks, or Cortex. No API key." />
-  <title>Try ChorusGraph — Interactive Demo</title>
+  <meta name="description" content="Interactive ChorusGraph demo — run Cache, ReAct, Plan-Solve, Reflection, multi-agent, warm chunks, and Cortex in your browser. No API key." />
+  <title>Try ChorusGraph</title>
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    .demo-hero { padding: 2.5rem 0 1.25rem; }
-    .demo-hero h1 { font-size: clamp(1.75rem, 4vw, 2.5rem); margin-bottom: 0.75rem; }
-    .playground {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 1.25rem 1.35rem 1.5rem;
-      margin: 0 0 2rem;
+    :root {
+      --ok: #34d399;
+      --warn: #fbbf24;
+      --danger: #f87171;
+      --node: #1a2332;
     }
-    .mode-grid {
+    body { min-height: 100vh; }
+    .shell { max-width: 1080px; margin: 0 auto; padding: 0 1.1rem 3rem; }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 1rem; flex-wrap: wrap; padding: 1rem 0; border-bottom: 1px solid var(--border);
+      margin-bottom: 1.25rem;
+    }
+    .topbar .logo { font-size: 1.1rem; }
+    .live-pill {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      font-size: 0.78rem; color: var(--ok);
+      border: 1px solid rgba(52, 211, 153, 0.35);
+      background: rgba(52, 211, 153, 0.08);
+      padding: 0.3rem 0.65rem; border-radius: 999px;
+    }
+    .live-pill i {
+      width: 7px; height: 7px; border-radius: 50%; background: var(--ok);
+      box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.7);
+      animation: pulse 1.6s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.55); }
+      70% { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+    }
+    h1 {
+      font-size: clamp(1.6rem, 3.5vw, 2.15rem);
+      line-height: 1.2; margin: 0 0 0.4rem;
+    }
+    .lede { color: var(--muted); margin: 0 0 1.25rem; max-width: 40rem; }
+
+    .modes {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-      gap: 0.5rem;
-      margin: 1rem 0 1.25rem;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 0.4rem;
+      margin-bottom: 1rem;
     }
-    .mode-grid button {
-      text-align: left;
-      padding: 0.7rem 0.85rem;
-      border-radius: 10px;
+    @media (max-width: 900px) {
+      .modes { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+    @media (max-width: 560px) {
+      .modes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    .modes button {
       border: 1px solid var(--border);
-      background: var(--bg);
+      background: var(--surface);
       color: var(--muted);
+      border-radius: 10px;
+      padding: 0.65rem 0.4rem;
       font: inherit;
       cursor: pointer;
-      transition: border-color 0.15s, color 0.15s, box-shadow 0.15s;
+      text-align: center;
+      transition: border-color 0.15s, color 0.15s, transform 0.12s, background 0.15s;
     }
-    .mode-grid button:hover { border-color: var(--accent); color: var(--text); }
-    .mode-grid button.active {
+    .modes button:hover { border-color: var(--accent); color: var(--text); transform: translateY(-1px); }
+    .modes button.active {
       border-color: var(--accent);
       color: var(--text);
+      background: rgba(20, 184, 166, 0.12);
       box-shadow: 0 0 0 1px var(--accent);
     }
-    .mode-grid button strong { display: block; color: var(--text); font-size: 0.9rem; }
-    .mode-grid button span { display: block; font-size: 0.72rem; margin-top: 0.2rem; line-height: 1.3; }
-    .mode-blurb {
-      color: var(--muted);
-      font-size: 0.92rem;
-      margin-bottom: 1rem;
+    .modes button strong { display: block; font-size: 0.82rem; color: inherit; }
+    .modes button em { display: block; font-style: normal; font-size: 0.68rem; opacity: 0.85; margin-top: 0.15rem; }
+
+    .graph {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem;
       min-height: 2.6rem;
-    }
-    .query-row {
-      display: flex;
-      gap: 0.65rem;
-      flex-wrap: wrap;
-      align-items: stretch;
-    }
-    .query-row input[type="text"] {
-      flex: 1 1 220px;
-      min-width: 0;
-      padding: 0.8rem 1rem;
-      border-radius: 10px;
+      padding: 0.75rem 0.9rem;
+      background: var(--surface);
       border: 1px solid var(--border);
-      background: var(--bg);
+      border-radius: 12px;
+      margin-bottom: 1rem;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+    }
+    .graph .node {
+      background: var(--node);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 0.35rem 0.55rem;
+      border-radius: 7px;
+      transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+    }
+    .graph .node.on {
+      border-color: var(--accent);
+      color: #99f6e4;
+      background: rgba(20, 184, 166, 0.18);
+      transform: scale(1.04);
+    }
+    .graph .node.hit {
+      border-color: var(--ok);
+      color: #a7f3d0;
+      background: rgba(52, 211, 153, 0.15);
+    }
+    .graph .node.miss {
+      border-color: var(--warn);
+      color: #fde68a;
+      background: rgba(251, 191, 36, 0.12);
+    }
+    .graph .arrow { color: #334155; }
+
+    .composer {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 0.5rem;
+      margin-bottom: 0.6rem;
+    }
+    @media (max-width: 640px) {
+      .composer { grid-template-columns: 1fr 1fr; }
+      .composer input { grid-column: 1 / -1; }
+    }
+    .composer input {
+      width: 100%;
+      padding: 0.85rem 1rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface);
       color: var(--text);
       font: inherit;
       font-size: 1rem;
     }
-    .query-row input:focus {
+    .composer input:focus {
       outline: none;
       border-color: var(--accent);
-      box-shadow: 0 0 0 1px var(--accent);
+      box-shadow: 0 0 0 2px rgba(20, 184, 166, 0.25);
     }
-    .query-row .btn { border: none; cursor: pointer; align-self: stretch; display: inline-flex; align-items: center; }
-    .query-row .btn:disabled { opacity: 0.55; cursor: wait; }
-    .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.75rem 0 0; }
+    .composer .btn {
+      border: none;
+      cursor: pointer;
+      padding: 0.85rem 1.15rem;
+      white-space: nowrap;
+    }
+    .composer .btn:disabled { opacity: 0.5; cursor: wait; }
+    .composer #btn-run { animation: none; }
+    .composer #btn-run.nudge {
+      animation: nudge 1.2s ease-in-out 2;
+    }
+    @keyframes nudge {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.4); }
+      50% { box-shadow: 0 0 0 6px rgba(20, 184, 166, 0); }
+    }
+
+    .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
     .chips button {
       border: 1px solid var(--border);
       background: transparent;
       color: var(--muted);
       border-radius: 999px;
-      padding: 0.3rem 0.7rem;
+      padding: 0.35rem 0.75rem;
       font: inherit;
       font-size: 0.78rem;
       cursor: pointer;
     }
-    .chips button:hover { border-color: var(--accent); color: var(--accent); }
-    .stats {
+    .chips button:hover, .chips button.hot {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .board {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 0.65rem;
-      margin: 1.25rem 0;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 0.85rem;
     }
-    .stat {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 0.65rem 0.8rem;
-    }
-    .stat .label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-    .stat .value { font-size: 1.25rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
-    .run-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1rem;
-      margin-top: 0.5rem;
-    }
-    @media (max-width: 800px) { .run-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 800px) { .board { grid-template-columns: 1fr; } }
+
     .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 0.95rem 1rem 1.1rem;
+      min-height: 320px;
+      display: flex;
+      flex-direction: column;
+    }
+    .panel header {
+      position: static;
+      background: transparent;
+      border: 0;
+      padding: 0;
+      margin: 0 0 0.75rem;
+      backdrop-filter: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+    .panel header h2 {
+      margin: 0;
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .panel header .meta { font-size: 0.75rem; color: var(--muted); font-family: var(--mono); }
+
+    .ledger {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      overflow-y: auto;
+      flex: 1;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      max-height: 380px;
+    }
+    .ledger li {
+      display: grid;
+      grid-template-columns: 52px 1fr;
+      gap: 0.55rem;
+      padding: 0.5rem 0.55rem;
+      margin-bottom: 0.35rem;
+      border-radius: 8px;
+      background: var(--bg);
+      border-left: 3px solid var(--border);
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.28s ease, transform 0.28s ease;
+    }
+    .ledger li.show { opacity: 1; transform: none; }
+    .ledger li.hit { border-left-color: var(--ok); }
+    .ledger li.miss { border-left-color: var(--warn); }
+    .ledger li.llm { border-left-color: #60a5fa; }
+    .ledger .t { color: #64748b; }
+    .ledger .b { color: #cbd5e1; }
+    .ledger .b strong { color: var(--text); }
+
+    .answer {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .badges { display: flex; flex-wrap: wrap; gap: 0.35rem; min-height: 1.4rem; }
+    .badge {
+      font-size: 0.72rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .badge.ok { color: var(--ok); border-color: rgba(52,211,153,0.45); }
+    .badge.warn { color: var(--warn); border-color: rgba(251,191,36,0.45); }
+    .badge.llm { color: #93c5fd; border-color: rgba(96,165,250,0.45); }
+    .answer-body {
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: 10px;
       padding: 0.9rem 1rem;
-      min-height: 220px;
-    }
-    .panel h3 {
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--muted);
-      margin-bottom: 0.75rem;
-      font-weight: 600;
-    }
-    .ledger { list-style: none; margin: 0; padding: 0; font-family: var(--mono); font-size: 0.8rem; }
-    .ledger li {
-      padding: 0.45rem 0.55rem;
-      border-left: 2px solid var(--border);
-      margin-bottom: 0.35rem;
-      color: #94a3b8;
-      opacity: 0;
-      transform: translateX(-6px);
-      transition: opacity 0.25s ease, transform 0.25s ease, border-color 0.25s;
-    }
-    .ledger li.show { opacity: 1; transform: none; }
-    .ledger li.hit { border-color: var(--accent); color: #5eead4; }
-    .ledger li.miss { border-color: #f59e0b; color: #fcd34d; }
-    .ledger li .hop { color: var(--text); font-weight: 600; }
-    .answer-box {
-      font-size: 0.95rem;
-      color: var(--text);
-      line-height: 1.5;
       white-space: pre-wrap;
+      line-height: 1.55;
+      color: var(--text);
+      font-size: 0.95rem;
+      flex: 1;
+      min-height: 140px;
     }
-    .answer-box .muted { color: var(--muted); font-size: 0.85rem; margin-top: 0.75rem; }
-    .badge {
-      display: inline-block;
-      font-size: 0.72rem;
-      padding: 0.15rem 0.45rem;
-      border-radius: 999px;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      margin-right: 0.35rem;
-    }
-    .badge.ok { border-color: var(--accent); color: var(--accent); }
-    .badge.warn { border-color: #f59e0b; color: #fbbf24; }
-    .hint { font-size: 0.85rem; color: var(--muted); margin-top: 1rem; }
-    .walk-toggle {
-      margin: 2rem 0 0.75rem;
-      display: flex;
+    .answer-body .placeholder { color: var(--muted); }
+    .cta-next {
+      display: none;
       align-items: center;
       justify-content: space-between;
-      gap: 1rem;
+      gap: 0.75rem;
       flex-wrap: wrap;
-    }
-    .walk-toggle h2 { font-size: 1.25rem; margin: 0; }
-    details.walkthrough {
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 0.5rem 1rem 1rem;
-      background: var(--surface);
-      margin-bottom: 2rem;
-    }
-    details.walkthrough > summary {
-      cursor: pointer;
-      padding: 0.75rem 0;
-      color: var(--text);
-      font-weight: 600;
-      list-style: none;
-    }
-    details.walkthrough > summary::-webkit-details-marker { display: none; }
-    details.walkthrough > summary::after { content: " ▾"; color: var(--accent); }
-    details.walkthrough[open] > summary::after { content: " ▴"; }
-    .topo-mini {
-      font-family: var(--mono);
-      font-size: 0.78rem;
-      color: var(--accent);
-      margin: 0.35rem 0 0.75rem;
-      word-break: break-word;
-    }
-    .cli-note {
-      margin-top: 1.5rem;
-      padding: 1rem;
-      border: 1px dashed var(--border);
+      padding: 0.7rem 0.85rem;
       border-radius: 10px;
-      font-size: 0.9rem;
-      color: var(--muted);
+      border: 1px solid rgba(20, 184, 166, 0.4);
+      background: rgba(20, 184, 166, 0.08);
+      color: var(--text);
+      font-size: 0.88rem;
     }
-    .cli-note code { color: var(--accent); }
+    .cta-next.show { display: flex; }
+    .cta-next button {
+      border: none;
+      cursor: pointer;
+      background: var(--accent);
+      color: #042f2e;
+      font-weight: 700;
+      border-radius: 8px;
+      padding: 0.45rem 0.8rem;
+      font: inherit;
+      font-size: 0.85rem;
+    }
+
+    .meters {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+      margin: 1rem 0 0;
+    }
+    @media (max-width: 640px) { .meters { grid-template-columns: repeat(2, 1fr); } }
+    .meter {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.65rem 0.75rem;
+    }
+    .meter .k { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .meter .v { font-size: 1.35rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+
+    .foot {
+      margin-top: 1.5rem;
+      color: var(--muted);
+      font-size: 0.82rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.25rem;
+      align-items: center;
+    }
+    .foot a { color: var(--accent); }
   </style>
 </head>
 <body>
-  <header>
-    <div class="container">
-      <nav>
-        <a class="logo" href="index.html">Chorus<span>Graph</span></a>
-        <ul>
-          <li><a href="index.html">Home</a></li>
-          <li><a href="demo.html">Demo</a></li>
-          <li><a href="plugins/prismrag.html">PrismRAG</a></li>
-          <li><a href="benchmarks.html">Benchmarks</a></li>
-          <li><a href="pricing.html">Pricing</a></li>
-          <li><a href="https://github.com/insightitsGit/ChorusGraph/tree/master/docs">Docs</a></li>
-        </ul>
-      </nav>
-    </div>
-  </header>
-
-  <main>
-    <section class="demo-hero">
-      <div class="container">
-        <h1>Try ChorusGraph</h1>
-        <p class="sub">A live <strong>in-browser simulator</strong> of the native stack — pick a mode, type a question, watch the Route Ledger. No API key. Repeat the same FX question to see the <strong>built-in cache hit</strong>.</p>
-        <div class="proof-strip">
-          <span><strong>Interactive</strong> playground</span>
-          <span><strong>L1</strong> PrismCache</span>
-          <span><strong>L2</strong> warm chunks</span>
-          <span><strong>L3</strong> Cortex</span>
-        </div>
+  <div class="shell">
+    <div class="topbar">
+      <a class="logo" href="index.html">Chorus<span>Graph</span></a>
+      <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap">
+        <span class="live-pill"><i></i> Live in browser · no API key</span>
+        <button type="button" class="btn btn-secondary" id="btn-reset" style="padding:0.4rem 0.75rem;font-size:0.85rem">Reset session</button>
       </div>
-    </section>
-
-    <section style="padding-top:0">
-      <div class="container">
-        <div class="playground" id="playground">
-          <p style="color:var(--muted);margin:0 0 0.25rem;font-size:0.85rem;">Choose a design</p>
-          <div class="mode-grid" id="mode-grid" role="radiogroup" aria-label="Demo mode"></div>
-          <p class="mode-blurb" id="mode-blurb"></p>
-          <p class="topo-mini" id="mode-topo"></p>
-
-          <div class="query-row">
-            <input type="text" id="query-input" maxlength="200"
-              placeholder="Ask something — e.g. Compare USD/EUR and USD/GBP"
-              aria-label="Query" />
-            <button type="button" class="btn btn-primary" id="btn-run">Run →</button>
-            <button type="button" class="btn btn-secondary" id="btn-reset">Reset</button>
-          </div>
-          <div class="chips" id="chips"></div>
-
-          <div class="stats">
-            <div class="stat"><div class="label">Sim LLM calls</div><div class="value" id="stat-llm">0</div></div>
-            <div class="stat"><div class="label">Cache hits</div><div class="value" id="stat-hits">0</div></div>
-            <div class="stat"><div class="label">Cache misses</div><div class="value" id="stat-miss">0</div></div>
-            <div class="stat"><div class="label">Last latency</div><div class="value" id="stat-lat">—</div></div>
-          </div>
-
-          <div class="run-grid">
-            <div class="panel">
-              <h3>Route Ledger</h3>
-              <ul class="ledger" id="ledger" aria-live="polite">
-                <li class="show" style="border-color:transparent;opacity:0.7">Run a query to stream hops…</li>
-              </ul>
-            </div>
-            <div class="panel">
-              <h3>Result</h3>
-              <div class="answer-box" id="answer">
-                <span class="muted">Output and cache/memory status appear here.</span>
-              </div>
-            </div>
-          </div>
-
-          <p class="hint" id="hint">Tip: run an FX question twice in <strong>Cache</strong> or <strong>ReAct</strong> mode — the second run should skip tools (HIT).</p>
-        </div>
-
-        <div class="cli-note">
-          <strong>This page simulates the product path in your browser</strong> (no Python server).
-          For the real engine offline:
-          <code>pip install chorusgraph</code> then
-          <code>chorusgraph-use-cases</code> /
-          <code>chorusgraph-use-cases cache</code> /
-          <code>warm_chunks</code> /
-          <code>cortex</code>.
-          Live Gemini: <code>chorusgraph-finance-patterns</code>, <code>chorusgraph-finance-memory</code>.
-        </div>
-
-        <details class="walkthrough">
-          <summary>Optional: click-through story (what each layer is for)</summary>
-          <div class="grid-3" style="margin-top:0.75rem">
-            <div class="card"><h3>L1 PrismCache</h3><p>Two-stage gate. Hit → writer (0 LLM). Miss → tools then seed.</p></div>
-            <div class="card"><h3>L2 Warm chunks</h3><p>Index by partition/version; warm at boot; catalog bumps don’t kill kb_markdown.</p></div>
-            <div class="card"><h3>L3 Cortex</h3><p>Recall structured facts at ingress; schedule_digest async after the answer.</p></div>
-          </div>
-          <div class="grid-3">
-            <div class="card"><h3>ReAct</h3><p>Unknown tool order — Thought → Action → Observation.</p></div>
-            <div class="card"><h3>Plan-and-Solve</h3><p>Static checklist then execute.</p></div>
-            <div class="card"><h3>Reflection / Multi-agent</h3><p>Validator loop · Researcher → Writer → Validator.</p></div>
-          </div>
-        </details>
-      </div>
-    </section>
-  </main>
-
-  <footer>
-    <div class="container">
-      <p>Insight IT Solutions · Apache-2.0 · Simulator for launch demos · <a href="https://github.com/insightitsGit/ChorusGraph">GitHub</a></p>
     </div>
-  </footer>
+
+    <h1>Run the stack. Watch the ledger.</h1>
+    <p class="lede">Pick a mode, ask a question, see hops fire. Ask the same FX question twice — the second run hits <strong>PrismCache</strong> and skips the LLM.</p>
+
+    <div class="modes" id="modes" role="radiogroup" aria-label="Mode"></div>
+    <div class="graph" id="graph" aria-hidden="true"></div>
+
+    <div class="composer">
+      <input id="q" type="text" maxlength="220" placeholder="Type a question…" autocomplete="off" />
+      <button type="button" class="btn btn-primary" id="btn-run">Run</button>
+      <button type="button" class="btn btn-secondary" id="btn-again" title="Re-run same query">Again</button>
+    </div>
+    <div class="chips" id="chips"></div>
+
+    <div class="board">
+      <section class="panel">
+        <header>
+          <h2>Route Ledger</h2>
+          <span class="meta" id="ledger-meta">idle</span>
+        </header>
+        <ul class="ledger" id="ledger" aria-live="polite"></ul>
+      </section>
+      <section class="panel">
+        <header>
+          <h2>Result</h2>
+          <span class="meta" id="result-meta">—</span>
+        </header>
+        <div class="answer">
+          <div class="badges" id="badges"></div>
+          <div class="answer-body" id="answer"><span class="placeholder">Results appear here after you Run.</span></div>
+          <div class="cta-next" id="cta-next">
+            <span id="cta-text"></span>
+            <button type="button" id="cta-btn">Do it</button>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="meters">
+      <div class="meter"><div class="k">LLM calls</div><div class="v" id="m-llm">0</div></div>
+      <div class="meter"><div class="k">Cache hits</div><div class="v" id="m-hit">0</div></div>
+      <div class="meter"><div class="k">Cache misses</div><div class="v" id="m-miss">0</div></div>
+      <div class="meter"><div class="k">Latency</div><div class="v" id="m-lat">—</div></div>
+    </div>
+
+    <div class="foot">
+      <span>Session state persists across modes until Reset.</span>
+      <a href="index.html">Home</a>
+      <a href="https://github.com/insightitsGit/ChorusGraph">GitHub</a>
+      <a href="benchmarks.html">Benchmarks</a>
+    </div>
+  </div>
 
   <script>
-    (function () {
-      const MODES = {
-        react: {
-          label: "ReAct",
-          short: "Unknown tool order",
-          blurb: "Thought → Action → Observation until finish. Best when tool order is unknown.",
-          topo: "reason ⇄ tool → finish → writer",
-          samples: [
-            "Compare USD/EUR and USD/GBP",
-            "What is the USD to EUR rate today?",
-          ],
-        },
-        plan_solve: {
-          label: "Plan-Solve",
-          short: "Fixed checklist",
-          blurb: "Emit a static plan once, then execute steps. Cacheable and auditable.",
-          topo: "planner → step₁ → step₂ → writer",
-          samples: [
-            "Fetch USD/EUR and USD/GBP, compute EUR/GBP cross-rate",
-          ],
-        },
-        reflection: {
-          label: "Reflection",
-          short: "Draft ↔ validator",
-          blurb: "Generator → critic until the rate validator approves.",
-          topo: "draft → validator ↺ revise → approved",
-          samples: [
-            "Summarize USD/EUR and USD/GBP carefully",
-          ],
-        },
-        multi_agent: {
-          label: "Multi-agent",
-          short: "Role pipeline",
-          blurb: "Researcher → Writer → Validator on a fixed native graph.",
-          topo: "START → researcher → writer → validator → END",
-          samples: [
-            "Explain ChorusGraph engine",
-          ],
-        },
-        cache: {
-          label: "Cache",
-          short: "L1 PrismCache",
-          blurb: "Built-in semantic cache. First run MISS + seed; same question again → HIT (skip LLM).",
-          topo: "ingress → cache_gate -[hit]→ writer | -[miss]→ tools → seed",
-          samples: [
-            "What is the USD to EUR exchange rate today?",
-            "USD/EUR rate please",
-          ],
-        },
-        warm_chunks: {
-          label: "Warm chunks",
-          short: "L2 retrieval",
-          blurb: "Index once per partition/version, warm at boot, query-only retrieve. Catalog bumps don’t invalidate kb_markdown.",
-          topo: "index(partition,version) → warm_retrieval → retrieve",
-          samples: [
-            "How does PrismCache reduce LLM costs?",
-            "Hotel AI Web Agent price",
-          ],
-        },
-        cortex: {
-          label: "Cortex",
-          short: "L3 memory",
-          blurb: "Right path: recall at ingress, digest after response. Wrong: stuffing prefs into L1 or sync digest.",
-          topo: "ingress recall → hops → response → async digest",
-          samples: [
-            "I prefer moderate risk for FX trades",
-            "What is my risk tolerance?",
-          ],
-        },
-      };
+  (function () {
+    const MODES = {
+      cache: {
+        label: "Cache",
+        sub: "L1 hit/miss",
+        path: ["ingress", "cache_gate", "tools", "seed", "writer"],
+        chips: ["What is the USD to EUR rate today?", "USD/EUR rate please", "What is USD to GBP?"],
+        placeholder: "Ask an FX question — then ask it again for a HIT",
+      },
+      react: {
+        label: "ReAct",
+        sub: "reason ↔ act",
+        path: ["ingress", "cache_gate", "react", "tool", "react", "tool", "finish", "writer"],
+        chips: ["Compare USD/EUR and USD/GBP", "What is the USD to EUR rate today?"],
+        placeholder: "Compare currencies — tools are chosen dynamically",
+      },
+      plan_solve: {
+        label: "Plan-Solve",
+        sub: "static plan",
+        path: ["planner", "step1", "step2", "step3", "writer"],
+        chips: ["Fetch USD/EUR and USD/GBP, compute EUR/GBP cross-rate"],
+        placeholder: "Decompose into a fixed checklist",
+      },
+      reflection: {
+        label: "Reflection",
+        sub: "draft ↔ check",
+        path: ["writer", "validator", "revise", "validator"],
+        chips: ["Summarize USD/EUR and USD/GBP carefully"],
+        placeholder: "Quality loop until validator approves",
+      },
+      multi_agent: {
+        label: "Multi-agent",
+        sub: "roles",
+        path: ["researcher", "writer", "validator"],
+        chips: ["Explain ChorusGraph engine", "Plan a research summary on semantic cache"],
+        placeholder: "Researcher → Writer → Validator",
+      },
+      warm_chunks: {
+        label: "Warm chunks",
+        sub: "L2 RAG",
+        path: ["index", "warm", "retrieve", "answer"],
+        chips: ["How does PrismCache reduce LLM costs?", "Hotel AI Web Agent price"],
+        placeholder: "Retrieve from a warm partition",
+      },
+      cortex: {
+        label: "Cortex",
+        sub: "L3 memory",
+        path: ["ingress", "recall", "writer", "digest"],
+        chips: ["I prefer moderate risk for FX trades", "What is my risk tolerance?"],
+        placeholder: "Teach a fact, then ask for it back",
+      },
+    };
 
-      const RATES = { "USD/EUR": 0.92, "USD/GBP": 0.79 };
-      const state = {
-        mode: "cache",
-        cache: Object.create(null),
-        cortexFacts: [],
-        stats: { llm: 0, hits: 0, miss: 0 },
-        running: false,
-      };
+    const RATES = { EUR: 0.92, GBP: 0.79 };
+    const S = {
+      mode: "cache",
+      cache: Object.create(null),
+      cortex: [],
+      stats: { llm: 0, hit: 0, miss: 0 },
+      busy: false,
+      lastQ: "",
+    };
 
-      const modeGrid = document.getElementById("mode-grid");
-      const modeBlurb = document.getElementById("mode-blurb");
-      const modeTopo = document.getElementById("mode-topo");
-      const queryInput = document.getElementById("query-input");
-      const chips = document.getElementById("chips");
-      const ledgerEl = document.getElementById("ledger");
-      const answerEl = document.getElementById("answer");
-      const btnRun = document.getElementById("btn-run");
-      const btnReset = document.getElementById("btn-reset");
+    const el = {
+      modes: document.getElementById("modes"),
+      graph: document.getElementById("graph"),
+      q: document.getElementById("q"),
+      chips: document.getElementById("chips"),
+      ledger: document.getElementById("ledger"),
+      ledgerMeta: document.getElementById("ledger-meta"),
+      resultMeta: document.getElementById("result-meta"),
+      badges: document.getElementById("badges"),
+      answer: document.getElementById("answer"),
+      cta: document.getElementById("cta-next"),
+      ctaText: document.getElementById("cta-text"),
+      ctaBtn: document.getElementById("cta-btn"),
+      run: document.getElementById("btn-run"),
+      again: document.getElementById("btn-again"),
+      reset: document.getElementById("btn-reset"),
+      mLlm: document.getElementById("m-llm"),
+      mHit: document.getElementById("m-hit"),
+      mMiss: document.getElementById("m-miss"),
+      mLat: document.getElementById("m-lat"),
+    };
 
-      Object.keys(MODES).forEach(function (id) {
-        const m = MODES[id];
-        const b = document.createElement("button");
-        b.type = "button";
-        b.dataset.mode = id;
-        b.setAttribute("role", "radio");
-        b.innerHTML = "<strong>" + m.label + "</strong><span>" + m.short + "</span>";
-        b.addEventListener("click", function () { setMode(id); });
-        modeGrid.appendChild(b);
+    Object.keys(MODES).forEach(function (id) {
+      const m = MODES[id];
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.mode = id;
+      b.innerHTML = "<strong>" + m.label + "</strong><em>" + m.sub + "</em>";
+      b.addEventListener("click", function () { setMode(id); });
+      el.modes.appendChild(b);
+    });
+
+    function setMode(id) {
+      S.mode = id;
+      const m = MODES[id];
+      el.modes.querySelectorAll("button").forEach(function (b) {
+        b.classList.toggle("active", b.dataset.mode === id);
       });
-
-      function setMode(id) {
-        state.mode = id;
-        const m = MODES[id];
-        modeGrid.querySelectorAll("button").forEach(function (b) {
-          const on = b.dataset.mode === id;
-          b.classList.toggle("active", on);
-          b.setAttribute("aria-checked", on ? "true" : "false");
+      renderGraph(m.path, null);
+      el.chips.innerHTML = "";
+      m.chips.forEach(function (text, i) {
+        const c = document.createElement("button");
+        c.type = "button";
+        c.textContent = text;
+        if (i === 0) c.classList.add("hot");
+        c.addEventListener("click", function () {
+          el.q.value = text;
+          el.q.focus();
+          el.run.classList.add("nudge");
+          setTimeout(function () { el.run.classList.remove("nudge"); }, 2400);
         });
-        modeBlurb.textContent = m.blurb;
-        modeTopo.textContent = m.topo;
-        chips.innerHTML = "";
-        m.samples.forEach(function (s) {
-          const c = document.createElement("button");
-          c.type = "button";
-          c.textContent = s;
-          c.addEventListener("click", function () {
-            queryInput.value = s;
-            queryInput.focus();
-          });
-          chips.appendChild(c);
-        });
-        if (!queryInput.value.trim()) queryInput.value = m.samples[0] || "";
-      }
-
-      function normQuery(q) {
-        return q.trim().toLowerCase().replace(/\s+/g, " ");
-      }
-
-      function cacheKey(q) {
-        const n = normQuery(q);
-        if (/usd.?eur|eur.?usd|dollar to euro|euro rate/.test(n)) return "fx:USD/EUR";
-        if (/usd.?gbp|gbp.?usd|dollar to pound|pound rate/.test(n)) return "fx:USD/GBP";
-        if (/compare|stronger|both/.test(n) && /eur|gbp/.test(n)) return "fx:COMPARE";
-        return "q:" + n;
-      }
-
-      function sleep(ms) {
-        return new Promise(function (r) { setTimeout(r, ms); });
-      }
-
-      function clearLedger() {
-        ledgerEl.innerHTML = "";
-      }
-
-      async function addHop(text, cls) {
-        const li = document.createElement("li");
-        if (cls) li.className = cls;
-        li.innerHTML = text;
-        ledgerEl.appendChild(li);
-        await sleep(20);
-        li.classList.add("show");
-        await sleep(280);
-      }
-
-      function updateStats() {
-        document.getElementById("stat-llm").textContent = String(state.stats.llm);
-        document.getElementById("stat-hits").textContent = String(state.stats.hits);
-        document.getElementById("stat-miss").textContent = String(state.stats.miss);
-      }
-
-      function setLatency(ms) {
-        document.getElementById("stat-lat").textContent = ms + " ms";
-      }
-
-      async function runCachePath(q, forceTools) {
-        const key = cacheKey(q);
-        const hit = !forceTools && state.cache[key];
-        await addHop('<span class="hop">vector_ingress</span> · project query');
-        if (hit) {
-          state.stats.hits += 1;
-          await addHop('<span class="hop">cache_gate</span> · HIT score≈0.99 · skip LLM', "hit");
-          await addHop('<span class="hop">writer</span> · replay cached tool data');
-          updateStats();
-          return {
-            badges: ['<span class="badge ok">cache HIT</span>', '<span class="badge">0 LLM</span>'],
-            text: "Cached: " + JSON.stringify(hit, null, 2),
-            latency: 12 + Math.floor(Math.random() * 8),
-          };
-        }
-        state.stats.miss += 1;
-        await addHop('<span class="hop">cache_gate</span> · MISS · continue graph', "miss");
-        state.stats.llm += 1;
-        await addHop('<span class="hop">tools</span> · fetch_exchange_rate');
-        const value =
-          key === "fx:COMPARE"
-            ? { "USD/EUR": RATES["USD/EUR"], "USD/GBP": RATES["USD/GBP"], note: "GBP stronger vs USD" }
-            : key === "fx:USD/GBP"
-              ? { pair: "USD/GBP", rate: RATES["USD/GBP"], source: "sim" }
-              : { pair: "USD/EUR", rate: RATES["USD/EUR"], source: "sim" };
-        state.cache[key] = value;
-        // Also seed common paraphrase keys for USD/EUR
-        if (key === "fx:USD/EUR" || key.indexOf("usd") >= 0) {
-          state.cache["fx:USD/EUR"] = value.pair ? value : { pair: "USD/EUR", rate: RATES["USD/EUR"], source: "sim" };
-        }
-        await addHop('<span class="hop">seed</span> · PrismCache write (quality-gated)');
-        await addHop('<span class="hop">writer</span> · synthesize answer');
-        updateStats();
-        return {
-          badges: ['<span class="badge warn">cache MISS</span>', '<span class="badge">seeded</span>'],
-          text: "Answer from tools:\n" + JSON.stringify(value, null, 2) + "\n\nRun the same question again to see a HIT.",
-          latency: 420 + Math.floor(Math.random() * 180),
-        };
-      }
-
-      async function runReact(q) {
-        const key = cacheKey(q);
-        if (state.cache[key] || state.cache["fx:COMPARE"]) {
-          return runCachePath(q, false);
-        }
-        await addHop('<span class="hop">vector_ingress</span>');
-        await addHop('<span class="hop">cache_gate</span> · MISS', "miss");
-        state.stats.miss += 1;
-        state.stats.llm += 1;
-        await addHop('<span class="hop">react</span> · Thought: need USD/EUR');
-        await addHop('<span class="hop">tool</span> · fetch_exchange_rate(USD→EUR) → 0.92');
-        state.stats.llm += 1;
-        await addHop('<span class="hop">react</span> · Thought: need USD/GBP');
-        await addHop('<span class="hop">tool</span> · fetch_exchange_rate(USD→GBP) → 0.79');
-        state.stats.llm += 1;
-        await addHop('<span class="hop">react</span> · finish=true');
-        await addHop('<span class="hop">writer</span>');
-        const value = { "USD/EUR": 0.92, "USD/GBP": 0.79, stronger: "GBP vs USD" };
-        state.cache["fx:COMPARE"] = value;
-        state.cache["fx:USD/EUR"] = { pair: "USD/EUR", rate: 0.92 };
-        updateStats();
-        return {
-          badges: ['<span class="badge">ReAct</span>', '<span class="badge warn">seeded cache</span>'],
-          text: "GBP is stronger against USD (0.79 vs 0.92 EUR per USD).\nCache seeded — ask again or switch to Cache mode for a HIT.",
-          latency: 900 + Math.floor(Math.random() * 200),
-        };
-      }
-
-      async function runPlan(q) {
-        await addHop('<span class="hop">planner</span> · emit static 3-step plan');
-        state.stats.llm += 1;
-        await addHop('<span class="hop">step 1</span> · fetch USD/EUR');
-        await addHop('<span class="hop">step 2</span> · fetch USD/GBP');
-        await addHop('<span class="hop">step 3</span> · compute EUR/GBP cross from USD legs');
-        await addHop('<span class="hop">writer</span>');
-        updateStats();
-        const cross = +(0.92 / 0.79).toFixed(4);
-        return {
-          badges: ['<span class="badge">Plan-and-Solve</span>'],
-          text: "Plan executed.\nEUR/GBP cross ≈ " + cross + " (from USD legs).",
-          latency: 700 + Math.floor(Math.random() * 150),
-        };
-      }
-
-      async function runReflection(q) {
-        await addHop('<span class="hop">writer</span> · draft with wrong figure 0.9900');
-        state.stats.llm += 1;
-        await addHop('<span class="hop">validator</span> · approved=false (wrong USD/EUR)', "miss");
-        await addHop('<span class="hop">revise</span> · correct to 0.92 / 0.79');
-        state.stats.llm += 1;
-        await addHop('<span class="hop">validator</span> · approved=true', "hit");
-        updateStats();
-        return {
-          badges: ['<span class="badge ok">approved</span>', '<span class="badge">Reflection</span>'],
-          text: "Final draft: USD/EUR is 0.92 and USD/GBP is 0.79. GBP is stronger against USD.",
-          latency: 650 + Math.floor(Math.random() * 120),
-        };
-      }
-
-      async function runMulti(q) {
-        await addHop('<span class="hop">researcher</span> · research_plan');
-        await addHop('<span class="hop">writer</span> · draft_response');
-        await addHop('<span class="hop">validator</span> · ok=true', "hit");
-        updateStats();
-        return {
-          badges: ['<span class="badge">multi-agent</span>'],
-          text: "Draft based on plan: Research plan for: " + q.slice(0, 80) + "\nValidation: ok",
-          latency: 180 + Math.floor(Math.random() * 60),
-        };
-      }
-
-      async function runWarm(q) {
-        const n = normQuery(q);
-        const catalog = /hotel|sku|catalog|5499|price/.test(n);
-        await addHop('<span class="hop">index</span> · kb_markdown=docs-v1 · catalog=cat-v1');
-        await addHop('<span class="hop">warm_retrieval</span> · retrieval_ready=true', "hit");
-        if (catalog) {
-          await addHop('<span class="hop">retrieve</span> · partition=catalog → cat1');
-          updateStats();
-          return {
-            badges: ['<span class="badge">L2 warm</span>', '<span class="badge">partition=catalog</span>'],
-            text: "Hit: Hotel AI Web Agent 5499 one-time license\n(Catalog partition — kb_markdown untouched)",
-            latency: 40 + Math.floor(Math.random() * 20),
-          };
-        }
-        await addHop('<span class="hop">retrieve</span> · partition=kb_markdown → md1 (query-only)');
-        await addHop('<span class="hop">note</span> · catalog bump → cat-v2 would not invalidate kb');
-        updateStats();
-        return {
-          badges: ['<span class="badge">L2 warm</span>', '<span class="badge">partition=kb_markdown</span>'],
-          text: "Hit: PrismCache reduces LLM API costs with semantic recall…\nADR-005: index once, warm at boot, no corpus re-embed per turn.",
-          latency: 35 + Math.floor(Math.random() * 25),
-        };
-      }
-
-      async function runCortex(q) {
-        const n = normQuery(q);
-        const isPref = /prefer|i like|my risk|moderate risk/.test(n) && !/what is my/.test(n);
-        const isAsk = /what is my|risk tolerance|do you know my/.test(n);
-
-        await addHop('<span class="hop">ingress</span> · recall_structured');
-        if (isAsk) {
-          const fact = state.cortexFacts.find(function (f) { return /risk/i.test(f.fact); });
-          if (fact) {
-            await addHop('<span class="hop">memory</span> · confidence=' + fact.confidence + ' · ' + fact.fact, "hit");
-            await addHop('<span class="hop">writer</span> · use memory_evidence (not L1 cache)');
-            updateStats();
-            return {
-              badges: ['<span class="badge ok">Cortex HIT</span>'],
-              text: "memory_recall: " + fact.fact + "\n\nRight: facts from L3, not whole-answer L1 cache.",
-              latency: 25 + Math.floor(Math.random() * 15),
-            };
-          }
-          await addHop('<span class="hop">memory</span> · empty recall (no fake fallback)', "miss");
-          await addHop('<span class="hop">writer</span> · continue without fabricated prefs');
-          updateStats();
-          return {
-            badges: ['<span class="badge warn">no memory yet</span>'],
-            text: "No Cortex fact yet.\nTry first: “I prefer moderate risk for FX trades” then ask again.",
-            latency: 20,
-          };
-        }
-
-        if (isPref || /moderate risk/.test(n)) {
-          await addHop('<span class="hop">writer</span> · acknowledge preference');
-          state.stats.llm += 1;
-          await addHop('<span class="hop">schedule_digest</span> · async off hot path (~0 ms added)', "hit");
-          state.cortexFacts.push({ fact: "User prefers moderate risk", confidence: 0.91, source: "turn-1" });
-          updateStats();
-          return {
-            badges: ['<span class="badge ok">digest queued</span>', '<span class="badge">L3</span>'],
-            text: "Saved preference via schedule_digest (non-blocking).\nNow ask: “What is my risk tolerance?”",
-            latency: 30,
-          };
-        }
-
-        await addHop('<span class="hop">note</span> · WRONG would be stuffing this into L1 whole-answer cache');
-        await addHop('<span class="hop">memory</span> · empty', "miss");
-        updateStats();
-        return {
-          badges: ['<span class="badge">Cortex</span>'],
-          text: "Teach Cortex a fact first (sample chip), then ask for recall.\nLive Python: chorusgraph-finance-memory",
-          latency: 18,
-        };
-      }
-
-      async function run() {
-        if (state.running) return;
-        const q = queryInput.value.trim();
-        if (!q) {
-          queryInput.focus();
-          return;
-        }
-        state.running = true;
-        btnRun.disabled = true;
-        clearLedger();
-        answerEl.innerHTML = '<span class="muted">Running…</span>';
-        const t0 = performance.now();
-        let result;
-        try {
-          switch (state.mode) {
-            case "cache": result = await runCachePath(q, false); break;
-            case "react": result = await runReact(q); break;
-            case "plan_solve": result = await runPlan(q); break;
-            case "reflection": result = await runReflection(q); break;
-            case "multi_agent": result = await runMulti(q); break;
-            case "warm_chunks": result = await runWarm(q); break;
-            case "cortex": result = await runCortex(q); break;
-            default: result = await runCachePath(q, false);
-          }
-        } catch (err) {
-          result = { badges: [], text: String(err), latency: 0 };
-        }
-        const wall = Math.max(result.latency, Math.round(performance.now() - t0));
-        setLatency(wall);
-        answerEl.innerHTML =
-          (result.badges || []).join("") +
-          "<div style='margin-top:0.75rem'>" +
-          escapeHtml(result.text) +
-          "</div>";
-        state.running = false;
-        btnRun.disabled = false;
-      }
-
-      function escapeHtml(s) {
-        return String(s)
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/\n/g, "<br>");
-      }
-
-      function resetAll() {
-        state.cache = Object.create(null);
-        state.cortexFacts = [];
-        state.stats = { llm: 0, hits: 0, miss: 0 };
-        updateStats();
-        setLatency("—");
-        clearLedger();
-        const li = document.createElement("li");
-        li.className = "show";
-        li.style.borderColor = "transparent";
-        li.style.opacity = "0.7";
-        li.textContent = "State cleared. Run a query…";
-        ledgerEl.appendChild(li);
-        answerEl.innerHTML = '<span class="muted">Cache and Cortex memory reset.</span>';
-      }
-
-      btnRun.addEventListener("click", run);
-      btnReset.addEventListener("click", resetAll);
-      queryInput.addEventListener("keydown", function (e) {
-        if (e.key === "Enter") run();
+        el.chips.appendChild(c);
       });
+      el.q.placeholder = m.placeholder;
+      if (!el.q.value.trim()) el.q.value = m.chips[0];
+      hideCta();
+    }
 
-      setMode("cache");
-      updateStats();
-    })();
+    function renderGraph(path, active) {
+      el.graph.innerHTML = "";
+      path.forEach(function (name, i) {
+        if (i) {
+          const a = document.createElement("span");
+          a.className = "arrow";
+          a.textContent = "→";
+          el.graph.appendChild(a);
+        }
+        const n = document.createElement("span");
+        n.className = "node";
+        n.dataset.node = name;
+        n.textContent = name;
+        if (active && active.name === name) {
+          n.classList.add("on");
+          if (active.kind) n.classList.add(active.kind);
+        }
+        el.graph.appendChild(n);
+      });
+    }
+
+    function lightNode(name, kind) {
+      const path = MODES[S.mode].path;
+      renderGraph(path, { name: name, kind: kind || "" });
+    }
+
+    function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+    function meters() {
+      el.mLlm.textContent = String(S.stats.llm);
+      el.mHit.textContent = String(S.stats.hit);
+      el.mMiss.textContent = String(S.stats.miss);
+    }
+
+    function clearLedger() {
+      el.ledger.innerHTML = "";
+    }
+
+    async function hop(name, body, kind) {
+      lightNode(name, kind);
+      const li = document.createElement("li");
+      if (kind) li.classList.add(kind);
+      const t = ((performance.now() / 1000) % 100).toFixed(2);
+      li.innerHTML = '<span class="t">+' + t + "s</span><span class=\"b\"><strong>" + name + "</strong> · " + body + "</span>";
+      el.ledger.appendChild(li);
+      el.ledger.scrollTop = el.ledger.scrollHeight;
+      await sleep(30);
+      li.classList.add("show");
+      await sleep(kind === "hit" ? 220 : 320);
+    }
+
+    function cacheKey(q) {
+      const n = q.trim().toLowerCase().replace(/\s+/g, " ");
+      if (/compare|stronger|both/.test(n) && /(eur|gbp)/.test(n)) return "fx:COMPARE";
+      if (/gbp|pound/.test(n)) return "fx:GBP";
+      if (/eur|euro/.test(n)) return "fx:EUR";
+      return "q:" + n;
+    }
+
+    function showResult(badges, text, meta) {
+      el.badges.innerHTML = badges.map(function (b) {
+        return '<span class="badge ' + (b.cls || "") + '">' + b.t + "</span>";
+      }).join("");
+      el.answer.textContent = text;
+      el.resultMeta.textContent = meta || "—";
+    }
+
+    function showCta(text, action) {
+      el.ctaText.textContent = text;
+      el.cta.classList.add("show");
+      el.ctaBtn.onclick = action;
+    }
+    function hideCta() { el.cta.classList.remove("show"); }
+
+    async function runCache(q) {
+      const key = cacheKey(q);
+      await hop("ingress", "embed + project query");
+      if (S.cache[key]) {
+        S.stats.hit++;
+        meters();
+        await hop("cache_gate", "HIT · score≈0.99 · skip tools/LLM", "hit");
+        await hop("writer", "replay cached payload", "hit");
+        showCta("Cache is warm. Try Reflection or Cortex next.", function () { setMode("reflection"); });
+        return {
+          badges: [{ t: "cache HIT", cls: "ok" }, { t: "0 LLM", cls: "ok" }],
+          text: "Served from PrismCache in ~ms:\n" + JSON.stringify(S.cache[key], null, 2),
+          ms: 11 + Math.floor(Math.random() * 9),
+          meta: "hit",
+        };
+      }
+      S.stats.miss++;
+      S.stats.llm++;
+      meters();
+      await hop("cache_gate", "MISS · continue pipeline", "miss");
+      await hop("tools", "fetch_exchange_rate", "llm");
+      const payload =
+        key === "fx:COMPARE"
+          ? { "USD/EUR": RATES.EUR, "USD/GBP": RATES.GBP, stronger: "GBP" }
+          : key === "fx:GBP"
+            ? { pair: "USD/GBP", rate: RATES.GBP }
+            : { pair: "USD/EUR", rate: RATES.EUR };
+      S.cache[key] = payload;
+      if (key === "fx:EUR" || key === "fx:COMPARE") S.cache["fx:EUR"] = { pair: "USD/EUR", rate: RATES.EUR };
+      await hop("seed", "write PrismCache (quality-gated)");
+      await hop("writer", "synthesize answer");
+      showCta("Run the same question again to see a HIT.", function () { el.run.click(); });
+      return {
+        badges: [{ t: "cache MISS", cls: "warn" }, { t: "seeded", cls: "ok" }, { t: "+1 LLM", cls: "llm" }],
+        text: "Cold path answered from tools:\n" + JSON.stringify(payload, null, 2) + "\n\nPress Again (or the button below) for a HIT.",
+        ms: 480 + Math.floor(Math.random() * 160),
+        meta: "miss → seed",
+      };
+    }
+
+    async function runReact(q) {
+      const key = cacheKey(q);
+      await hop("ingress", "project query");
+      if (S.cache[key] || S.cache["fx:COMPARE"] || (key === "fx:EUR" && S.cache["fx:EUR"])) {
+        return runCache(q);
+      }
+      await hop("cache_gate", "MISS", "miss");
+      S.stats.miss++;
+      S.stats.llm += 3;
+      meters();
+      await hop("react", "Thought: need USD/EUR first", "llm");
+      await hop("tool", "fetch_exchange_rate(USD→EUR) → 0.92");
+      await hop("react", "Thought: need USD/GBP next", "llm");
+      await hop("tool", "fetch_exchange_rate(USD→GBP) → 0.79");
+      await hop("finish", "finish=true · enough evidence");
+      await hop("writer", "compose comparison");
+      const payload = { "USD/EUR": 0.92, "USD/GBP": 0.79, stronger: "GBP vs USD" };
+      S.cache["fx:COMPARE"] = payload;
+      S.cache["fx:EUR"] = { pair: "USD/EUR", rate: 0.92 };
+      S.cache["fx:GBP"] = { pair: "USD/GBP", rate: 0.79 };
+      showCta("Ask the same compare again — Cache/ReAct will HIT.", function () { el.run.click(); });
+      return {
+        badges: [{ t: "ReAct", cls: "" }, { t: "3 LLM", cls: "llm" }, { t: "cache seeded", cls: "ok" }],
+        text: "GBP is stronger against USD (0.79 GBP vs 0.92 EUR per 1 USD).\nTool order was decided dynamically.",
+        ms: 980 + Math.floor(Math.random() * 200),
+        meta: "react loop",
+      };
+    }
+
+    async function runPlan() {
+      S.stats.llm++;
+      meters();
+      await hop("planner", "emit static 3-step plan", "llm");
+      await hop("step1", "fetch USD/EUR → 0.92");
+      await hop("step2", "fetch USD/GBP → 0.79");
+      await hop("step3", "compute EUR/GBP cross from USD legs");
+      await hop("writer", "summarize");
+      const cross = +(RATES.EUR / RATES.GBP).toFixed(4);
+      return {
+        badges: [{ t: "Plan-and-Solve", cls: "" }],
+        text: "Plan executed in order.\nEUR/GBP cross ≈ " + cross + " (computed, not fetched).",
+        ms: 720 + Math.floor(Math.random() * 120),
+        meta: "static plan",
+      };
+    }
+
+    async function runReflection() {
+      S.stats.llm += 2;
+      meters();
+      await hop("writer", "draft: USD/EUR is 0.9900 (wrong)", "llm");
+      await hop("validator", "approved=false · wrong figure", "miss");
+      await hop("revise", "correct figures from tools", "llm");
+      await hop("validator", "approved=true", "hit");
+      return {
+        badges: [{ t: "Reflection", cls: "" }, { t: "approved", cls: "ok" }],
+        text: "Final draft: USD/EUR is 0.92 and USD/GBP is 0.79.\nValidator rejected the bad figure, then approved the revision.",
+        ms: 640 + Math.floor(Math.random() * 100),
+        meta: "2 passes",
+      };
+    }
+
+    async function runMulti(q) {
+      await hop("researcher", "research_plan for: " + q.slice(0, 48));
+      await hop("writer", "draft_response from plan");
+      await hop("validator", "ok=true", "hit");
+      return {
+        badges: [{ t: "multi-agent", cls: "" }, { t: "validated", cls: "ok" }],
+        text: "Roles completed.\nPlan → draft → validation ok.\n(Production FC2 adds cache_gate before this chain.)",
+        ms: 160 + Math.floor(Math.random() * 50),
+        meta: "3 roles",
+      };
+    }
+
+    async function runWarm(q) {
+      const n = q.toLowerCase();
+      const catalog = /hotel|sku|price|5499|catalog/.test(n);
+      await hop("index", "kb_markdown=docs-v1 · catalog=cat-v1");
+      await hop("warm", "warm_retrieval · ready=true", "hit");
+      if (catalog) {
+        await hop("retrieve", "partition=catalog → Hotel AI Web Agent 5499");
+        await hop("answer", "cite catalog chunk");
+        return {
+          badges: [{ t: "L2 warm", cls: "ok" }, { t: "catalog", cls: "" }],
+          text: "Retrieved from catalog partition.\nHotel AI Web Agent — 5499 one-time.\nkb_markdown partition untouched.",
+          ms: 38 + Math.floor(Math.random() * 20),
+          meta: "partition=catalog",
+        };
+      }
+      await hop("retrieve", "partition=kb_markdown · query-only (no corpus re-embed)", "hit");
+      await hop("answer", "cite warm chunk");
+      showCta("Try a catalog query to see partition isolation.", function () {
+        el.q.value = "Hotel AI Web Agent price";
+        el.run.click();
+      });
+      return {
+        badges: [{ t: "L2 warm", cls: "ok" }, { t: "kb_markdown", cls: "" }],
+        text: "PrismCache reduces LLM API costs with semantic recall…\nWarm path: index once per version, retrieve without re-encoding the KB.",
+        ms: 42 + Math.floor(Math.random() * 18),
+        meta: "partition=kb_markdown",
+      };
+    }
+
+    async function runCortex(q) {
+      const n = q.toLowerCase();
+      const asking = /what is my|risk tolerance|do you remember|my preference/.test(n);
+      const teaching = /prefer|i like|moderate risk|remember that/.test(n);
+
+      await hop("ingress", "recall_structured");
+      if (asking) {
+        const fact = S.cortex.find(function (f) { return /risk/i.test(f.fact); });
+        if (fact) {
+          await hop("recall", "confidence=" + fact.confidence + " · " + fact.fact, "hit");
+          await hop("writer", "answer from memory_evidence (not L1 cache)", "hit");
+          return {
+            badges: [{ t: "Cortex recall", cls: "ok" }, { t: "L3", cls: "" }],
+            text: "memory_recall: " + fact.fact + "\n\nRight usage: structured facts at ingress with confidence — not whole-answer L1 cache.",
+            ms: 22 + Math.floor(Math.random() * 12),
+            meta: "recall hit",
+          };
+        }
+        await hop("recall", "empty · no fabricated fallback", "miss");
+        await hop("writer", "continue without inventing prefs");
+        showCta("Teach Cortex first: use the preference chip.", function () {
+          setMode("cortex");
+          el.q.value = "I prefer moderate risk for FX trades";
+          el.run.click();
+        });
+        return {
+          badges: [{ t: "no memory", cls: "warn" }],
+          text: "No L3 fact yet.\nTeach a preference, then ask again.",
+          ms: 18,
+          meta: "empty recall",
+        };
+      }
+
+      if (teaching) {
+        S.stats.llm++;
+        meters();
+        await hop("recall", "empty (first time)", "miss");
+        await hop("writer", "acknowledge preference", "llm");
+        await hop("digest", "schedule_digest async · ~0 ms on hot path", "hit");
+        S.cortex.push({ fact: "User prefers moderate risk", confidence: 0.91 });
+        showCta("Now ask: What is my risk tolerance?", function () {
+          el.q.value = "What is my risk tolerance?";
+          el.run.click();
+        });
+        return {
+          badges: [{ t: "digest queued", cls: "ok" }, { t: "async", cls: "" }],
+          text: "Preference stored off the hot path.\nWrong would be: sync digest before responding, or stuffing prefs into L1 cache.",
+          ms: 28,
+          meta: "digest",
+        };
+      }
+
+      await hop("recall", "empty", "miss");
+      return {
+        badges: [{ t: "Cortex", cls: "" }],
+        text: "Use a sample chip to teach a fact or ask for recall.",
+        ms: 15,
+        meta: "idle",
+      };
+    }
+
+    async function run() {
+      if (S.busy) return;
+      const q = el.q.value.trim();
+      if (!q) { el.q.focus(); return; }
+      S.busy = true;
+      S.lastQ = q;
+      el.run.disabled = true;
+      el.again.disabled = true;
+      hideCta();
+      clearLedger();
+      el.ledgerMeta.textContent = "running…";
+      el.answer.innerHTML = '<span class="placeholder">Running…</span>';
+      el.badges.innerHTML = "";
+      const t0 = performance.now();
+      let out;
+      try {
+        if (S.mode === "cache") out = await runCache(q);
+        else if (S.mode === "react") out = await runReact(q);
+        else if (S.mode === "plan_solve") out = await runPlan(q);
+        else if (S.mode === "reflection") out = await runReflection(q);
+        else if (S.mode === "multi_agent") out = await runMulti(q);
+        else if (S.mode === "warm_chunks") out = await runWarm(q);
+        else out = await runCortex(q);
+      } catch (e) {
+        out = { badges: [{ t: "error", cls: "warn" }], text: String(e), ms: 0, meta: "error" };
+      }
+      const wall = Math.max(out.ms || 0, Math.round(performance.now() - t0));
+      el.mLat.textContent = wall + "ms";
+      el.ledgerMeta.textContent = "done · " + wall + "ms";
+      showResult(out.badges, out.text, out.meta);
+      S.busy = false;
+      el.run.disabled = false;
+      el.again.disabled = false;
+    }
+
+    function reset() {
+      S.cache = Object.create(null);
+      S.cortex = [];
+      S.stats = { llm: 0, hit: 0, miss: 0 };
+      meters();
+      el.mLat.textContent = "—";
+      clearLedger();
+      hideCta();
+      el.ledgerMeta.textContent = "idle";
+      el.resultMeta.textContent = "—";
+      el.badges.innerHTML = "";
+      el.answer.innerHTML = '<span class="placeholder">Session cleared. Pick a mode and Run.</span>';
+      renderGraph(MODES[S.mode].path, null);
+    }
+
+    el.run.addEventListener("click", run);
+    el.again.addEventListener("click", function () {
+      if (S.lastQ) el.q.value = S.lastQ;
+      run();
+    });
+    el.reset.addEventListener("click", reset);
+    el.q.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") run();
+    });
+
+    setMode("cache");
+    meters();
+    el.run.classList.add("nudge");
+    setTimeout(function () { el.run.classList.remove("nudge"); }, 2800);
+  })();
   </script>
 </body>
 </html>

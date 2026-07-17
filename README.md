@@ -13,7 +13,7 @@ pip install "chorusgraph==1.1.0"
 chorusgraph-demo
 ```
 
-**Interactive demo:** [insightitsGit.github.io/ChorusGraph/demo.html](https://insightitsGit.github.io/ChorusGraph/demo.html) — **try-it playground** in the browser (pick ReAct / Plan / Reflection / multi-agent / PrismCache / warm chunks / Cortex, type a query, watch the ledger). No API key. Repeat an FX question to see a cache HIT.
+**Interactive demo:** [insightitsGit.github.io/ChorusGraph/demo.html](https://insightitsGit.github.io/ChorusGraph/demo.html) — live playground (pick a mode, type a query, watch the ledger; repeat FX for cache HIT). No API key.
 
 > **ChorusGraph** = native engine + Prism stack · **LangGraph** = optional baseline for A/B comparison only ([`docs/TERMINOLOGY.md`](docs/TERMINOLOGY.md))
 
