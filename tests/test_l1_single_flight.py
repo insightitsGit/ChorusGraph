@@ -226,7 +226,9 @@ def test_graph_single_flight_joins_concurrent_invokes():
 
 
 def test_stack_with_flight_enables_runtime_policy():
-    stack = ChorusStack.defaults(tenant_id="f").with_flight(FlightPolicy(enabled=True, join_timeout_s=5.0))
+    stack = ChorusStack.defaults(tenant_id="f").with_flight(
+        FlightPolicy(enabled=True, join_timeout_s=5.0)
+    )
     rt = stack.to_cache_runtime()
     assert rt.flight_policy.enabled is True
     assert rt.flight_policy.join_timeout_s == 5.0
