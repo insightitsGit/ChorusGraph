@@ -25,5 +25,5 @@ Optional: [PrismGuard](https://github.com/insightitsGit/PrismGuard) as a separat
 
 ## Related
 
-- [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) · [PLUGINS.md](PLUGINS.md) · [ADR-005-warm-chunk-vectors.md](ADR-005-warm-chunk-vectors.md)  
+- [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) · [PLUGINS.md](PLUGINS.md) · [ADR-005-warm-chunk-vectors.md](ADR-005-warm-chunk-vectors.md) · [ADR-006-l1-single-flight.md](ADR-006-l1-single-flight.md) · [ADR-007-react-repeated-action-default.md](ADR-007-react-repeated-action-default.md)
 - [llm-context.md](llm-context.md) · [TERMINOLOGY.md](TERMINOLOGY.md)

@@ -20,7 +20,7 @@ from chorusgraph.core.transport_router import TransportRouter
 from chorusgraph.ledger.sink import LedgerSink
 from chorusgraph.nodes.roles import Node
 from chorusgraph.core.subgraph import SubgraphSpec, build_subgraph_node
-from chorusgraph.sections.models import CachePolicy
+from chorusgraph.sections.models import CachePolicy, CacheProfile
 from chorusgraph.transport.modes import TransportMode
 
 GraphStateSchema = Optional[Type[Any]]
@@ -66,6 +66,8 @@ class Graph:
         category_slug: str = "general",
         cache_policy: CachePolicy = CachePolicy.NO_CACHE,
         cache_query_key: str = "message",
+        cache_profile: Optional[CacheProfile] = None,
+        flight_policy: Optional[Any] = None,
         join: JoinSpec | None = None,
     ) -> None:
         if name in (START, END):
@@ -85,6 +87,8 @@ class Graph:
                 category_slug=category_slug,
                 cache_policy=cache_policy,
                 query_key=cache_query_key,
+                profile=cache_profile,
+                flight_policy=flight_policy,
             )
         if join is not None:
             self._join_policies[name] = join

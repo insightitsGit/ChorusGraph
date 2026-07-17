@@ -2,6 +2,7 @@
 
 from chorusgraph.cache_gate.backend import recall, recall_direct, seed_cache_entry
 from chorusgraph.cache_gate.decision import Decision, DecisionKind
+from chorusgraph.cache_gate.flight import FlightPolicy, InProcessFlightCoordinator, flight_eligible
 from chorusgraph.cache_gate.gate import gate
 from chorusgraph.cache_gate.scope import normalize_exact_query, scope_id
 from chorusgraph.cache_gate.seed_policy import is_refusal_response, safety_approving, should_seed_cache
@@ -10,7 +11,10 @@ from chorusgraph.cache_gate.sidecar import SidecarStore
 __all__ = [
     "Decision",
     "DecisionKind",
+    "FlightPolicy",
+    "InProcessFlightCoordinator",
     "SidecarStore",
+    "flight_eligible",
     "gate",
     "is_refusal_response",
     "normalize_exact_query",

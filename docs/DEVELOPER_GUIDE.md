@@ -284,6 +284,10 @@ from chorusgraph.agents import PlanPolicy
 policy = PlanPolicy(max_steps=8, token_budget=8000, on_exhaust="abstain")
 ```
 
+`token_budget` is a coarse in-loop estimate (reason JSON length / 4), not provider usage.
+`on_exhaust` is API-present; behavior is still deferred — exhaustion today surfaces as
+`finish_reason` of `max_steps` / `token_budget`.
+
 Belief-tier knobs (`confidence_stop`, `groundedness_floor`) exist in `BeliefPolicy` but are **disabled until signals are calibrated** — enabling them raises `BeliefPolicyNotCalibratedError`.
 
 ---
@@ -294,7 +298,7 @@ All three patterns use one substrate (`run_agent_loop`) behind `Agent(pattern=..
 
 | Pattern | Best for | Stop condition |
 |---------|----------|----------------|
-| **`react`** | Unknown tool sequence, comparisons, exploration | LLM sets `finish=true` or `max_steps` / token budget |
+| **`react`** | Unknown tool sequence, comparisons, exploration | LLM `finish=true`, `max_steps` / token budget, **or** repeated exact tool+args (default) |
 | **`plan_solve`** | Decomposable tasks with known tool catalog | Static plan emitted upfront, sequential execution |
 | **`reflection`** | Quality-sensitive drafts (rates, figures, citations) | Validator / grounding guard passes or `max_revisions` |
 
@@ -312,6 +316,8 @@ agent = Agent(
     tools=registry,
     model=your_llm_json_fn,  # (system, user) -> JSON string
     policy=PlanPolicy(max_steps=6),
+    # stop_on_repeated_action=True by default (exact tool+args thrash stop).
+    # Opt out with ReActOpts(stop_on_repeated_action=False) for intentional retries.
     pattern_opts=ReActOpts(max_tool_calls=6, require_tool_before_finish=False),
 )
 result = agent.run("What is USD/EUR today?")

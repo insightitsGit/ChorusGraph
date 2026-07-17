@@ -31,6 +31,9 @@ class CacheProfile(BaseModel):
     ttl_s: Optional[int] = None
     scope: CacheScope = "global"
     risk_tier: RiskTier = "low"
+    # ADR-006 — opt-in L1 single-flight; ignored unless keying/scope allow.
+    single_flight: bool = False
+    single_flight_timeout_s: Optional[float] = None
 
 
 class Section(BaseModel):

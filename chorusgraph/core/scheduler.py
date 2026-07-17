@@ -371,33 +371,40 @@ class CompiledGraph:
         )
         if cached is not None:
             return cached[0], None, None
-        ctx = NodeContext(
-            state=snapshot,
-            node_id=node_id,
-            super_step=super_step,
-            bus=self.bus,
-            projector=self.projector,
-            on_emit=on_emit,
-            resume_value=getattr(self, "_resume_value", None),
-            branch_id=branch_id,
-            branch_payload=branch_payload,
-            run_config=getattr(self, "_run_config", None),
-            parent_run_id=getattr(self, "_parent_run_id", None),
-        )
-        fn = self.ir.nodes[node_id]
-        try:
-            raw = fn(ctx)
-        except NodeInterrupt:
-            raise
-        except MidStepAbort:
-            raise
-        except GraphInterrupt:
-            raise
-        except Exception as exc:
-            return self._coerce_node_result(ctx, self._failure_command(ctx, exc))
-        if getattr(fn, "_counts_as_llm", False):
-            self._llm_calls += 1
-        return self._coerce_node_result(ctx, raw)
+
+        def compute() -> Tuple[NodeUpdate, Optional[frozenset[str]], Optional[List[Send]]]:
+            ctx = NodeContext(
+                state=snapshot,
+                node_id=node_id,
+                super_step=super_step,
+                bus=self.bus,
+                projector=self.projector,
+                on_emit=on_emit,
+                resume_value=getattr(self, "_resume_value", None),
+                branch_id=branch_id,
+                branch_payload=branch_payload,
+                run_config=getattr(self, "_run_config", None),
+                parent_run_id=getattr(self, "_parent_run_id", None),
+            )
+            fn = self.ir.nodes[node_id]
+            try:
+                raw = fn(ctx)
+            except NodeInterrupt:
+                raise
+            except MidStepAbort:
+                raise
+            except GraphInterrupt:
+                raise
+            except Exception as exc:
+                return self._coerce_node_result(ctx, self._failure_command(ctx, exc))
+            if getattr(fn, "_counts_as_llm", False):
+                self._llm_calls += 1
+            return self._coerce_node_result(ctx, raw)
+
+        view = branch_view if branch_view is not None else snapshot.view()
+        if self.cache_interceptor is not None:
+            return self.cache_interceptor.run_miss(node_id, view, compute)
+        return compute()
 
     def _failure_command(self, ctx: NodeContext, exc: Exception) -> Command:
         from chorusgraph.resilience.errors import classify_exception
@@ -441,45 +448,52 @@ class CompiledGraph:
         )
         if cached is not None:
             return cached[0], None, None
-        fn = self.ir.nodes[node_id]
-        ctx = NodeContext(
-            state=snapshot,
-            node_id=node_id,
-            super_step=super_step,
-            bus=self.bus,
-            projector=self.projector,
-            on_emit=on_emit,
-            resume_value=getattr(self, "_resume_value", None),
-            branch_id=branch_id,
-            branch_payload=branch_payload,
-            run_config=getattr(self, "_run_config", None),
-            parent_run_id=getattr(self, "_parent_run_id", None),
-        )
-        if inspect.iscoroutinefunction(fn):
-            try:
-                raw = await fn(ctx)
-            except NodeInterrupt:
-                raise
-            except MidStepAbort:
-                raise
-            except GraphInterrupt:
-                raise
-            except Exception as exc:
-                return self._coerce_node_result(ctx, self._failure_command(ctx, exc))
-        else:
-            try:
-                raw = await asyncio.to_thread(fn, ctx)
-            except NodeInterrupt:
-                raise
-            except MidStepAbort:
-                raise
-            except GraphInterrupt:
-                raise
-            except Exception as exc:
-                return self._coerce_node_result(ctx, self._failure_command(ctx, exc))
-        if getattr(fn, "_counts_as_llm", False):
-            self._llm_calls += 1
-        return self._coerce_node_result(ctx, raw)
+
+        async def compute() -> Tuple[NodeUpdate, Optional[frozenset[str]], Optional[List[Send]]]:
+            fn = self.ir.nodes[node_id]
+            ctx = NodeContext(
+                state=snapshot,
+                node_id=node_id,
+                super_step=super_step,
+                bus=self.bus,
+                projector=self.projector,
+                on_emit=on_emit,
+                resume_value=getattr(self, "_resume_value", None),
+                branch_id=branch_id,
+                branch_payload=branch_payload,
+                run_config=getattr(self, "_run_config", None),
+                parent_run_id=getattr(self, "_parent_run_id", None),
+            )
+            if inspect.iscoroutinefunction(fn):
+                try:
+                    raw = await fn(ctx)
+                except NodeInterrupt:
+                    raise
+                except MidStepAbort:
+                    raise
+                except GraphInterrupt:
+                    raise
+                except Exception as exc:
+                    return self._coerce_node_result(ctx, self._failure_command(ctx, exc))
+            else:
+                try:
+                    raw = await asyncio.to_thread(fn, ctx)
+                except NodeInterrupt:
+                    raise
+                except MidStepAbort:
+                    raise
+                except GraphInterrupt:
+                    raise
+                except Exception as exc:
+                    return self._coerce_node_result(ctx, self._failure_command(ctx, exc))
+            if getattr(fn, "_counts_as_llm", False):
+                self._llm_calls += 1
+            return self._coerce_node_result(ctx, raw)
+
+        view = branch_view if branch_view is not None else snapshot.view()
+        if self.cache_interceptor is not None:
+            return await self.cache_interceptor.arun_miss(node_id, view, compute)
+        return await compute()
 
     def _checkpoint(
         self,

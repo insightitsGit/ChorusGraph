@@ -3,11 +3,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import Any, Awaitable, Callable, Dict, Optional, TypeVar, TYPE_CHECKING
 
 import numpy as np
 
 from chorusgraph.cache_gate.decision import Decision
+from chorusgraph.cache_gate.flight import (
+    FlightPolicy,
+    InProcessFlightCoordinator,
+    flight_eligible,
+    resolve_flight_policy,
+)
 from chorusgraph.cache_gate.gate import gate
 from chorusgraph.cache_gate.scope import scope_id as make_scope_id
 from chorusgraph.compose.ports import CacheBackend, is_cache_backend
@@ -18,6 +24,8 @@ from chorusgraph.transforms.projector import raw_from_state, vector_64_from_stat
 
 if TYPE_CHECKING:
     from chorusgraph.cache_gate.sidecar import SidecarStore
+
+T = TypeVar("T")
 
 
 @dataclass
@@ -32,6 +40,9 @@ class CacheRuntime:
     tenant_id: str = "default"
     registry: Any = field(default_factory=default_registry)
     backend: Optional[CacheBackend] = None
+    # ADR-006 — default off; no stampede join unless enabled.
+    flight_policy: FlightPolicy = field(default_factory=FlightPolicy)
+    flight: Optional[InProcessFlightCoordinator] = None
 
     def verify_threshold_for(self, category_slug: str) -> float:
         if self.verify_threshold is not None:
@@ -49,6 +60,11 @@ class CacheRuntime:
 
         return PrismCacheBackend(self.cache, self.sidecar)
 
+    def resolve_flight(self) -> InProcessFlightCoordinator:
+        if self.flight is None:
+            self.flight = InProcessFlightCoordinator()
+        return self.flight
+
 
 @dataclass
 class NodeCacheSpec:
@@ -60,6 +76,7 @@ class NodeCacheSpec:
     fingerprint_key: str = "fingerprint_key"
     scope_session_key: str = "session_id"
     scope_user_key: str = "user_id"
+    flight_policy: Optional[FlightPolicy] = None
 
 
 class CacheInterceptor:
@@ -131,6 +148,70 @@ class CacheInterceptor:
             turn_id=super_step,
         )
         return update, decision
+
+    def _miss_flight_plan(
+        self, node_id: str, view: Dict[str, Any]
+    ) -> Optional[tuple[str, FlightPolicy]]:
+        spec = self._specs.get(node_id)
+        if spec is None or spec.cache_policy == CachePolicy.NO_CACHE:
+            return None
+
+        profile = self._runtime.registry.get(spec.category_slug, override=spec.profile)
+        policy = resolve_flight_policy(
+            runtime_policy=self._runtime.flight_policy,
+            spec_policy=spec.flight_policy,
+            profile=profile,
+        )
+        if not policy.enabled:
+            return None
+
+        query = str(view.get(spec.query_key) or view.get("message") or "")
+        fp_key = str(view.get(spec.fingerprint_key) or "") if profile.keying == "fingerprint" else None
+        sid = make_scope_id(
+            profile.scope,
+            tenant_id=self._runtime.tenant_id,
+            user_id=str(view.get(spec.scope_user_key) or "") or None,
+            session_id=str(view.get(spec.scope_session_key) or "") or None,
+        )
+        elig = flight_eligible(
+            profile,
+            tenant_id=self._runtime.tenant_id,
+            scope_id=sid,
+            category_slug=spec.category_slug,
+            query=query,
+            fingerprint_key=fp_key,
+            policy=policy,
+        )
+        if not elig.eligible or not elig.flight_key:
+            return None
+        return elig.flight_key, policy
+
+    def run_miss(self, node_id: str, view: Dict[str, Any], compute: Callable[[], T]) -> T:
+        """Run miss-path ``compute``, joining an in-flight peer when eligible."""
+        plan = self._miss_flight_plan(node_id, view)
+        if plan is None:
+            return compute()
+        key, policy = plan
+        return self._runtime.resolve_flight().run(
+            key,
+            compute,
+            timeout_s=policy.join_timeout_s,
+            on_leader_error=policy.on_leader_error,
+        )
+
+    async def arun_miss(
+        self, node_id: str, view: Dict[str, Any], compute: Callable[[], Awaitable[T]]
+    ) -> T:
+        plan = self._miss_flight_plan(node_id, view)
+        if plan is None:
+            return await compute()
+        key, policy = plan
+        return await self._runtime.resolve_flight().arun(
+            key,
+            compute,
+            timeout_s=policy.join_timeout_s,
+            on_leader_error=policy.on_leader_error,
+        )
 
 
 __all__ = ["CacheInterceptor", "CacheRuntime", "NodeCacheSpec"]

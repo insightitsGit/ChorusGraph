@@ -59,11 +59,38 @@ def test_stop_on_repeated_action_breaks_loop():
         tools=registry,
         model=llm,
         policy=PlanPolicy(max_steps=8),
-        pattern_opts=ReActOpts(stop_on_repeated_action=True, max_tool_calls=8),
+        pattern_opts=ReActOpts(max_tool_calls=8),  # default stop_on_repeated_action=True
     )
     result = agent.run("USD EUR rate")
     assert result.finish_reason == "repeated_action"
     assert len(result.tool_calls) == 1
+
+
+def test_stop_on_repeated_action_can_opt_out():
+    """Intentional same tool+args twice — set stop_on_repeated_action=False."""
+    registry = default_finance_registry()
+    action = {
+        "tool": "fetch_exchange_rate",
+        "args": {"from_currency": "USD", "to_currency": "EUR"},
+    }
+    llm, call = _stub_react_llm(
+        [
+            {"thought": "fetch", "action": action, "finish": False},
+            {"thought": "refresh", "action": action, "finish": False},
+            {"thought": "done", "action": None, "finish": True},
+        ]
+    )
+    agent = Agent(
+        pattern="react",
+        tools=registry,
+        model=llm,
+        policy=PlanPolicy(max_steps=8),
+        pattern_opts=ReActOpts(stop_on_repeated_action=False, max_tool_calls=8),
+    )
+    result = agent.run("USD EUR rate")
+    assert result.finish_reason != "repeated_action"
+    assert len(result.tool_calls) == 2
+    assert call["n"] >= 3
 
 
 def test_require_tool_before_finish_blocks_early_finish():

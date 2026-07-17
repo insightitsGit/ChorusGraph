@@ -139,6 +139,12 @@ On verified hit: skip retrieve + LLM (fast path). Resonance is **not optional** 
 > **CacheProfile (H21):** per-node × category attributes (`keying`, `ttl_s`, `scope`, `risk_tier`) govern
 > the gate — see [`CACHE_PROFILES.md`](CACHE_PROFILES.md). Healthcare judgment hops use fingerprint keying
 > and quality-gated seeding; finance `fx_rates` uses semantic + short TTL.
+>
+> **L1 single-flight (ADR-006, shipped opt-in):** in-flight miss coalescing for
+> `exact`/`fingerprint` keys under `global`/`tenant` scope — cuts concurrent stampede spend; default off
+> because followers wait on the leader. Enable via `CacheProfile(single_flight=True)` or
+> `ChorusStack.with_flight(FlightPolicy(enabled=True))`. See
+> [`ADR-006-l1-single-flight.md`](ADR-006-l1-single-flight.md) and [`CACHE_PROFILES.md`](CACHE_PROFILES.md) §8.
 
 **Code:** `chorusgraph/cache_gate/gate.py`, `cache_gate/backend.py`
 

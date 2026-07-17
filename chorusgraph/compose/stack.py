@@ -56,6 +56,7 @@ class ChorusStack:
     checkpoint_root: str = ".chorusgraph/checkpoints"
     ledger_path: str = ":memory:"
     sidecar_path: str = ":memory:"
+    flight_policy: Optional[Any] = None
     _cache_runtime: Optional[Any] = field(default=None, repr=False)
     _measured_thresholds: Optional[CacheThresholds] = field(default=None, repr=False)
 
@@ -129,6 +130,7 @@ class ChorusStack:
         """Build ``CacheRuntime`` for node-entry cache interceptor."""
         if self._cache_runtime is not None:
             return self._cache_runtime
+        from chorusgraph.cache_gate.flight import FlightPolicy
         from chorusgraph.core.cache_interceptor import CacheRuntime
 
         thresholds = self.resolve_measured_thresholds()
@@ -139,6 +141,7 @@ class ChorusStack:
             cache = backend.cache
         else:
             cache = backend
+        policy = self.flight_policy if self.flight_policy is not None else FlightPolicy()
         self._cache_runtime = CacheRuntime(
             cache=cache,
             sidecar=sidecar,
@@ -148,12 +151,17 @@ class ChorusStack:
             tenant_id=self.tenant_id,
             registry=default_registry(),
             backend=backend,
+            flight_policy=policy,
         )
         return self._cache_runtime
 
     def with_cache(self, backend: CacheBackend) -> "ChorusStack":
         """Return a copy with cache backend replaced (e.g. Redis)."""
         return replace(self, cache=backend, _cache_runtime=None)
+
+    def with_flight(self, policy: Any) -> "ChorusStack":
+        """Return a copy with L1 single-flight policy (ADR-006; default remains off)."""
+        return replace(self, flight_policy=policy, _cache_runtime=None)
 
     def with_retrieval(self, backend: RetrievalBackend) -> "ChorusStack":
         """Return a copy with retrieval backend replaced (e.g. PrismRAG)."""

@@ -1,6 +1,6 @@
 """ChorusGraph — native Prism execution engine with cache, memory, and Route Ledger."""
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 from chorusgraph.adapter import RunnableWithLedger, wrap
 from chorusgraph.cache_gate import Decision, DecisionKind, SidecarStore, gate, seed_cache_entry

@@ -12,19 +12,23 @@ All notable changes to ChorusGraph are documented here (semver).
 - **E8:** Product Dockerfile, docker-compose, k8s manifest, deploy docs.
 - **E9:** Frozen public API (`chorusgraph/public.py`), stability guarantee, API 1.0 docs.
 
-## [Unreleased]
+## [1.2.0] — 2026-07-17
 
-### Fixed
-- **Benchmark comparison:** `abstain_rate` now uses `lower_is_better=True` (fewer refusals wins). Regenerated `COMPARISON_REPORT.md` for light/mid/heavy canonical runs.
-
-### Changed
-- **Docs & website:** canonical MVP benchmark updated to Azure run `mid_20260708_111539` (100 tasks/scenario) with latency/LLM summary (`benchmark/results/BENCHMARK_LATENCY_LLM_SUMMARY.md`). Supersedes `20260704_212111` for public claims. Benchmark-only fixes (`eeba2ad`); no library release.
-- README + benchmark index: link all canonical runs to COMPARISON_REPORT, results.tar.gz, and run_meta.json (light/mid/heavy).
+Published on PyPI: [chorusgraph 1.2.0](https://pypi.org/project/chorusgraph/1.2.0/).
 
 ### Added
-- **Benchmark results archive:** `azure_light_20260708_101409`, `azure_mid_20260708_111539`, pre-fix baselines, consolidated latency/LLM summary.
-- **Heavy scale run:** `heavy_20260708_140300` (300 tasks/scenario, all pairs complete).
-- **`scripts/swap_gemini_key.py`:** rotate `GEMINI_API_KEY` when quota is exhausted.
+- **L1 single-flight (opt-in):** in-process miss coalescing for `exact`/`fingerprint` keys under `global`/`tenant` scope — one leader computes; followers join or time out ([`ADR-006`](docs/ADR-006-l1-single-flight.md)). Default **off**. Enable via `CacheProfile(single_flight=True)` or `ChorusStack.with_flight(FlightPolicy(enabled=True))`.
+- **Docs:** [`LOOP-TOKEN-BURN-FINDINGS.md`](docs/LOOP-TOKEN-BURN-FINDINGS.md), ADR-006, ADR-007.
+
+### Changed
+- **ReAct anti-thrash default:** `ReActOpts.stop_on_repeated_action` now defaults to `True` (exact tool+args replay stops the loop). Opt out with `False` for intentional retries ([`ADR-007`](docs/ADR-007-react-repeated-action-default.md)).
+- **SidecarStore:** thread-safe SQLite access for concurrent gate lookups under single-flight.
+- **Docs & website:** canonical MVP benchmark updated to Azure run `mid_20260708_111539` (100 tasks/scenario) with latency/LLM summary. Supersedes `20260704_212111` for public claims.
+
+### Fixed
+- **Benchmark comparison:** `abstain_rate` now uses `lower_is_better=True` (fewer refusals wins).
+
+## [Unreleased]
 
 ## [1.1.0] — 2026-07-13
 

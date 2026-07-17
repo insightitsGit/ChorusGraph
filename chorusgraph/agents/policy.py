@@ -70,7 +70,8 @@ class PlanPolicy:
 class ReActOpts:
     max_tool_calls: int = 6
     require_tool_before_finish: bool = False
-    stop_on_repeated_action: bool = False
+    # Exact tool+args replay → stop (anti-thrash). Opt out with False if intentional retries.
+    stop_on_repeated_action: bool = True
     observation_char_limit: int = 2000
 
 

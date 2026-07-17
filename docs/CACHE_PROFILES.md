@@ -50,6 +50,8 @@ class CacheProfile(BaseModel):
     risk_tier: Literal["low", "high"]                         # ← error cost
     # risk_tier="high" implies: stricter verify threshold, quality-gated seeding (§5),
     # and cache_policy may not exceed EXACT for judgment-producing nodes.
+    single_flight: bool = False                               # ← ADR-006 stampede join (opt-in)
+    single_flight_timeout_s: Optional[float] = None
 ```
 
 - `keying="semantic"` — today's behavior: 64-d coarse → 384-d verify on the raw text.
@@ -129,6 +131,35 @@ design (safety). Their wins come from mid-pipeline fact caching + deterministic 
 concurrent super-step (retrieve ∥ drug_check). Quality rises at the same time because judgments always
 run fresh.
 
+## 8. L1 single-flight (in-flight miss join) — shipped opt-in
+
+> **Status:** shipped · **default off.** See [`ADR-006-l1-single-flight.md`](ADR-006-l1-single-flight.md).
+
+**Problem.** L1 only helps after an answer is seeded. If User A is still computing and User B asks
+with the **same** direct key, both miss today → duplicate spend (cache stampede).
+
+**Improvement.** Opt-in **single-flight**: one leader runs the miss path; followers with the same
+flight key wait (or time out and compute independently).
+
+**Sameness rule (strict):**
+
+| Allowed to coalesce | Not allowed (v1) |
+|---------------------|------------------|
+| `keying` ∈ {`exact`, `fingerprint`} | `keying=semantic` (similarity ≠ identity) |
+| `scope` ∈ {`global`, `tenant`} | `scope` ∈ {`user`, `session`} (cross-user leak / wrong answer) |
+
+**Enable:** `CacheProfile(single_flight=True)` on the node, and/or
+`ChorusStack.with_flight(FlightPolicy(enabled=True))`.
+
+**Latency tradeoff:** leader ≈ unchanged; followers may wait instead of racing a second paid LLM.
+Default **off** so existing graphs keep today’s parallel-miss latency unless they opt in.
+
+**Code:** `chorusgraph/cache_gate/flight.py` · `CacheInterceptor.run_miss` · tests in
+`tests/test_l1_single_flight.py`.
+
+This is **not** agent-loop token-burn control (`PlanPolicy` / `stop_on_repeated_action`) — see
+[`LOOP-TOKEN-BURN-FINDINGS.md`](LOOP-TOKEN-BURN-FINDINGS.md).
+
 ---
 *Design addition v1 · four measured axes · four archetypes · profiles attach node × category · any new
-domain = run the profiler, get the config.*
+domain = run the profiler, get the config. · §8 single-flight = ADR-006 shipped opt-in.*
