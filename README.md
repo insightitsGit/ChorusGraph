@@ -13,7 +13,7 @@ pip install "chorusgraph==1.1.0"
 chorusgraph-demo
 ```
 
-**Interactive demo:** [insightitsGit.github.io/ChorusGraph/demo.html](https://insightitsGit.github.io/ChorusGraph/demo.html) — **PrismCache** miss/hit, **warm chunk vectors**, **PrismCortex** lifecycle, ReAct / Plan-Solve / Reflection, multi-agent. No API key for the story or for `chorusgraph-use-cases`.
+**Interactive demo:** [insightitsGit.github.io/ChorusGraph/demo.html](https://insightitsGit.github.io/ChorusGraph/demo.html) — **try-it playground** in the browser (pick ReAct / Plan / Reflection / multi-agent / PrismCache / warm chunks / Cortex, type a query, watch the ledger). No API key. Repeat an FX question to see a cache HIT.
 
 > **ChorusGraph** = native engine + Prism stack · **LangGraph** = optional baseline for A/B comparison only ([`docs/TERMINOLOGY.md`](docs/TERMINOLOGY.md))
 
@@ -87,7 +87,7 @@ chorusgraph-finance-memory                    # live Cortex + checkpoints (needs
 chorusgraph-audit --log your_queries.jsonl    # semantic gate on your logs (no API key)
 ```
 
-**Interactive demo:** [demo.html](https://insightitsGit.github.io/ChorusGraph/demo.html) — toggle cache miss/hit, warm chunks vs Cortex, pick a design pattern.
+**Interactive demo:** [demo.html](https://insightitsGit.github.io/ChorusGraph/demo.html) — browser playground: type a query, run a mode, see Route Ledger + cache HIT on repeat.
 
 **Developer guide:** [`docs/DEVELOPER_GUIDE.md`](docs/DEVELOPER_GUIDE.md) — planning & reasoning, domain performance (finance vs healthcare), code examples.
 

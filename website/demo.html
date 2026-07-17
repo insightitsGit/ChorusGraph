@@ -3,74 +3,197 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Interactive ChorusGraph demo — built-in semantic cache, ReAct / Plan-and-Solve / Reflection, multi-agent roles, Route Ledger, and benchmarks. No API key for the walkthrough." />
-  <title>Interactive Demo — ChorusGraph</title>
+  <meta name="description" content="Try ChorusGraph in the browser — pick ReAct, Plan-Solve, Reflection, multi-agent, PrismCache, warm chunks, or Cortex. No API key." />
+  <title>Try ChorusGraph — Interactive Demo</title>
   <link rel="stylesheet" href="css/style.css" />
   <style>
-    .demo-hero { padding: 3rem 0 2rem; }
+    .demo-hero { padding: 2.5rem 0 1.25rem; }
     .demo-hero h1 { font-size: clamp(1.75rem, 4vw, 2.5rem); margin-bottom: 0.75rem; }
-    .demo-layout { display: grid; grid-template-columns: 260px 1fr; gap: 1.5rem; align-items: start; }
-    @media (max-width: 768px) { .demo-layout { grid-template-columns: 1fr; } }
-    .step-nav { list-style: none; margin: 0; padding: 0; }
-    .step-nav li { margin-bottom: 0.35rem; }
-    .step-nav button {
-      width: 100%; text-align: left; padding: 0.65rem 0.85rem;
-      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-      color: var(--muted); font: inherit; cursor: pointer;
+    .playground {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem 1.35rem 1.5rem;
+      margin: 0 0 2rem;
     }
-    .step-nav button:hover { border-color: var(--accent); color: var(--text); }
-    .step-nav button.active {
-      border-color: var(--accent); color: var(--text);
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.5rem;
+      margin: 1rem 0 1.25rem;
+    }
+    .mode-grid button {
+      text-align: left;
+      padding: 0.7rem 0.85rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--muted);
+      font: inherit;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, box-shadow 0.15s;
+    }
+    .mode-grid button:hover { border-color: var(--accent); color: var(--text); }
+    .mode-grid button.active {
+      border-color: var(--accent);
+      color: var(--text);
       box-shadow: 0 0 0 1px var(--accent);
     }
-    .step-nav button.done { color: var(--accent); }
-    .step-panel { display: none; }
-    .step-panel.active { display: block; }
-    .step-panel h2 { margin-bottom: 0.75rem; }
-    .step-panel p { margin-bottom: 1rem; }
-    .terminal {
-      background: #0a0e12; border: 1px solid var(--border); border-radius: 10px;
-      padding: 1rem 1.1rem; font-family: var(--mono); font-size: 0.8rem;
-      line-height: 1.45; color: #94a3b8; overflow-x: auto; white-space: pre-wrap;
-      margin: 1rem 0;
+    .mode-grid button strong { display: block; color: var(--text); font-size: 0.9rem; }
+    .mode-grid button span { display: block; font-size: 0.72rem; margin-top: 0.2rem; line-height: 1.3; }
+    .mode-blurb {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin-bottom: 1rem;
+      min-height: 2.6rem;
     }
-    .terminal .prompt { color: var(--accent); }
-    .terminal .out { color: #e2e8f0; }
-    .demo-controls { display: flex; gap: 0.75rem; margin-top: 1.5rem; flex-wrap: wrap; }
-    .progress { font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem; }
-    .highlight { color: var(--accent); font-weight: 600; }
-    .embed-note {
-      background: var(--surface); border: 1px dashed var(--border);
-      border-radius: 10px; padding: 1rem; margin-top: 1.5rem; font-size: 0.9rem;
+    .query-row {
+      display: flex;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+      align-items: stretch;
     }
-    .pattern-tabs {
-      display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1rem 0 1.25rem;
+    .query-row input[type="text"] {
+      flex: 1 1 220px;
+      min-width: 0;
+      padding: 0.8rem 1rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font: inherit;
+      font-size: 1rem;
     }
-    .pattern-tabs button {
-      padding: 0.5rem 0.9rem; border-radius: 8px; border: 1px solid var(--border);
-      background: var(--surface); color: var(--muted); font: inherit; cursor: pointer;
-    }
-    .pattern-tabs button:hover { border-color: var(--accent); color: var(--text); }
-    .pattern-tabs button.active {
-      border-color: var(--accent); color: var(--text);
+    .query-row input:focus {
+      outline: none;
+      border-color: var(--accent);
       box-shadow: 0 0 0 1px var(--accent);
     }
-    .pattern-pane { display: none; }
-    .pattern-pane.active { display: block; }
-    .pattern-pane h3 { margin: 0 0 0.5rem; font-size: 1.15rem; }
-    .meta-row {
-      display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.75rem 0 1rem;
+    .query-row .btn { border: none; cursor: pointer; align-self: stretch; display: inline-flex; align-items: center; }
+    .query-row .btn:disabled { opacity: 0.55; cursor: wait; }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.75rem 0 0; }
+    .chips button {
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 0.3rem 0.7rem;
+      font: inherit;
+      font-size: 0.78rem;
+      cursor: pointer;
     }
-    .meta-row span {
-      background: var(--surface); border: 1px solid var(--border);
-      padding: 0.25rem 0.65rem; border-radius: 999px; font-size: 0.8rem; color: var(--muted);
+    .chips button:hover { border-color: var(--accent); color: var(--accent); }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 0.65rem;
+      margin: 1.25rem 0;
     }
-    .topo {
-      font-family: var(--mono); font-size: 0.85rem; color: var(--accent);
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 8px; padding: 0.75rem 1rem; margin: 0.75rem 0 1rem;
-      overflow-x: auto;
+    .stat {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.65rem 0.8rem;
     }
+    .stat .label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .stat .value { font-size: 1.25rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+    .run-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: 0.5rem;
+    }
+    @media (max-width: 800px) { .run-grid { grid-template-columns: 1fr; } }
+    .panel {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.9rem 1rem;
+      min-height: 220px;
+    }
+    .panel h3 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+      font-weight: 600;
+    }
+    .ledger { list-style: none; margin: 0; padding: 0; font-family: var(--mono); font-size: 0.8rem; }
+    .ledger li {
+      padding: 0.45rem 0.55rem;
+      border-left: 2px solid var(--border);
+      margin-bottom: 0.35rem;
+      color: #94a3b8;
+      opacity: 0;
+      transform: translateX(-6px);
+      transition: opacity 0.25s ease, transform 0.25s ease, border-color 0.25s;
+    }
+    .ledger li.show { opacity: 1; transform: none; }
+    .ledger li.hit { border-color: var(--accent); color: #5eead4; }
+    .ledger li.miss { border-color: #f59e0b; color: #fcd34d; }
+    .ledger li .hop { color: var(--text); font-weight: 600; }
+    .answer-box {
+      font-size: 0.95rem;
+      color: var(--text);
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .answer-box .muted { color: var(--muted); font-size: 0.85rem; margin-top: 0.75rem; }
+    .badge {
+      display: inline-block;
+      font-size: 0.72rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      margin-right: 0.35rem;
+    }
+    .badge.ok { border-color: var(--accent); color: var(--accent); }
+    .badge.warn { border-color: #f59e0b; color: #fbbf24; }
+    .hint { font-size: 0.85rem; color: var(--muted); margin-top: 1rem; }
+    .walk-toggle {
+      margin: 2rem 0 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .walk-toggle h2 { font-size: 1.25rem; margin: 0; }
+    details.walkthrough {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.5rem 1rem 1rem;
+      background: var(--surface);
+      margin-bottom: 2rem;
+    }
+    details.walkthrough > summary {
+      cursor: pointer;
+      padding: 0.75rem 0;
+      color: var(--text);
+      font-weight: 600;
+      list-style: none;
+    }
+    details.walkthrough > summary::-webkit-details-marker { display: none; }
+    details.walkthrough > summary::after { content: " ▾"; color: var(--accent); }
+    details.walkthrough[open] > summary::after { content: " ▴"; }
+    .topo-mini {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--accent);
+      margin: 0.35rem 0 0.75rem;
+      word-break: break-word;
+    }
+    .cli-note {
+      margin-top: 1.5rem;
+      padding: 1rem;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .cli-note code { color: var(--accent); }
   </style>
 </head>
 <body>
@@ -93,444 +216,515 @@
   <main>
     <section class="demo-hero">
       <div class="container">
-        <h1>Interactive demo — ChorusGraph</h1>
-        <p class="sub">Native engine with <strong>built-in semantic cache</strong>, optional <strong>warm chunk vectors</strong>, <strong>PrismCortex</strong> memory, agent patterns, multi-agent roles, and verified benchmarks. Walkthrough needs <strong>no API key</strong>; CLI stubs run offline too.</p>
+        <h1>Try ChorusGraph</h1>
+        <p class="sub">A live <strong>in-browser simulator</strong> of the native stack — pick a mode, type a question, watch the Route Ledger. No API key. Repeat the same FX question to see the <strong>built-in cache hit</strong>.</p>
         <div class="proof-strip">
-          <span><strong>Built-in</strong> PrismCache</span>
+          <span><strong>Interactive</strong> playground</span>
+          <span><strong>L1</strong> PrismCache</span>
           <span><strong>L2</strong> warm chunks</span>
-          <span><strong>L3</strong> PrismCortex</span>
-          <span><strong>LLM-free</strong> CLI demos</span>
-          <span><code>pip install "chorusgraph==1.1.0"</code></span>
+          <span><strong>L3</strong> Cortex</span>
         </div>
       </div>
     </section>
 
     <section style="padding-top:0">
-      <div class="container demo-layout">
-        <ol class="step-nav" id="step-nav" aria-label="Demo steps"></ol>
-
-        <div id="step-panels">
-          <article class="step-panel active" data-step="0">
-            <p class="progress">Step 1 of 11</p>
-            <h2>The problem</h2>
-            <p>Production agents usually glue six systems together — orchestration, cache, vector DB, checkpoints, observability, audit. Repeat questions burn tokens; compliance asks <em>why</em> the agent answered, and logs are not enough.</p>
-            <div class="grid-3">
-              <div class="card"><h3>Token burn</h3><p>Every similar intent re-hits the model.</p></div>
-              <div class="card"><h3>Audit gap</h3><p>No per-hop decision trace.</p></div>
-              <div class="card"><h3>Integration tax</h3><p>LangGraph + Redis + Pinecone + …</p></div>
-            </div>
-          </article>
-
-          <article class="step-panel" data-step="1">
-            <p class="progress">Step 2 of 11</p>
-            <h2>Install — one package</h2>
-            <p>ChorusGraph is a <span class="highlight">native</span> runtime (not a LangGraph wrapper). Python 3.11+. <code>ChorusStack.defaults()</code> attaches <span class="highlight">PrismCache</span> automatically — no Redis required to start.</p>
-            <div class="terminal"><span class="prompt">$</span> pip install "chorusgraph==1.1.0"
-<span class="prompt">$</span> python -c "from chorusgraph import ChorusStack; print(ChorusStack.defaults().resolve_cache().name)"
-<span class="out">prism</span></div>
-            <p class="footnote">Swap later with <code>.with_cache(RedisCacheBackend(...))</code> — same graph code. Optional: <code>pip install "chorusgraph[gemini]"</code> for live LLM graphs.</p>
-          </article>
-
-          <article class="step-panel" data-step="2">
-            <p class="progress">Step 3 of 11</p>
-            <h2>Run the routing demo — no API key</h2>
-            <p><code>chorusgraph-demo</code> exercises routing, envelopes, and conditional edges on the native <code>Graph</code> engine.</p>
-            <div class="terminal"><span class="prompt">$</span> chorusgraph-demo
-<span class="out">=== short path (message='hi') ===
-{
-  "result": { "response": "short:hi", "route": "short_path", ... },
-  "ledger": { "run_id": "...", "steps": [ ... ] },
-  "persisted_match": true
-}</span></div>
-            <p>Same graph, two routes — scored by message length. This is the native BSP scheduler, not LangGraph.</p>
-          </article>
-
-          <article class="step-panel" data-step="3">
-            <p class="progress">Step 4 of 11</p>
-            <h2>Route Ledger — replay every hop</h2>
-            <p>Every node publishes artifacts with <code>rule_chain</code> and category. Cache decisions land here too (<code>cache_hit</code>, scores, duration).</p>
-            <div class="terminal"><span class="out">"steps": [
-  { "hop": "cache_gate", "cache_hit": true, "rule_chain": ["cache_gate=hit"], ... },
-  { "hop": "writer", "category_slug": "writer", ... }
-]</span></div>
-            <p>Production teams use this for “why did the agent say that?” — sovereignty-friendly, no third-party trace cloud required.</p>
-          </article>
-
-          <article class="step-panel" data-step="4">
-            <p class="progress">Step 5 of 11</p>
-            <h2>Built-in semantic cache</h2>
-            <p>L1 <span class="highlight">PrismCache</span> is on by default. <code>cache_gate</code> runs <strong>coarse 64-d recall → full verify</strong>. Toggle miss vs hit to see the product win.</p>
-            <div class="topo">MISS: ingress → cache_gate → tools / ReAct → writer → seed<br/>HIT:&nbsp;&nbsp;ingress → cache_gate → writer (skip LLM)</div>
-            <div class="pattern-tabs" id="cache-tabs" role="tablist" aria-label="Cache miss or hit">
-              <button type="button" class="active" data-cache="miss">1. Cold miss</button>
-              <button type="button" data-cache="hit">2. Warm hit</button>
-            </div>
-            <div id="cache-panes">
-              <div class="pattern-pane active" data-cache="miss">
-                <h3>Cold path — cache miss</h3>
-                <p>Empty cache → gate returns <code>MISS</code> → graph runs tools / agent → answer → <strong>seed</strong> PrismCache (quality-gated).</p>
-                <div class="terminal"><span class="prompt">$</span> chorusgraph-use-cases cache
-<span class="out">Turn 1 (cold): kind=miss is_hit=False
-  -> continue graph: tools / ReAct / writer, then seed cache
-Seeded PrismCache for: 'What is the USD to EUR exchange rate today?'</span></div>
-              </div>
-              <div class="pattern-pane" data-cache="hit">
-                <h3>Warm path — cache hit</h3>
-                <p>Same (or seeded paraphrase) query → gate returns <code>HIT</code> with score → route straight to writer. ~ms latency, 0 LLM tokens on repeats.</p>
-                <div class="terminal"><span class="out">Turn 2 (repeat): kind=hit is_hit=True score=1.0
-  cached value: {'from_currency': 'USD', 'to_currency': 'EUR', 'rate': 0.92, ...}
-  -> cache_gate routes straight to writer (skip LLM tools)
-Backend: prism (ChorusStack default)</span></div>
-              </div>
-            </div>
-            <div class="grid-3" style="margin-top:1rem">
-              <div class="card"><h3>Default</h3><p><code>PrismCacheBackend</code> — zero extra deps</p></div>
-              <div class="card"><h3>Swap</h3><p><code>RedisCacheBackend</code> via <code>with_cache()</code></p></div>
-              <div class="card"><h3>Profiles</h3><p>Finance: short TTL · Healthcare: facts-only</p></div>
-            </div>
-            <p class="footnote">CLI: <code>chorusgraph-use-cases cache</code> · Audit your logs: <code>chorusgraph-audit --log queries.jsonl</code> · Docs: <code>CACHE_PROFILES.md</code></p>
-          </article>
-
-          <article class="step-panel" data-step="5">
-            <p class="progress">Step 6 of 11</p>
-            <h2>Warm chunks (L2) &amp; PrismCortex (L3)</h2>
-            <p>L1 cache answers. L2 retrieves knowledge. L3 remembers <em>user/session facts</em>. Toggle to see the right recipe for each.</p>
-            <div class="pattern-tabs" id="l2l3-tabs" role="tablist" aria-label="Warm chunks or Cortex">
-              <button type="button" class="active" data-l2l3="warm">Warm chunk vectors</button>
-              <button type="button" data-l2l3="cortex">PrismCortex</button>
-            </div>
-            <div id="l2l3-panes">
-              <div class="pattern-pane active" data-l2l3="warm">
-                <h3>Index once · warm at boot · query-only retrieve</h3>
-                <p>Do <strong>not</strong> re-encode the KB every turn. Use partitions so a catalog bump never invalidates <code>kb_markdown</code>. ADR-005.</p>
-                <div class="topo">index(partition, version) → warm_retrieval → retrieve (query-only)<br/>rerank_policy="vectors_only" on PrismRAG</div>
-                <div class="terminal"><span class="prompt">$</span> chorusgraph-use-cases warm_chunks
-<span class="out">index kb_markdown=docs-v1, catalog=cat-v1
-warm_retrieval → retrieval_ready=True
-catalog → cat-v2  (kb_markdown still docs-v1)
-retrieve handler rule_chain includes partition=kb_markdown</span></div>
-              </div>
-              <div class="pattern-pane" data-l2l3="cortex">
-                <h3>Recall at ingress · digest off the hot path</h3>
-                <p><strong>Wrong:</strong> user prefs in L1 whole-answer cache · sync digest before response · dump full transcript every hop.<br/>
-                <strong>Right:</strong> <code>recall_structured</code> → confidence gate · <code>schedule_digest</code> async after the answer.</p>
-                <div class="topo">ingress recall_structured → hops → response → async schedule_digest</div>
-                <div class="terminal"><span class="prompt">$</span> chorusgraph-use-cases cortex
-<span class="out">Turn 1: schedule_digest (non-blocking)
-Turn 2: memory_confidence=0.91  memory_recall=User prefers moderate risk
-Unrelated query: None  (no fabricated fallback)
-Live: chorusgraph-finance-memory</span></div>
-              </div>
-            </div>
-            <p class="footnote">Warm: <code>docs/ADR-005-warm-chunk-vectors.md</code> · Cortex: <code>chorusgraph-finance-memory</code> / <code>CortexMemoryBackend</code></p>
-          </article>
-
-          <article class="step-panel" data-step="6">
-            <p class="progress">Step 7 of 11</p>
-            <h2>Use cases — pick a design</h2>
-            <p>Patterns, multi-agent, <span class="highlight">cache</span>, <span class="highlight">warm chunks</span>, and <span class="highlight">Cortex</span>. Click a tab, then run the matching CLI offline.</p>
-            <div class="pattern-tabs" id="pattern-tabs" role="tablist" aria-label="Design patterns"></div>
-            <div id="pattern-panes"></div>
-            <div class="terminal"><span class="prompt">$</span> chorusgraph-use-cases --list
-<span class="out">  [react] ...
-  [plan_solve] ...
-  [reflection] ...
-  [multi_agent] ...
-  [cache] Built-in semantic cache (miss then hit)
-  [warm_chunks] Warm chunk vectors (index once, query-only retrieve)
-  [cortex] PrismCortex L3 - recall at ingress, digest off the hot path</span>
-<span class="prompt">$</span> chorusgraph-use-cases cache
-<span class="prompt">$</span> chorusgraph-use-cases warm_chunks
-<span class="prompt">$</span> chorusgraph-use-cases cortex</div>
-            <p class="footnote">Source: <code>chorusgraph/examples/use_cases/</code> · live Gemini + cache gate: <code>chorusgraph-finance-patterns</code> · Cortex: <code>chorusgraph-finance-memory</code></p>
-          </article>
-
-          <article class="step-panel" data-step="7">
-            <p class="progress">Step 8 of 11</p>
-            <h2>Multi-agent — role pipeline</h2>
-            <p>When the plan is a <em>known</em> multi-hop pipeline, use role-typed nodes on the native graph — not a dynamic <code>Agent</code> loop. Production FC2/HC2 add <code>cache_gate</code> before the role chain.</p>
-            <div class="topo">START → researcher → writer → validator → END<br/>+ cache: ingress → cache_gate -[hit]→ writer | -[miss]→ researcher → …</div>
-            <div class="grid-3">
-              <div class="card"><h3>Researcher</h3><p>Plans what to gather; publishes <code>research_plan</code>.</p></div>
-              <div class="card"><h3>Writer</h3><p>Drafts the answer from the plan artifact.</p></div>
-              <div class="card"><h3>Validator</h3><p>Checks the draft; ledger records <code>ok=…</code>.</p></div>
-            </div>
-            <div class="terminal"><span class="prompt">$</span> chorusgraph-use-cases multi_agent
-<span class="out">Ledger path: researcher -&gt; writer -&gt; validator</span></div>
-            <p>See <code>docs/FINANCE_MULTIAGENT_CHORUS.md</code> for FC2 wiring with cache hit skip.</p>
-          </article>
-
-          <article class="step-panel" data-step="8">
-            <p class="progress">Step 9 of 11</p>
-            <h2>Live pattern graphs (optional Gemini)</h2>
-            <p>Full finance graphs wire <code>cache_gate</code> before ReAct / Plan-Solve / Reflection. Offline <code>chorusgraph-use-cases cache</code> is enough to see the gate.</p>
-            <div class="terminal"><span class="prompt">$</span> pip install "chorusgraph[gemini]"
-<span class="prompt">$</span> set GEMINI_API_KEY=...
-<span class="prompt">$</span> chorusgraph-finance-patterns
-<span class="out">=== REACT ===
-Ledger path: vector_ingress -&gt; cache_gate -&gt; react_agent -&gt; writer -&gt; ...
-(on repeat query: cache_gate -&gt; writer)</span></div>
-          </article>
-
-          <article class="step-panel" data-step="9">
-            <p class="progress">Step 10 of 11</p>
-            <h2>Measure cache savings (offline)</h2>
-            <p><code>chorusgraph-audit</code> runs your query log through the <strong>real</strong> semantic gate — no live LLM calls — so you can estimate hit rate before production.</p>
-            <div class="terminal"><span class="prompt">$</span> chorusgraph-audit --log your_queries.jsonl
-<span class="out">Estimated cache hit rate: 42%
-Projected LLM call reduction: 38%
-...</span></div>
-            <p>Pair with staging traffic before you flip cache on in production. After a pilot, inspect measured hits from the Route Ledger.</p>
-          </article>
-
-          <article class="step-panel" data-step="10">
-            <p class="progress">Step 11 of 11</p>
-            <h2>Verified benchmarks</h2>
-            <p>Paired Azure runs vs LangGraph baselines — same tasks, only orchestration differs. Cache is a major driver of finance multi-agent wins on repeats.</p>
-            <table>
-              <thead><tr><th>Scenario</th><th>LangGraph</th><th>ChorusGraph</th></tr></thead>
-              <tbody>
-                <tr><td>Finance single</td><td>87%</td><td><strong>98%</strong></td></tr>
-                <tr><td>Finance multi</td><td>87%</td><td><strong>94%</strong></td></tr>
-                <tr><td>Healthcare single</td><td>74%</td><td><strong>79%</strong></td></tr>
-                <tr><td>Healthcare multi</td><td>59%</td><td><strong>85%</strong></td></tr>
-              </tbody>
-            </table>
-            <p class="footnote">Full tables: <a href="benchmarks.html">benchmarks page</a></p>
-            <div class="cta-row">
-              <a class="btn btn-primary" href="https://github.com/insightitsGit/ChorusGraph">Star on GitHub</a>
-              <a class="btn btn-secondary" href="https://github.com/insightitsGit/ChorusGraph/blob/master/docs/INSTALL.md">Install guide</a>
-              <a class="btn btn-secondary" href="https://github.com/insightitsGit/ChorusGraph/tree/master/chorusgraph/examples/use_cases">Use cases</a>
-            </div>
-          </article>
-        </div>
-      </div>
-
       <div class="container">
-        <div class="demo-controls">
-          <button type="button" class="btn btn-secondary" id="btn-prev" disabled>← Previous</button>
-          <button type="button" class="btn btn-primary" id="btn-next">Next →</button>
+        <div class="playground" id="playground">
+          <p style="color:var(--muted);margin:0 0 0.25rem;font-size:0.85rem;">Choose a design</p>
+          <div class="mode-grid" id="mode-grid" role="radiogroup" aria-label="Demo mode"></div>
+          <p class="mode-blurb" id="mode-blurb"></p>
+          <p class="topo-mini" id="mode-topo"></p>
+
+          <div class="query-row">
+            <input type="text" id="query-input" maxlength="200"
+              placeholder="Ask something — e.g. Compare USD/EUR and USD/GBP"
+              aria-label="Query" />
+            <button type="button" class="btn btn-primary" id="btn-run">Run →</button>
+            <button type="button" class="btn btn-secondary" id="btn-reset">Reset</button>
+          </div>
+          <div class="chips" id="chips"></div>
+
+          <div class="stats">
+            <div class="stat"><div class="label">Sim LLM calls</div><div class="value" id="stat-llm">0</div></div>
+            <div class="stat"><div class="label">Cache hits</div><div class="value" id="stat-hits">0</div></div>
+            <div class="stat"><div class="label">Cache misses</div><div class="value" id="stat-miss">0</div></div>
+            <div class="stat"><div class="label">Last latency</div><div class="value" id="stat-lat">—</div></div>
+          </div>
+
+          <div class="run-grid">
+            <div class="panel">
+              <h3>Route Ledger</h3>
+              <ul class="ledger" id="ledger" aria-live="polite">
+                <li class="show" style="border-color:transparent;opacity:0.7">Run a query to stream hops…</li>
+              </ul>
+            </div>
+            <div class="panel">
+              <h3>Result</h3>
+              <div class="answer-box" id="answer">
+                <span class="muted">Output and cache/memory status appear here.</span>
+              </div>
+            </div>
+          </div>
+
+          <p class="hint" id="hint">Tip: run an FX question twice in <strong>Cache</strong> or <strong>ReAct</strong> mode — the second run should skip tools (HIT).</p>
         </div>
-        <div class="embed-note">
-          <strong>Product Hunt / embed:</strong> Use this URL as your interactive demo link —
-          <a id="demo-canonical-url" href="demo.html"></a>.
+
+        <div class="cli-note">
+          <strong>This page simulates the product path in your browser</strong> (no Python server).
+          For the real engine offline:
+          <code>pip install chorusgraph</code> then
+          <code>chorusgraph-use-cases</code> /
+          <code>chorusgraph-use-cases cache</code> /
+          <code>warm_chunks</code> /
+          <code>cortex</code>.
+          Live Gemini: <code>chorusgraph-finance-patterns</code>, <code>chorusgraph-finance-memory</code>.
         </div>
+
+        <details class="walkthrough">
+          <summary>Optional: click-through story (what each layer is for)</summary>
+          <div class="grid-3" style="margin-top:0.75rem">
+            <div class="card"><h3>L1 PrismCache</h3><p>Two-stage gate. Hit → writer (0 LLM). Miss → tools then seed.</p></div>
+            <div class="card"><h3>L2 Warm chunks</h3><p>Index by partition/version; warm at boot; catalog bumps don’t kill kb_markdown.</p></div>
+            <div class="card"><h3>L3 Cortex</h3><p>Recall structured facts at ingress; schedule_digest async after the answer.</p></div>
+          </div>
+          <div class="grid-3">
+            <div class="card"><h3>ReAct</h3><p>Unknown tool order — Thought → Action → Observation.</p></div>
+            <div class="card"><h3>Plan-and-Solve</h3><p>Static checklist then execute.</p></div>
+            <div class="card"><h3>Reflection / Multi-agent</h3><p>Validator loop · Researcher → Writer → Validator.</p></div>
+          </div>
+        </details>
       </div>
     </section>
   </main>
 
   <footer>
     <div class="container">
-      <p>Insight IT Solutions · Apache-2.0 · <a href="https://github.com/insightitsGit/ChorusGraph">GitHub</a></p>
+      <p>Insight IT Solutions · Apache-2.0 · Simulator for launch demos · <a href="https://github.com/insightitsGit/ChorusGraph">GitHub</a></p>
     </div>
   </footer>
 
   <script>
     (function () {
-      const patterns = [
-        {
-          id: "react",
+      const MODES = {
+        react: {
           label: "ReAct",
-          title: "Compare live FX rates",
-          domain: "Finance / rates",
-          when: "1-N tool calls, order unknown",
-          topo: "reason <-> tool -> finish -> writer",
-          why: "The agent decides which tools to call and in what order. Thought -> Action -> Observation until finish.",
-          stop: "finish=true or PlanPolicy max_steps",
-          cli: "chorusgraph-use-cases react",
-          sample: "Thought: Need USD/EUR first\nAction: fetch_exchange_rate(USD->EUR)\nObservation: rate=0.92\nFinish after GBP leg",
+          short: "Unknown tool order",
+          blurb: "Thought → Action → Observation until finish. Best when tool order is unknown.",
+          topo: "reason ⇄ tool → finish → writer",
+          samples: [
+            "Compare USD/EUR and USD/GBP",
+            "What is the USD to EUR rate today?",
+          ],
         },
-        {
-          id: "plan_solve",
-          label: "Plan-and-Solve",
-          title: "Fetch rates, then cross-rate",
-          domain: "Finance / pricing",
-          when: "Decomposable tasks, known tool catalog",
-          topo: "planner -> step1 -> step2 -> ... -> writer",
-          why: "Emit a static checklist once, then execute sequentially - cacheable and auditable.",
-          stop: "All plan steps done (or on_step_failure)",
-          cli: "chorusgraph-use-cases plan_solve",
-          sample: "Plan:\n  1. fetch USD/EUR\n  2. fetch USD/GBP\n  3. compute EUR/GBP cross\nExecute -> summary",
+        plan_solve: {
+          label: "Plan-Solve",
+          short: "Fixed checklist",
+          blurb: "Emit a static plan once, then execute steps. Cacheable and auditable.",
+          topo: "planner → step₁ → step₂ → writer",
+          samples: [
+            "Fetch USD/EUR and USD/GBP, compute EUR/GBP cross-rate",
+          ],
         },
-        {
-          id: "reflection",
+        reflection: {
           label: "Reflection",
-          title: "Draft must pass rate validator",
-          domain: "Compliance-sensitive copy",
-          when: "Drafts with rates, citations, claims to verify",
-          topo: "draft -> validator <-> revise -> approved",
-          why: "Generator -> critic loop revises until a validator (or grounding guard) approves.",
-          stop: "Validator approves or max_revisions",
-          cli: "chorusgraph-use-cases reflection",
-          sample: "Draft wrong -> validator rejects -> revise with 0.92 / 0.79 -> approved",
+          short: "Draft ↔ validator",
+          blurb: "Generator → critic until the rate validator approves.",
+          topo: "draft → validator ↺ revise → approved",
+          samples: [
+            "Summarize USD/EUR and USD/GBP carefully",
+          ],
         },
-        {
-          id: "multi_agent",
+        multi_agent: {
           label: "Multi-agent",
-          title: "Researcher -> Writer -> Validator",
-          domain: "Role orchestration",
-          when: "Known multi-hop pipeline with distinct roles",
-          topo: "START -> researcher -> writer -> validator -> END",
-          why: "Role-typed nodes on a fixed graph. Production FC2/HC2 put cache_gate before this chain.",
-          stop: "Graph reaches END",
-          cli: "chorusgraph-use-cases multi_agent",
-          sample: "researcher -> writer -> validator\nLedger records every role hop",
+          short: "Role pipeline",
+          blurb: "Researcher → Writer → Validator on a fixed native graph.",
+          topo: "START → researcher → writer → validator → END",
+          samples: [
+            "Explain ChorusGraph engine",
+          ],
         },
-        {
-          id: "cache",
+        cache: {
           label: "Cache",
-          title: "Built-in PrismCache (miss then hit)",
-          domain: "L1 semantic cache",
-          when: "Repeat / paraphrase queries",
-          topo: "cache_gate -[hit]-> writer | -[miss]-> tools then seed",
-          why: "ChorusStack.defaults() ships PrismCache. Two-stage gate: coarse 64-d recall -> full verify. Hits skip the LLM.",
-          stop: "Hit returns value; miss continues then seeds",
-          cli: "chorusgraph-use-cases cache",
-          sample: "Turn 1: MISS -> tools -> seed\nTurn 2: HIT score~1.0 -> writer (0 LLM tokens)\nBackend: prism",
+          short: "L1 PrismCache",
+          blurb: "Built-in semantic cache. First run MISS + seed; same question again → HIT (skip LLM).",
+          topo: "ingress → cache_gate -[hit]→ writer | -[miss]→ tools → seed",
+          samples: [
+            "What is the USD to EUR exchange rate today?",
+            "USD/EUR rate please",
+          ],
         },
-        {
-          id: "warm_chunks",
+        warm_chunks: {
           label: "Warm chunks",
-          title: "Warm chunk vectors (L2)",
-          domain: "L2 retrieval / ADR-005",
-          when: "Stable KB RAG; multi-replica ready probes",
-          topo: "index(partition,version) -> warm_retrieval -> query-only retrieve",
-          why: "Do not re-encode the corpus every turn. Partition isolation: catalog bumps must not invalidate kb_markdown.",
-          stop: "retrieval_ready(partition); same version index is a no-op",
-          cli: "chorusgraph-use-cases warm_chunks",
-          sample: "kb_markdown=docs-v1 ready\ncatalog -> cat-v2 (kb unchanged)\nrule_chain: partition=kb_markdown",
+          short: "L2 retrieval",
+          blurb: "Index once per partition/version, warm at boot, query-only retrieve. Catalog bumps don’t invalidate kb_markdown.",
+          topo: "index(partition,version) → warm_retrieval → retrieve",
+          samples: [
+            "How does PrismCache reduce LLM costs?",
+            "Hotel AI Web Agent price",
+          ],
         },
-        {
-          id: "cortex",
+        cortex: {
           label: "Cortex",
-          title: "PrismCortex L3 lifecycle",
-          domain: "L3 memory",
-          when: "Personalized / cross-session facts",
-          topo: "ingress recall_structured -> hops -> async schedule_digest",
-          why: "User facts belong in Cortex, not L1 whole-answer cache. Digest never blocks the response path.",
-          stop: "confidence/freshness gate; empty recall = no fake fallback",
-          cli: "chorusgraph-use-cases cortex",
-          sample: "WRONG: L1 prefs / sync digest / full transcript\nRIGHT: recall -> confidence -> async digest\nLive: chorusgraph-finance-memory",
+          short: "L3 memory",
+          blurb: "Right path: recall at ingress, digest after response. Wrong: stuffing prefs into L1 or sync digest.",
+          topo: "ingress recall → hops → response → async digest",
+          samples: [
+            "I prefer moderate risk for FX trades",
+            "What is my risk tolerance?",
+          ],
         },
-      ];
+      };
 
-      const tabs = document.getElementById("pattern-tabs");
-      const panes = document.getElementById("pattern-panes");
+      const RATES = { "USD/EUR": 0.92, "USD/GBP": 0.79 };
+      const state = {
+        mode: "cache",
+        cache: Object.create(null),
+        cortexFacts: [],
+        stats: { llm: 0, hits: 0, miss: 0 },
+        running: false,
+      };
 
-      patterns.forEach(function (p, i) {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.setAttribute("role", "tab");
-        btn.textContent = p.label;
-        btn.dataset.pattern = p.id;
-        if (i === 0) btn.classList.add("active");
-        btn.addEventListener("click", function () { showPattern(p.id); });
-        tabs.appendChild(btn);
+      const modeGrid = document.getElementById("mode-grid");
+      const modeBlurb = document.getElementById("mode-blurb");
+      const modeTopo = document.getElementById("mode-topo");
+      const queryInput = document.getElementById("query-input");
+      const chips = document.getElementById("chips");
+      const ledgerEl = document.getElementById("ledger");
+      const answerEl = document.getElementById("answer");
+      const btnRun = document.getElementById("btn-run");
+      const btnReset = document.getElementById("btn-reset");
 
-        const pane = document.createElement("div");
-        pane.className = "pattern-pane" + (i === 0 ? " active" : "");
-        pane.dataset.pattern = p.id;
-        pane.innerHTML =
-          "<h3>" + p.title + "</h3>" +
-          "<div class=\"meta-row\">" +
-          "<span>" + p.domain + "</span>" +
-          "<span>" + p.when + "</span>" +
-          "</div>" +
-          "<p>" + p.why + "</p>" +
-          "<div class=\"topo\">" + p.topo + "</div>" +
-          "<p><strong>Stop:</strong> " + p.stop + "</p>" +
-          "<div class=\"terminal\"><span class=\"prompt\">$</span> " + p.cli +
-          "\n<span class=\"out\">" + p.sample + "</span></div>";
-        panes.appendChild(pane);
+      Object.keys(MODES).forEach(function (id) {
+        const m = MODES[id];
+        const b = document.createElement("button");
+        b.type = "button";
+        b.dataset.mode = id;
+        b.setAttribute("role", "radio");
+        b.innerHTML = "<strong>" + m.label + "</strong><span>" + m.short + "</span>";
+        b.addEventListener("click", function () { setMode(id); });
+        modeGrid.appendChild(b);
       });
 
-      function showPattern(id) {
-        tabs.querySelectorAll("button").forEach(function (b) {
-          b.classList.toggle("active", b.dataset.pattern === id);
+      function setMode(id) {
+        state.mode = id;
+        const m = MODES[id];
+        modeGrid.querySelectorAll("button").forEach(function (b) {
+          const on = b.dataset.mode === id;
+          b.classList.toggle("active", on);
+          b.setAttribute("aria-checked", on ? "true" : "false");
         });
-        panes.querySelectorAll(".pattern-pane").forEach(function (pane) {
-          pane.classList.toggle("active", pane.dataset.pattern === id);
+        modeBlurb.textContent = m.blurb;
+        modeTopo.textContent = m.topo;
+        chips.innerHTML = "";
+        m.samples.forEach(function (s) {
+          const c = document.createElement("button");
+          c.type = "button";
+          c.textContent = s;
+          c.addEventListener("click", function () {
+            queryInput.value = s;
+            queryInput.focus();
+          });
+          chips.appendChild(c);
         });
+        if (!queryInput.value.trim()) queryInput.value = m.samples[0] || "";
       }
 
-      document.querySelectorAll("#cache-tabs button").forEach(function (btn) {
-        btn.addEventListener("click", function () {
-          var id = btn.dataset.cache;
-          document.querySelectorAll("#cache-tabs button").forEach(function (b) {
-            b.classList.toggle("active", b.dataset.cache === id);
-          });
-          document.querySelectorAll("#cache-panes .pattern-pane").forEach(function (pane) {
-            pane.classList.toggle("active", pane.dataset.cache === id);
-          });
-        });
-      });
+      function normQuery(q) {
+        return q.trim().toLowerCase().replace(/\s+/g, " ");
+      }
 
-      document.querySelectorAll("#l2l3-tabs button").forEach(function (btn) {
-        btn.addEventListener("click", function () {
-          var id = btn.dataset.l2l3;
-          document.querySelectorAll("#l2l3-tabs button").forEach(function (b) {
-            b.classList.toggle("active", b.dataset.l2l3 === id);
-          });
-          document.querySelectorAll("#l2l3-panes .pattern-pane").forEach(function (pane) {
-            pane.classList.toggle("active", pane.dataset.l2l3 === id);
-          });
-        });
-      });
+      function cacheKey(q) {
+        const n = normQuery(q);
+        if (/usd.?eur|eur.?usd|dollar to euro|euro rate/.test(n)) return "fx:USD/EUR";
+        if (/usd.?gbp|gbp.?usd|dollar to pound|pound rate/.test(n)) return "fx:USD/GBP";
+        if (/compare|stronger|both/.test(n) && /eur|gbp/.test(n)) return "fx:COMPARE";
+        return "q:" + n;
+      }
 
-      const labels = [
-        "1. The problem",
-        "2. Install + PrismCache",
-        "3. chorusgraph-demo",
-        "4. Route Ledger",
-        "5. Built-in cache",
-        "6. Warm chunks & Cortex",
-        "7. Use cases & patterns",
-        "8. Multi-agent",
-        "9. Live Gemini (opt.)",
-        "10. chorusgraph-audit",
-        "11. Benchmarks",
-      ];
-      const nav = document.getElementById("step-nav");
-      const panels = Array.from(document.querySelectorAll(".step-panel"));
-      let current = 0;
+      function sleep(ms) {
+        return new Promise(function (r) { setTimeout(r, ms); });
+      }
 
-      labels.forEach(function (label, i) {
+      function clearLedger() {
+        ledgerEl.innerHTML = "";
+      }
+
+      async function addHop(text, cls) {
         const li = document.createElement("li");
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.textContent = label;
-        btn.dataset.step = String(i);
-        btn.addEventListener("click", function () { go(i); });
-        li.appendChild(btn);
-        nav.appendChild(li);
-      });
-
-      const prev = document.getElementById("btn-prev");
-      const next = document.getElementById("btn-next");
-
-      function go(i) {
-        current = Math.max(0, Math.min(panels.length - 1, i));
-        panels.forEach(function (p, idx) {
-          p.classList.toggle("active", idx === current);
-        });
-        nav.querySelectorAll("button").forEach(function (b, idx) {
-          b.classList.toggle("active", idx === current);
-          b.classList.toggle("done", idx < current);
-        });
-        prev.disabled = current === 0;
-        next.textContent = current === panels.length - 1 ? "Done ✓" : "Next →";
+        if (cls) li.className = cls;
+        li.innerHTML = text;
+        ledgerEl.appendChild(li);
+        await sleep(20);
+        li.classList.add("show");
+        await sleep(280);
       }
 
-      prev.addEventListener("click", function () { go(current - 1); });
-      next.addEventListener("click", function () {
-        if (current < panels.length - 1) go(current + 1);
+      function updateStats() {
+        document.getElementById("stat-llm").textContent = String(state.stats.llm);
+        document.getElementById("stat-hits").textContent = String(state.stats.hits);
+        document.getElementById("stat-miss").textContent = String(state.stats.miss);
+      }
+
+      function setLatency(ms) {
+        document.getElementById("stat-lat").textContent = ms + " ms";
+      }
+
+      async function runCachePath(q, forceTools) {
+        const key = cacheKey(q);
+        const hit = !forceTools && state.cache[key];
+        await addHop('<span class="hop">vector_ingress</span> · project query');
+        if (hit) {
+          state.stats.hits += 1;
+          await addHop('<span class="hop">cache_gate</span> · HIT score≈0.99 · skip LLM', "hit");
+          await addHop('<span class="hop">writer</span> · replay cached tool data');
+          updateStats();
+          return {
+            badges: ['<span class="badge ok">cache HIT</span>', '<span class="badge">0 LLM</span>'],
+            text: "Cached: " + JSON.stringify(hit, null, 2),
+            latency: 12 + Math.floor(Math.random() * 8),
+          };
+        }
+        state.stats.miss += 1;
+        await addHop('<span class="hop">cache_gate</span> · MISS · continue graph', "miss");
+        state.stats.llm += 1;
+        await addHop('<span class="hop">tools</span> · fetch_exchange_rate');
+        const value =
+          key === "fx:COMPARE"
+            ? { "USD/EUR": RATES["USD/EUR"], "USD/GBP": RATES["USD/GBP"], note: "GBP stronger vs USD" }
+            : key === "fx:USD/GBP"
+              ? { pair: "USD/GBP", rate: RATES["USD/GBP"], source: "sim" }
+              : { pair: "USD/EUR", rate: RATES["USD/EUR"], source: "sim" };
+        state.cache[key] = value;
+        // Also seed common paraphrase keys for USD/EUR
+        if (key === "fx:USD/EUR" || key.indexOf("usd") >= 0) {
+          state.cache["fx:USD/EUR"] = value.pair ? value : { pair: "USD/EUR", rate: RATES["USD/EUR"], source: "sim" };
+        }
+        await addHop('<span class="hop">seed</span> · PrismCache write (quality-gated)');
+        await addHop('<span class="hop">writer</span> · synthesize answer');
+        updateStats();
+        return {
+          badges: ['<span class="badge warn">cache MISS</span>', '<span class="badge">seeded</span>'],
+          text: "Answer from tools:\n" + JSON.stringify(value, null, 2) + "\n\nRun the same question again to see a HIT.",
+          latency: 420 + Math.floor(Math.random() * 180),
+        };
+      }
+
+      async function runReact(q) {
+        const key = cacheKey(q);
+        if (state.cache[key] || state.cache["fx:COMPARE"]) {
+          return runCachePath(q, false);
+        }
+        await addHop('<span class="hop">vector_ingress</span>');
+        await addHop('<span class="hop">cache_gate</span> · MISS', "miss");
+        state.stats.miss += 1;
+        state.stats.llm += 1;
+        await addHop('<span class="hop">react</span> · Thought: need USD/EUR');
+        await addHop('<span class="hop">tool</span> · fetch_exchange_rate(USD→EUR) → 0.92');
+        state.stats.llm += 1;
+        await addHop('<span class="hop">react</span> · Thought: need USD/GBP');
+        await addHop('<span class="hop">tool</span> · fetch_exchange_rate(USD→GBP) → 0.79');
+        state.stats.llm += 1;
+        await addHop('<span class="hop">react</span> · finish=true');
+        await addHop('<span class="hop">writer</span>');
+        const value = { "USD/EUR": 0.92, "USD/GBP": 0.79, stronger: "GBP vs USD" };
+        state.cache["fx:COMPARE"] = value;
+        state.cache["fx:USD/EUR"] = { pair: "USD/EUR", rate: 0.92 };
+        updateStats();
+        return {
+          badges: ['<span class="badge">ReAct</span>', '<span class="badge warn">seeded cache</span>'],
+          text: "GBP is stronger against USD (0.79 vs 0.92 EUR per USD).\nCache seeded — ask again or switch to Cache mode for a HIT.",
+          latency: 900 + Math.floor(Math.random() * 200),
+        };
+      }
+
+      async function runPlan(q) {
+        await addHop('<span class="hop">planner</span> · emit static 3-step plan');
+        state.stats.llm += 1;
+        await addHop('<span class="hop">step 1</span> · fetch USD/EUR');
+        await addHop('<span class="hop">step 2</span> · fetch USD/GBP');
+        await addHop('<span class="hop">step 3</span> · compute EUR/GBP cross from USD legs');
+        await addHop('<span class="hop">writer</span>');
+        updateStats();
+        const cross = +(0.92 / 0.79).toFixed(4);
+        return {
+          badges: ['<span class="badge">Plan-and-Solve</span>'],
+          text: "Plan executed.\nEUR/GBP cross ≈ " + cross + " (from USD legs).",
+          latency: 700 + Math.floor(Math.random() * 150),
+        };
+      }
+
+      async function runReflection(q) {
+        await addHop('<span class="hop">writer</span> · draft with wrong figure 0.9900');
+        state.stats.llm += 1;
+        await addHop('<span class="hop">validator</span> · approved=false (wrong USD/EUR)', "miss");
+        await addHop('<span class="hop">revise</span> · correct to 0.92 / 0.79');
+        state.stats.llm += 1;
+        await addHop('<span class="hop">validator</span> · approved=true', "hit");
+        updateStats();
+        return {
+          badges: ['<span class="badge ok">approved</span>', '<span class="badge">Reflection</span>'],
+          text: "Final draft: USD/EUR is 0.92 and USD/GBP is 0.79. GBP is stronger against USD.",
+          latency: 650 + Math.floor(Math.random() * 120),
+        };
+      }
+
+      async function runMulti(q) {
+        await addHop('<span class="hop">researcher</span> · research_plan');
+        await addHop('<span class="hop">writer</span> · draft_response');
+        await addHop('<span class="hop">validator</span> · ok=true', "hit");
+        updateStats();
+        return {
+          badges: ['<span class="badge">multi-agent</span>'],
+          text: "Draft based on plan: Research plan for: " + q.slice(0, 80) + "\nValidation: ok",
+          latency: 180 + Math.floor(Math.random() * 60),
+        };
+      }
+
+      async function runWarm(q) {
+        const n = normQuery(q);
+        const catalog = /hotel|sku|catalog|5499|price/.test(n);
+        await addHop('<span class="hop">index</span> · kb_markdown=docs-v1 · catalog=cat-v1');
+        await addHop('<span class="hop">warm_retrieval</span> · retrieval_ready=true', "hit");
+        if (catalog) {
+          await addHop('<span class="hop">retrieve</span> · partition=catalog → cat1');
+          updateStats();
+          return {
+            badges: ['<span class="badge">L2 warm</span>', '<span class="badge">partition=catalog</span>'],
+            text: "Hit: Hotel AI Web Agent 5499 one-time license\n(Catalog partition — kb_markdown untouched)",
+            latency: 40 + Math.floor(Math.random() * 20),
+          };
+        }
+        await addHop('<span class="hop">retrieve</span> · partition=kb_markdown → md1 (query-only)');
+        await addHop('<span class="hop">note</span> · catalog bump → cat-v2 would not invalidate kb');
+        updateStats();
+        return {
+          badges: ['<span class="badge">L2 warm</span>', '<span class="badge">partition=kb_markdown</span>'],
+          text: "Hit: PrismCache reduces LLM API costs with semantic recall…\nADR-005: index once, warm at boot, no corpus re-embed per turn.",
+          latency: 35 + Math.floor(Math.random() * 25),
+        };
+      }
+
+      async function runCortex(q) {
+        const n = normQuery(q);
+        const isPref = /prefer|i like|my risk|moderate risk/.test(n) && !/what is my/.test(n);
+        const isAsk = /what is my|risk tolerance|do you know my/.test(n);
+
+        await addHop('<span class="hop">ingress</span> · recall_structured');
+        if (isAsk) {
+          const fact = state.cortexFacts.find(function (f) { return /risk/i.test(f.fact); });
+          if (fact) {
+            await addHop('<span class="hop">memory</span> · confidence=' + fact.confidence + ' · ' + fact.fact, "hit");
+            await addHop('<span class="hop">writer</span> · use memory_evidence (not L1 cache)');
+            updateStats();
+            return {
+              badges: ['<span class="badge ok">Cortex HIT</span>'],
+              text: "memory_recall: " + fact.fact + "\n\nRight: facts from L3, not whole-answer L1 cache.",
+              latency: 25 + Math.floor(Math.random() * 15),
+            };
+          }
+          await addHop('<span class="hop">memory</span> · empty recall (no fake fallback)', "miss");
+          await addHop('<span class="hop">writer</span> · continue without fabricated prefs');
+          updateStats();
+          return {
+            badges: ['<span class="badge warn">no memory yet</span>'],
+            text: "No Cortex fact yet.\nTry first: “I prefer moderate risk for FX trades” then ask again.",
+            latency: 20,
+          };
+        }
+
+        if (isPref || /moderate risk/.test(n)) {
+          await addHop('<span class="hop">writer</span> · acknowledge preference');
+          state.stats.llm += 1;
+          await addHop('<span class="hop">schedule_digest</span> · async off hot path (~0 ms added)', "hit");
+          state.cortexFacts.push({ fact: "User prefers moderate risk", confidence: 0.91, source: "turn-1" });
+          updateStats();
+          return {
+            badges: ['<span class="badge ok">digest queued</span>', '<span class="badge">L3</span>'],
+            text: "Saved preference via schedule_digest (non-blocking).\nNow ask: “What is my risk tolerance?”",
+            latency: 30,
+          };
+        }
+
+        await addHop('<span class="hop">note</span> · WRONG would be stuffing this into L1 whole-answer cache');
+        await addHop('<span class="hop">memory</span> · empty', "miss");
+        updateStats();
+        return {
+          badges: ['<span class="badge">Cortex</span>'],
+          text: "Teach Cortex a fact first (sample chip), then ask for recall.\nLive Python: chorusgraph-finance-memory",
+          latency: 18,
+        };
+      }
+
+      async function run() {
+        if (state.running) return;
+        const q = queryInput.value.trim();
+        if (!q) {
+          queryInput.focus();
+          return;
+        }
+        state.running = true;
+        btnRun.disabled = true;
+        clearLedger();
+        answerEl.innerHTML = '<span class="muted">Running…</span>';
+        const t0 = performance.now();
+        let result;
+        try {
+          switch (state.mode) {
+            case "cache": result = await runCachePath(q, false); break;
+            case "react": result = await runReact(q); break;
+            case "plan_solve": result = await runPlan(q); break;
+            case "reflection": result = await runReflection(q); break;
+            case "multi_agent": result = await runMulti(q); break;
+            case "warm_chunks": result = await runWarm(q); break;
+            case "cortex": result = await runCortex(q); break;
+            default: result = await runCachePath(q, false);
+          }
+        } catch (err) {
+          result = { badges: [], text: String(err), latency: 0 };
+        }
+        const wall = Math.max(result.latency, Math.round(performance.now() - t0));
+        setLatency(wall);
+        answerEl.innerHTML =
+          (result.badges || []).join("") +
+          "<div style='margin-top:0.75rem'>" +
+          escapeHtml(result.text) +
+          "</div>";
+        state.running = false;
+        btnRun.disabled = false;
+      }
+
+      function escapeHtml(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\n/g, "<br>");
+      }
+
+      function resetAll() {
+        state.cache = Object.create(null);
+        state.cortexFacts = [];
+        state.stats = { llm: 0, hits: 0, miss: 0 };
+        updateStats();
+        setLatency("—");
+        clearLedger();
+        const li = document.createElement("li");
+        li.className = "show";
+        li.style.borderColor = "transparent";
+        li.style.opacity = "0.7";
+        li.textContent = "State cleared. Run a query…";
+        ledgerEl.appendChild(li);
+        answerEl.innerHTML = '<span class="muted">Cache and Cortex memory reset.</span>';
+      }
+
+      btnRun.addEventListener("click", run);
+      btnReset.addEventListener("click", resetAll);
+      queryInput.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") run();
       });
 
-      var canonical = document.getElementById("demo-canonical-url");
-      canonical.href = window.location.href.split("#")[0];
-      canonical.textContent = canonical.href;
-
-      go(0);
+      setMode("cache");
+      updateStats();
     })();
   </script>
 </body>
