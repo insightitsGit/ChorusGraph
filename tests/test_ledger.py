@@ -44,7 +44,11 @@ def test_sqlite_write_and_query_roundtrip(tmp_path):
 
 
 def test_sqlite_kind_detail_roundtrip(tmp_path):
-    from chorusgraph.audit.ledger_report import analyze_ledger_run, format_ledger_console_report, ledger_audit_to_dict
+    from chorusgraph.audit.ledger_report import (
+        analyze_ledger_run,
+        format_ledger_console_report,
+        ledger_audit_to_dict,
+    )
     from chorusgraph.ledger.instrument import make_custom_step
 
     db = tmp_path / "ledger_kind.db"

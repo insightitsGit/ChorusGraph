@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import pytest
 
+from chorusgraph.core.channels import NodeUpdate
 from chorusgraph.core.constants import END, START
 from chorusgraph.core.graph import Graph
 from chorusgraph.core.intercept import InterceptDecision
-from chorusgraph.core.channels import NodeUpdate
-from chorusgraph.core.node import NodeContext, NodeInterrupt
+from chorusgraph.core.node import NodeContext
 
 
 def test_call_llm_proceed_and_counts():
