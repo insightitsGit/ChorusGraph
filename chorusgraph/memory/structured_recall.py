@@ -42,18 +42,26 @@ class StructuredRecallContext:
 
 
 def evidence_from_explain(explain: Any) -> List[Dict[str, Any]]:
+    """Map Cortex explain evidence — includes 0.3.0 correction metadata when present."""
     out: List[Dict[str, Any]] = []
     for item in getattr(explain, "evidence", None) or []:
-        out.append(
-            {
-                "fact": getattr(item, "fact", ""),
-                "confidence": float(getattr(item, "confidence", 0.0) or 0.0),
-                "source_id": getattr(item, "source_id", None),
-                "recorded_at": (
-                    item.recorded_at.isoformat()
-                    if getattr(item, "recorded_at", None) is not None
-                    else None
-                ),
-            }
-        )
+        row: Dict[str, Any] = {
+            "fact": getattr(item, "fact", ""),
+            "confidence": float(getattr(item, "confidence", 0.0) or 0.0),
+            "source_id": getattr(item, "source_id", None),
+            "recorded_at": (
+                item.recorded_at.isoformat()
+                if getattr(item, "recorded_at", None) is not None
+                else None
+            ),
+        }
+        # PrismCortex 0.3.0 — correction / supersession fields (optional)
+        vf = getattr(item, "valid_from", None)
+        if vf is not None:
+            row["valid_from"] = vf.isoformat() if hasattr(vf, "isoformat") else vf
+        if getattr(item, "supersedes_prior", None) is not None:
+            row["supersedes_prior"] = bool(item.supersedes_prior)
+        if getattr(item, "prior_value", None) is not None:
+            row["prior_value"] = item.prior_value
+        out.append(row)
     return out

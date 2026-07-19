@@ -81,6 +81,9 @@ def gate(
         session_id=session_id,
     )
     v_threshold = _verify_threshold_for(profile, verify_threshold)
+    store = sidecar
+    if store is None:
+        store = getattr(backend, "sidecar", None)
 
     if section.cache_policy == CachePolicy.NO_CACHE:
         return Decision(kind=DecisionKind.MISS)
@@ -97,7 +100,7 @@ def gate(
         )
         if direct is None:
             return Decision(kind=DecisionKind.MISS)
-        return _decision_from_candidate(direct, section, verify_score=1.0)
+        return _decision_from_candidate(direct, section, verify_score=1.0, sidecar=store)
 
     # Semantic two-stage path
     if raw_embedding_384 is None:
@@ -142,10 +145,16 @@ def gate(
             candidate_packet_id=top.packet_id,
         )
 
-    return _decision_from_candidate(top, section, verify_score=verify)
+    return _decision_from_candidate(top, section, verify_score=verify, sidecar=store)
 
 
-def _decision_from_candidate(top, section: Section, *, verify_score: float) -> Decision:
+def _decision_from_candidate(
+    top,
+    section: Section,
+    *,
+    verify_score: float,
+    sidecar: "SidecarStore | None" = None,
+) -> Decision:
     if section.cache_policy == CachePolicy.EXACT:
         kind = DecisionKind.HIT_REUSE
     elif section.cache_policy == CachePolicy.REPLAY_SAFE:
@@ -155,6 +164,18 @@ def _decision_from_candidate(top, section: Section, *, verify_score: float) -> D
     else:
         return Decision(kind=DecisionKind.MISS)
 
+    force_refresh = False
+    # Prefer prismlib-plus ≥0.8.0 CacheEntry.created_at; fall back to sidecar valid_from.
+    created_at: Optional[float] = getattr(top, "created_at", None)
+    if sidecar is not None and getattr(top, "packet_id", None):
+        entry = sidecar.get(top.packet_id)
+        if entry is not None:
+            if created_at is None:
+                created_at = entry.valid_from
+            if entry.must_revalidate:
+                force_refresh = True
+                kind = DecisionKind.HIT_REVALIDATE
+
     return Decision(
         kind=kind,
         value=top.value,
@@ -162,6 +183,8 @@ def _decision_from_candidate(top, section: Section, *, verify_score: float) -> D
         verify_score=verify_score,
         candidate_query=top.query_text,
         candidate_packet_id=top.packet_id,
+        force_refresh=force_refresh,
+        created_at=created_at,
     )
 
 

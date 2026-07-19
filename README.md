@@ -1,15 +1,15 @@
 # ChorusGraph
 
 [![CI](https://github.com/insightitsGit/ChorusGraph/actions/workflows/ci.yml/badge.svg)](https://github.com/insightitsGit/ChorusGraph/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/chorusgraph.svg)](https://pypi.org/project/chorusgraph/1.2.0/)
+[![PyPI](https://img.shields.io/pypi/v/chorusgraph.svg)](https://pypi.org/project/chorusgraph/1.3.0/)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-green.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-1.2.0-informational)](https://pypi.org/project/chorusgraph/1.2.0/)
+[![Version](https://img.shields.io/badge/version-1.3.0-informational)](https://pypi.org/project/chorusgraph/1.3.0/)
 
 **Native agent runtime with semantic cache, swappable retrieval (PrismRAG), auditable memory, and enterprise hardening — one pip install, five plug-in ports.**
 
 ```bash
-pip install "chorusgraph==1.2.0"
+pip install "chorusgraph==1.3.0"
 chorusgraph-demo
 ```
 
@@ -46,9 +46,11 @@ Building production LLM agents usually means gluing six systems: orchestration, 
 | Repeat questions burn tokens | Two-stage semantic cache (coarse 64-d recall → full verify) |
 | Concurrent identical misses (stampede) | Opt-in L1 single-flight — one leader computes; followers join ([ADR-006](docs/ADR-006-l1-single-flight.md)) |
 | Stuck ReAct thrash (same tool+args) | Default `stop_on_repeated_action=True` — exact replay stops the loop ([ADR-007](docs/ADR-007-react-repeated-action-default.md)) |
-| RAG re-encodes the corpus every turn | Optional warm chunk vectors — index once per partition, query-only retrieve |
+| Need halt/verify **before** LLM tokens | Provider-boundary interceptors — `ctx.call_llm` + `register_interceptor` ([ADR-008](docs/ADR-008-llm-call-interceptors.md)) |
+| Stale L1 answers after a fact correction | `mark_revalidate` → `force_refresh` (skip disabled until re-seed) |
+| RAG re-encodes the corpus every turn | Warm chunk vectors + public `get_chunk_vectors` (384-d, zero re-embed) |
 | RAG is another integration project | `RetrievalBackend` plug-in — keyword default, PrismRAG vector opt-in |
-| “Why did the agent say that?” | Route Ledger + `rule_chain` on every hop |
+| “Why did the agent say that?” | Route Ledger + `rule_chain` + optional `kind`/`detail` (e.g. `shine.verdict`) |
 | Orchestration + ops duct tape | Native scheduler, health endpoints, Docker/k8s packaging |
 | “Will this save us money?” | `chorusgraph-audit` — cold log simulation + pilot ledger reports |
 
@@ -116,12 +118,14 @@ Full install guide: [`docs/INSTALL.md`](docs/INSTALL.md) · AI IDE prompts: [`do
 | Feature | Description |
 |---------|-------------|
 | **Native graph engine** | BSP scheduler, envelope channels, conditional routing — no LangGraph on product paths |
+| **LLM call interceptors** | `NodeContext.call_llm` + `register_interceptor` — halt / reroute **before tokens** ([ADR-008](docs/ADR-008-llm-call-interceptors.md)); `Agent.with_interceptors` |
 | **Semantic cache (L1)** | Built-in PrismCache via `ChorusStack.defaults()` — two-stage gate; demo: `chorusgraph-use-cases cache` |
+| **Cache force-refresh** | `mark_revalidate(...)` → `Decision.force_refresh` — REPLAY_SAFE skip unchanged until the bit is set |
 | **L1 single-flight** | Opt-in miss coalescing for exact/fingerprint + global/tenant keys ([ADR-006](docs/ADR-006-l1-single-flight.md)); default off |
 | **Retrieval (L2)** | Keyword default; `PrismRAGRetrievalBackend` for vector + taxonomy (opt-in extra) |
-| **Warm chunk vectors (L2)** | Opt-in: `index(partition, version)` + `warm_retrieval` — demo: `chorusgraph-use-cases warm_chunks` ([ADR-005](docs/ADR-005-warm-chunk-vectors.md)) |
-| **Memory (L3)** | PrismCortex — recall at ingress, `schedule_digest` async; demo: `chorusgraph-use-cases cortex` · live: `chorusgraph-finance-memory` |
-| **Route Ledger** | Per-hop audit trail: cache hits, scores, durations, `rule_chain` |
+| **Warm chunk vectors (L2)** | `index(partition, version)` + `warm_retrieval` + `get_chunk_vectors` / `bump_partition_version` ([ADR-005](docs/ADR-005-warm-chunk-vectors.md)) |
+| **Memory (L3)** | PrismCortex ≥0.3.0 via `chorusgraph[cortex]` (`[prism-plus]`) — `on_event` / `bind_cache_revalidate` for corrections |
+| **Route Ledger** | Per-hop audit: cache hits, scores, `rule_chain`, optional `kind`/`detail` (e.g. `shine.verdict`) |
 | **Checkpoints** | SQLite default; Postgres enterprise persistence (license-gated) |
 | **Tool registry** | Allowlisted tools with sandbox; MCP-compatible patterns |
 | **Resilience** | Timeouts, retries, circuit breakers, graceful node failure |
@@ -206,6 +210,14 @@ stack = (
 
 Full plug-in guide: [`docs/PLUGINS.md`](docs/PLUGINS.md)
 
+**New in 1.3.0 (PrismShine hooks):**
+- [LLM call interceptors](docs/ADR-008-llm-call-interceptors.md) — `NodeContext.call_llm` + `CompiledGraph.register_interceptor` (`before_llm` / `after_llm`); `Agent.with_interceptors`; opt-in, inert when unused
+- Cache force-refresh — `mark_revalidate(...)` → `Decision.force_refresh` ([`CACHE_PROFILES.md`](docs/CACHE_PROFILES.md) §9); REPLAY_SAFE skip unchanged when bit unset
+- Warm public API — `get_chunk_vectors` (384-d) + `bump_partition_version` + `encoder_artifact_id` (via `prismlang.encoder.model_id()`)
+- Ledger `kind` / `detail` (e.g. `shine.verdict`) — Sqlite round-trip + `chorusgraph-audit` custom-step visibility; cache-decision `created_at` from prismlib-plus ≥0.8.0 store metadata
+- Optional `Graph.add_node(..., consumes=[...])` on `NodeContext`
+- Floors: `prismlang≥0.1.2`, `prismlib-plus≥0.8.0`; cortex extra `prismcortex[prism-plus,gemini]≥0.3.0` (do not mix with `[prism]`)
+
 **New in 1.2.0:**
 - [L1 single-flight](docs/ADR-006-l1-single-flight.md) (opt-in) — `CacheProfile(single_flight=True)` or `ChorusStack.with_flight(FlightPolicy(enabled=True))`
 - ReAct [anti-thrash default](docs/ADR-007-react-repeated-action-default.md) — exact repeated tool+args stops the loop; set `stop_on_repeated_action=False` to opt out
@@ -218,14 +230,14 @@ Full plug-in guide: [`docs/PLUGINS.md`](docs/PLUGINS.md)
 
 | Layer | Component | Role |
 |-------|-----------|------|
-| L0 — hop | PrismLang | 64-d state compression + `rule_chain` audit |
-| L1 — cache | PrismCache | Semantic gate, Resonance-scored recall |
+| L0 — hop | PrismLang ≥0.1.2 | 64-d state compression + `rule_chain` + `encoder.model_id()` |
+| L1 — cache | PrismCache via prismlib-plus ≥0.8.0 | Semantic gate, Resonance recall, `HitMeta` / `created_at` |
 | L2 — knowledge | Retrieval plug-in | Keyword default · vector + taxonomy opt-in |
 | rerank | PrismResonance | Shared substrate rerank |
-| L3 — memory | PrismCortex | Structured, replayable memory |
+| L3 — memory | PrismCortex ≥0.3.0 (`[prism-plus]`) | Structured memory + `on_event` corrections |
 | transport | CHORUS / PrismAPI | Cross-node envelopes · federation hooks |
 
-ChorusGraph is the **integration runtime** for the Prism family — PrismLang, PrismCache, PrismCortex, PrismRAG ship as defaults or opt-in extras, not separate science projects.
+ChorusGraph is the **integration runtime** for the Prism family — PrismLang, PrismCache, PrismCortex, PrismRAG ship as defaults or opt-in extras, not separate science projects. Install cortex with `pip install "chorusgraph[cortex]"` (uses `[prism-plus]`; do not also install `prismcortex[prism]`).
 
 ### Companion: PrismGuard (prompt-injection firewall)
 
@@ -365,6 +377,7 @@ Readiness scorecard: [`docs/ENTERPRISE_READINESS.md`](docs/ENTERPRISE_READINESS.
 | [`docs/ADR-005-warm-chunk-vectors.md`](docs/ADR-005-warm-chunk-vectors.md) | Optional L2 warm chunk vectors (1.1.0) — use cases & benefits |
 | [`docs/ADR-006-l1-single-flight.md`](docs/ADR-006-l1-single-flight.md) | Opt-in L1 single-flight miss coalescing (1.2.0) |
 | [`docs/ADR-007-react-repeated-action-default.md`](docs/ADR-007-react-repeated-action-default.md) | ReAct `stop_on_repeated_action` default on (1.2.0) |
+| [`docs/ADR-008-llm-call-interceptors.md`](docs/ADR-008-llm-call-interceptors.md) | LLM call port + `register_interceptor` (1.3.0) |
 | [`docs/COMPOSE.md`](docs/COMPOSE.md) | `ChorusStack` composition patterns |
 | [`docs/WHITEPAPER.md`](docs/WHITEPAPER.md) | Product thesis + technical depth |
 | [`docs/BENCHMARK.md`](docs/BENCHMARK.md) | Fairness methodology |
@@ -428,6 +441,10 @@ Lockfile: `requirements-lock.txt` · release notes: [`CHANGELOG.md`](CHANGELOG.m
 **Shipped in 1.2.0:**
 - Opt-in [L1 single-flight](docs/ADR-006-l1-single-flight.md) — coalesce concurrent exact/fingerprint misses (default off)
 - Safer ReAct default — [`stop_on_repeated_action=True`](docs/ADR-007-react-repeated-action-default.md); opt out for intentional same tool+args retries
+
+**Shipped in 1.3.0:**
+- [LLM call interceptors](docs/ADR-008-llm-call-interceptors.md) at the provider boundary (`call_llm` / `register_interceptor`)
+- PrismShine hooks: `mark_revalidate`, `get_chunk_vectors`, `bump_partition_version`, ledger `kind`/`detail`
 
 **Phase 2 (documented, in progress):**
 

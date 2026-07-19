@@ -17,6 +17,7 @@ from chorusgraph.core.bus import ResonanceBus
 from chorusgraph.core.cache_interceptor import CacheInterceptor
 from chorusgraph.core.channels import ChannelState, NodeUpdate
 from chorusgraph.core.ir import GraphIR
+from chorusgraph.core.intercept import InterceptorRegistry, LlmInterceptReroute
 from chorusgraph.core.node import Command, NodeContext, NodeInterrupt
 from chorusgraph.core.persistence import EngineCheckpointer, GraphStateSnapshot, state_from_checkpoint
 from chorusgraph.core.pending_writes import MidStepAbort
@@ -81,6 +82,9 @@ class CompiledGraph:
     transport: Optional[TransportRouter] = None
     stack: Optional[Any] = None
     _native: bool = True
+    # ADR-008 — provider-boundary hooks (inert when empty).
+    interceptors: InterceptorRegistry = field(default_factory=InterceptorRegistry)
+    llm_callable: Optional[Callable[[str, str], str]] = field(default=None, repr=False)
 
     last_ledger: Optional[Any] = None
     last_tracker: Optional[RouteTracker] = None
@@ -91,6 +95,24 @@ class CompiledGraph:
     _step_in_progress: bool = field(default=False, repr=False)
     _send_batch: Optional[SendBatch] = field(default=None, repr=False)
     _straggler_batch: Optional[SendBatch] = field(default=None, repr=False)
+
+    def register_interceptor(
+        self,
+        *,
+        before_llm: Optional[Callable[..., Any]] = None,
+        after_llm: Optional[Callable[..., Any]] = None,
+    ) -> "CompiledGraph":
+        """Register provider-boundary LLM hooks (ADR-008). No-op until nodes use ``ctx.call_llm``."""
+        if before_llm is not None:
+            self.interceptors.before_llm = before_llm
+        if after_llm is not None:
+            self.interceptors.after_llm = after_llm
+        return self
+
+    def bind_llm(self, model: Callable[[str, str], str]) -> "CompiledGraph":
+        """Default ``(system, user) -> str`` used by ``NodeContext.call_llm`` when model= omitted."""
+        self.llm_callable = model
+        return self
 
     @staticmethod
     def _branch_pending_id(target: str, branch_id: str) -> str:
@@ -373,22 +395,23 @@ class CompiledGraph:
             return cached[0], None, None
 
         def compute() -> Tuple[NodeUpdate, Optional[frozenset[str]], Optional[List[Send]]]:
-            ctx = NodeContext(
-                state=snapshot,
-                node_id=node_id,
-                super_step=super_step,
-                bus=self.bus,
-                projector=self.projector,
+            ctx = self._make_node_context(
+                node_id,
+                snapshot,
+                super_step,
                 on_emit=on_emit,
-                resume_value=getattr(self, "_resume_value", None),
                 branch_id=branch_id,
                 branch_payload=branch_payload,
-                run_config=getattr(self, "_run_config", None),
-                parent_run_id=getattr(self, "_parent_run_id", None),
             )
             fn = self.ir.nodes[node_id]
             try:
                 raw = fn(ctx)
+            except LlmInterceptReroute as exc:
+                hop = (exc.hop or "").strip()
+                if not hop:
+                    raise
+                goto = self.ir.validate_command_goto(node_id, hop)
+                return NodeUpdate(), goto, None
             except NodeInterrupt:
                 raise
             except MidStepAbort:
@@ -397,14 +420,45 @@ class CompiledGraph:
                 raise
             except Exception as exc:
                 return self._coerce_node_result(ctx, self._failure_command(ctx, exc))
-            if getattr(fn, "_counts_as_llm", False):
-                self._llm_calls += 1
+            if getattr(fn, "_counts_as_llm", False) or ctx.llm_calls_made:
+                self._llm_calls += max(1, ctx.llm_calls_made or 1)
             return self._coerce_node_result(ctx, raw)
 
         view = branch_view if branch_view is not None else snapshot.view()
         if self.cache_interceptor is not None:
             return self.cache_interceptor.run_miss(node_id, view, compute)
         return compute()
+
+    def _make_node_context(
+        self,
+        node_id: str,
+        snapshot: ChannelState,
+        super_step: int,
+        *,
+        on_emit: Optional[Any] = None,
+        branch_id: Optional[str] = None,
+        branch_payload: Optional[Dict[str, Any]] = None,
+    ) -> NodeContext:
+        consumes = None
+        if hasattr(self.ir, "node_consumes"):
+            consumes = list(getattr(self.ir, "node_consumes", {}).get(node_id) or []) or None
+        return NodeContext(
+            state=snapshot,
+            node_id=node_id,
+            super_step=super_step,
+            bus=self.bus,
+            projector=self.projector,
+            on_emit=on_emit,
+            resume_value=getattr(self, "_resume_value", None),
+            branch_id=branch_id,
+            branch_payload=branch_payload,
+            run_config=getattr(self, "_run_config", None),
+            parent_run_id=getattr(self, "_parent_run_id", None),
+            llm_callable=self.llm_callable,
+            before_llm=self.interceptors.before_llm,
+            after_llm=self.interceptors.after_llm,
+            consumes=consumes,
+        )
 
     def _failure_command(self, ctx: NodeContext, exc: Exception) -> Command:
         from chorusgraph.resilience.errors import classify_exception
@@ -451,43 +505,38 @@ class CompiledGraph:
 
         async def compute() -> Tuple[NodeUpdate, Optional[frozenset[str]], Optional[List[Send]]]:
             fn = self.ir.nodes[node_id]
-            ctx = NodeContext(
-                state=snapshot,
-                node_id=node_id,
-                super_step=super_step,
-                bus=self.bus,
-                projector=self.projector,
+            ctx = self._make_node_context(
+                node_id,
+                snapshot,
+                super_step,
                 on_emit=on_emit,
-                resume_value=getattr(self, "_resume_value", None),
                 branch_id=branch_id,
                 branch_payload=branch_payload,
-                run_config=getattr(self, "_run_config", None),
-                parent_run_id=getattr(self, "_parent_run_id", None),
             )
-            if inspect.iscoroutinefunction(fn):
-                try:
-                    raw = await fn(ctx)
-                except NodeInterrupt:
+
+            async def _run() -> Any:
+                if inspect.iscoroutinefunction(fn):
+                    return await fn(ctx)
+                return await asyncio.to_thread(fn, ctx)
+
+            try:
+                raw = await _run()
+            except LlmInterceptReroute as exc:
+                hop = (exc.hop or "").strip()
+                if not hop:
                     raise
-                except MidStepAbort:
-                    raise
-                except GraphInterrupt:
-                    raise
-                except Exception as exc:
-                    return self._coerce_node_result(ctx, self._failure_command(ctx, exc))
-            else:
-                try:
-                    raw = await asyncio.to_thread(fn, ctx)
-                except NodeInterrupt:
-                    raise
-                except MidStepAbort:
-                    raise
-                except GraphInterrupt:
-                    raise
-                except Exception as exc:
-                    return self._coerce_node_result(ctx, self._failure_command(ctx, exc))
-            if getattr(fn, "_counts_as_llm", False):
-                self._llm_calls += 1
+                goto = self.ir.validate_command_goto(node_id, hop)
+                return NodeUpdate(), goto, None
+            except NodeInterrupt:
+                raise
+            except MidStepAbort:
+                raise
+            except GraphInterrupt:
+                raise
+            except Exception as exc:
+                return self._coerce_node_result(ctx, self._failure_command(ctx, exc))
+            if getattr(fn, "_counts_as_llm", False) or ctx.llm_calls_made:
+                self._llm_calls += max(1, ctx.llm_calls_made or 1)
             return self._coerce_node_result(ctx, raw)
 
         view = branch_view if branch_view is not None else snapshot.view()

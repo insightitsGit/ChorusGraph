@@ -38,6 +38,7 @@ class GraphIR:
     conditional: Dict[str, ConditionalEdge] = field(default_factory=dict)
     node_categories: Dict[str, str] = field(default_factory=dict)
     node_cache_specs: Dict[str, NodeCacheSpec] = field(default_factory=dict)
+    node_consumes: Dict[str, List[str]] = field(default_factory=dict)
     interrupt_before: Set[str] = field(default_factory=set)
     interrupt_after: Set[str] = field(default_factory=set)
     join_policies: Dict[str, JoinSpec] = field(default_factory=dict)

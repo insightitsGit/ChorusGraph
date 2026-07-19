@@ -22,6 +22,10 @@ class Decision:
     verify_score: float = 0.0
     candidate_query: Optional[str] = None
     candidate_packet_id: Optional[str] = None
+    # ADR / PrismShine — when True, CacheInterceptor must not skip (force refresh).
+    force_refresh: bool = False
+    # Sidecar valid_from (unix ts) when available — for CACHE_PREDATES_FACT_UPDATE.
+    created_at: Optional[float] = None
 
     @property
     def is_hit(self) -> bool:

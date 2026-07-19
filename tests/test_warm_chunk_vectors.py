@@ -205,6 +205,72 @@ def test_prismrag_warm_path_corpus_embeds_once():
     assert backend.stats().corpus_embeds == 0
 
 
+def test_encoder_artifact_id_from_prismlang():
+    from chorusgraph.compose.adapters.prismrag_retrieval import _encoder_artifact_id
+
+    mid = _encoder_artifact_id()
+    assert mid is not None
+    assert "MiniLM" in mid or "sentence-transformers" in mid
+
+
+def test_keyword_bump_partition_version():
+    backend = KeywordRetrievalBackend()
+    backend.index(
+        [{"id": "1", "topic": "t", "text": "hello", "source": ""}],
+        partition="kb",
+        version="1",
+    )
+    assert backend.is_ready(partition="kb")
+    n = backend.bump_partition_version("kb")
+    assert n == 2
+    assert backend.stats().partition_versions["kb"] == "2"
+    assert backend.is_ready(partition="kb") is False
+    assert backend.get_chunk_vectors(["1"], partition="kb") == {}
+
+
+def test_stack_bump_and_get_chunk_vectors_keyword():
+    backend = KeywordRetrievalBackend()
+    backend.index([{"id": "1", "topic": "t", "text": "hello", "source": ""}])
+    stack = ChorusStack.defaults(tenant_id="bump-kw").with_retrieval(backend)
+    assert stack.bump_partition_version("default") == 1
+    assert stack.get_chunk_vectors(["1"]) == {}
+
+
+def test_prismrag_get_chunk_vectors_384():
+    pytest.importorskip("chromadb")
+    from chorusgraph.compose import PrismRAGRetrievalBackend
+    from chorusgraph.embedders import PrismlangOnnxEmbedder
+
+    corpus = [
+        {
+            "id": "c1",
+            "topic": "cache",
+            "text": "PrismCache caches LLM answers semantically",
+            "source": "kb",
+        },
+    ]
+    backend = PrismRAGRetrievalBackend(
+        embedder=PrismlangOnnxEmbedder(),
+        collection_name="warm_get_vec_test",
+        tenant_id="warm-vec",
+    )
+    backend.index(corpus, partition="kb", version="3")
+    recs = backend.get_chunk_vectors(["c1", "missing"], partition="kb")
+    assert "c1" in recs
+    assert "missing" not in recs
+    assert len(recs["c1"].vector_384) == 384
+    assert recs["c1"].partition == "kb"
+    assert recs["c1"].version == "3"
+    n = backend.bump_partition_version("kb")
+    assert n == 4
+    assert backend.is_ready(partition="kb") is False
+    # Vectors remain readable until re-index; readiness is the invalidation signal.
+    assert "c1" in backend.get_chunk_vectors(["c1"], partition="kb")
+    stack = ChorusStack.defaults(tenant_id="warm-vec-stack").with_retrieval(backend)
+    via_stack = stack.get_chunk_vectors(["c1"], partition="kb")
+    assert len(via_stack["c1"].vector_384) == 384
+
+
 def test_make_retrieve_handler_require_chunk_vectors():
     from chorusgraph.examples.finance_agent.runtime import FinanceRuntime
 

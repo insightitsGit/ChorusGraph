@@ -5,6 +5,7 @@ from __future__ import annotations
 import time
 from typing import Any, Dict, List, Optional, Sequence
 
+from chorusgraph.compose.chunk_vectors import ChunkVectorRecord
 from chorusgraph.compose.retrieval_stats import RetrievalStats
 
 
@@ -108,3 +109,25 @@ class KeywordRetrievalBackend:
 
     def stats(self) -> RetrievalStats:
         return self._stats
+
+    def bump_partition_version(self, partition: str = "default") -> int:
+        cur = self._versions.get(partition)
+        try:
+            n = int(str(cur or "0")) + 1
+        except ValueError:
+            n = 1
+        self._versions[partition] = str(n)
+        self._stats.partition_versions[partition] = str(n)
+        # Mark not ready until re-index / warm — STALE_CACHE_REUSE signal.
+        self._ready[partition] = False
+        self._stats.ready_partitions = tuple(p for p, ok in self._ready.items() if ok)
+        return n
+
+    def get_chunk_vectors(
+        self,
+        chunk_ids: Sequence[str],
+        *,
+        partition: str = "default",
+    ) -> Dict[str, ChunkVectorRecord]:
+        # Keyword backend has no embeddings — empty (callers use PrismRAG for 384-d).
+        return {}

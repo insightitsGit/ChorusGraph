@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Callable, Dict, List, Mapping, Optional, Type
+from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, Type
 
 from prismlang import PrismProjector
 
@@ -53,6 +53,7 @@ class Graph:
         self._conditional: Dict[str, ConditionalEdge] = {}
         self._node_categories: Dict[str, str] = {}
         self._node_cache: Dict[str, NodeCacheSpec] = {}
+        self._node_consumes: Dict[str, List[str]] = {}
         self._interrupt_before: set[str] = set()
         self._interrupt_after: set[str] = set()
         self._join_policies: Dict[str, JoinSpec] = {}
@@ -69,6 +70,7 @@ class Graph:
         cache_profile: Optional[CacheProfile] = None,
         flight_policy: Optional[Any] = None,
         join: JoinSpec | None = None,
+        consumes: Optional[Sequence[str]] = None,
     ) -> None:
         if name in (START, END):
             raise ValueError(f"Reserved node name: {name}")
@@ -81,6 +83,8 @@ class Graph:
             wrapped = dict_node_adapter(fn, hop=name)  # type: ignore[arg-type]
         self._nodes[name] = wrapped
         self._node_categories[name] = category_slug
+        if consumes:
+            self._node_consumes[name] = [str(k) for k in consumes]
         if cache_policy != CachePolicy.NO_CACHE:
             self._node_cache[name] = NodeCacheSpec(
                 node_id=name,
@@ -240,6 +244,7 @@ class Graph:
             conditional=dict(self._conditional),
             node_categories=dict(self._node_categories),
             node_cache_specs=dict(self._node_cache),
+            node_consumes=dict(self._node_consumes),
             interrupt_before=set(self._interrupt_before),
             interrupt_after=set(self._interrupt_after),
             join_policies=dict(self._join_policies),

@@ -160,6 +160,31 @@ Default **off** so existing graphs keep today’s parallel-miss latency unless t
 This is **not** agent-loop token-burn control (`PlanPolicy` / `stop_on_repeated_action`) — see
 [`LOOP-TOKEN-BURN-FINDINGS.md`](LOOP-TOKEN-BURN-FINDINGS.md).
 
+## 9. Force revalidate (PrismShine) — shipped additive
+
+> **Status:** shipped in **1.3.0** · inert unless you call `mark_revalidate`.
+
+Mark sidecar rows so the next gate hit returns `force_refresh=True` (and
+`DecisionKind.HIT_REVALIDATE`). `CacheInterceptor.try_skip` skips only when
+`is_hit and not force_refresh` — so REPLAY_SAFE labeling without the bit still
+skips as in 1.2.0.
+
+```python
+from chorusgraph.cache_gate import mark_revalidate
+
+mark_revalidate(sidecar, packet_ids=[packet_id])
+# or: mark_revalidate(sidecar, query_vector=raw_384, threshold=0.55)
+```
+
+Re-`seed_cache_entry` clears the bit (sidecar `INSERT OR REPLACE` writes
+`must_revalidate=0`). Cache-gate ledger steps copy `created_at` / `force_refresh`
+into `detail`. With **prismlib-plus ≥0.8.0**, `Decision.created_at` prefers the
+store `CacheEntry.created_at` (same field as `HitMeta.created_at`) and falls back
+to sidecar `valid_from`.
+
+PrismCortex **0.3.0** corrections can drive the same path via
+`CortexMemoryService.bind_cache_revalidate(sidecar)`.
+
 ---
 *Design addition v1 · four measured axes · four archetypes · profiles attach node × category · any new
-domain = run the profiler, get the config. · §8 single-flight = ADR-006 shipped opt-in.*
+domain = run the profiler, get the config. · §8 single-flight = ADR-006 · §9 mark_revalidate = 1.3.0.*

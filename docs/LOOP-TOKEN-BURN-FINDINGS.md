@@ -91,3 +91,9 @@ Concurrent same-key stampede → [`ADR-006-l1-single-flight.md`](ADR-006-l1-sing
 | Partner / ship their binary? | **No.** |
 
 Reproduce evidence: `python scripts/_probe_loop_token_burn.py`
+
+---
+
+## README follow-up (no release)
+
+**2026-07-17 Amin:** README PrismGuard companion still pins `0.1.4` — fix to `0.1.7` on the **next** ChorusGraph cut. Do not ship a patch release only for README.

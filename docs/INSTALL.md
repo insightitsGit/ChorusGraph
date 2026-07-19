@@ -1,8 +1,8 @@
 # Install ChorusGraph (pip)
 
-**Package:** `chorusgraph` · **Version:** 1.2.0 · **Python:** ≥3.11 · **License:** Apache-2.0
+**Package:** `chorusgraph` · **Version:** 1.3.0 · **Python:** ≥3.11 · **License:** Apache-2.0
 
-**PyPI:** [chorusgraph 1.2.0](https://pypi.org/project/chorusgraph/1.2.0/)
+**PyPI:** [chorusgraph 1.3.0](https://pypi.org/project/chorusgraph/1.3.0/)
 
 ---
 
@@ -39,10 +39,10 @@ python -m pytest --version   # if dev extra installed
 
 | Extra | Installs | When you need it |
 |-------|----------|------------------|
-| *(none)* | Core runtime (`prismlang`, `prismlib-plus`, `prismresonance`) | Default stack — semantic cache + resonance bus ship with `pip install chorusgraph` |
+| *(none)* | Core runtime (`prismlang≥0.1.2`, `prismlib-plus≥0.8.0`, `prismresonance`) | Default stack — semantic cache + resonance bus ship with `pip install chorusgraph` |
 | `retrieval` | `chromadb>=0.4` | `PrismRAGRetrievalBackend` vector search |
 | `gemini` | `google-genai` | Live Gemini examples and `-m live` tests |
-| `cortex` | `prismcortex[prism,gemini]` | L3 structured memory (PrismCortex) |
+| `cortex` | `prismcortex[prism-plus,gemini]≥0.3.0` | L3 structured memory — use `[prism-plus]` (not `[prism]`) because ChorusGraph already depends on `prismlib-plus` |
 | `postgres` | `psycopg[binary]` | Postgres DSN paths in deploy docs |
 | `benchmark` | chromadb + langgraph | FL*/HL* LangGraph baseline scenarios only |
 | `langgraph` | langgraph + checkpoint-sqlite | Baselines / compat tests — **not** required for core product |

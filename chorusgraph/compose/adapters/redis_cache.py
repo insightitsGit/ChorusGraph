@@ -126,6 +126,7 @@ class RedisCacheBackend:
             if now - stored_at > profile.ttl_s:
                 return None
         raw = self.embed(query if profile.keying != "fingerprint" else (fingerprint_key or query))
+        stored_at = value.get("_stored_at")
         return CacheCandidate(
             packet_id=key,
             constructive_score=1.0,
@@ -134,6 +135,7 @@ class RedisCacheBackend:
             raw_embedding_384=raw,
             category_slug=category_slug,
             scope_id=scope_id,
+            created_at=float(stored_at) if stored_at is not None else None,
         )
 
     def seed(

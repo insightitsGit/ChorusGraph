@@ -42,6 +42,34 @@ class Agent:
         if self.pattern_opts is None:
             self.pattern_opts = PATTERN_DEFAULTS[self.pattern]  # type: ignore[assignment]
 
+    def with_interceptors(
+        self,
+        *,
+        before_llm: Optional[Callable[..., Any]] = None,
+        after_llm: Optional[Callable[..., Any]] = None,
+    ) -> "Agent":
+        """
+        Return a copy whose ``model`` (and ``llm_text``) fire ADR-008 hooks.
+
+        Use when the Agent runs outside ``NodeContext.call_llm`` (AgentNode path).
+        """
+        from chorusgraph.core.intercept import wrap_llm_callable
+
+        wrapped = wrap_llm_callable(self.model, before_llm=before_llm, after_llm=after_llm)
+        text = self.llm_text
+        if text is not None and (before_llm or after_llm):
+            text = wrap_llm_callable(text, before_llm=before_llm, after_llm=after_llm)
+        return Agent(
+            pattern=self.pattern,
+            tools=self.tools,
+            model=wrapped,
+            role=self.role,
+            policy=self.policy,
+            pattern_opts=self.pattern_opts,
+            belief=self.belief,
+            llm_text=text,
+        )
+
     def run(
         self,
         question: str,

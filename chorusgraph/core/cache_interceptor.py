@@ -135,16 +135,25 @@ class CacheInterceptor:
         )
         if not decision.is_hit or not decision.value:
             return None
+        # PrismShine mark_revalidate — must re-run body; do not skip.
+        if getattr(decision, "force_refresh", False):
+            return None
 
         artifact = dict(decision.value) if isinstance(decision.value, dict) else {"value": decision.value}
         artifact.setdefault("_cache_hit", True)
         artifact.setdefault("cache_hit", True)
+        rules = [
+            f"cache_hit={decision.kind.value}",
+            f"score={decision.verify_score or decision.coarse_score:.3f}",
+        ]
+        if decision.created_at is not None:
+            rules.append(f"created_at={decision.created_at}")
         update = publish_update(
             hop=node_id,
             artifact=artifact,
             vector=list(vec) if vec is not None else [0.0] * 64,
             category_slug=spec.category_slug,
-            rule_chain=[f"cache_hit={decision.kind.value}", f"score={decision.verify_score or decision.coarse_score:.3f}"],
+            rule_chain=rules,
             turn_id=super_step,
         )
         return update, decision

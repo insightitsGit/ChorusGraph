@@ -36,9 +36,9 @@ python -m twine upload dist/*
 ## Tag after a successful upload
 
 ```powershell
-git tag -a v1.2.0 -m "v1.2.0 — L1 single-flight + ReAct anti-thrash default"
+git tag -a v1.3.0 -m "v1.3.0 — PrismShine hooks (LLM interceptors, mark_revalidate, warm 384-d)"
 git push origin master
-git push origin v1.2.0
+git push origin v1.3.0
 ```
 
 Attach `sbom/release-sbom.json` to the GitHub release if you regenerate it for the tag.

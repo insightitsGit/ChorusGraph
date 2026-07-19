@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Protocol, Sequence, runtime_checka
 import numpy as np
 
 from chorusgraph.cache_gate.backend import CacheCandidate
+from chorusgraph.compose.chunk_vectors import ChunkVectorRecord
 from chorusgraph.compose.retrieval_stats import RetrievalStats
 from chorusgraph.sections.models import CacheProfile
 
@@ -158,6 +159,17 @@ class RetrievalBackend(Protocol):
     def stats(self) -> RetrievalStats:
         """Query/corpus embed counters and partition versions."""
 
+    def bump_partition_version(self, partition: str = "default") -> int:
+        """Increment partition version (stored as str); returns new int version."""
+
+    def get_chunk_vectors(
+        self,
+        chunk_ids: Sequence[str],
+        *,
+        partition: str = "default",
+    ) -> Dict[str, ChunkVectorRecord]:
+        """Return raw 384-d vectors + version for warm-indexed chunks (may be empty)."""
+
 
 def is_cache_backend(obj: Any) -> bool:
     return getattr(obj, "_chorusgraph_cache_backend", False) is True
@@ -169,6 +181,7 @@ def is_retrieval_backend(obj: Any) -> bool:
 
 __all__ = [
     "CacheBackend",
+    "ChunkVectorRecord",
     "MemoryBackend",
     "PersistenceBackend",
     "RetrievalBackend",

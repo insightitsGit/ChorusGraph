@@ -13,8 +13,21 @@ from typing import Any, Callable, Dict, List, Optional, Sequence
 import numpy as np
 
 from chorusgraph.compose.adapters.keyword_retrieval import KeywordRetrievalBackend, _chunk_record
+from chorusgraph.compose.chunk_vectors import ChunkVectorRecord
 from chorusgraph.compose.retrieval_stats import RetrievalStats
 from chorusgraph.embedders import PrismlangOnnxEmbedder
+
+
+def _encoder_artifact_id() -> Optional[str]:
+    try:
+        from prismlang import encoder as pe
+
+        mid = getattr(pe, "model_id", None)
+        if callable(mid):
+            return str(mid())
+    except Exception:
+        pass
+    return None
 
 logger = logging.getLogger(__name__)
 
@@ -112,6 +125,8 @@ class PrismRAGRetrievalBackend:
         self._versions: Dict[str, Optional[str]] = {}
         self._loaded: Dict[str, bool] = {}
         self._vector_64: Dict[str, Dict[str, List[float]]] = {}
+        self._vector_384: Dict[str, Dict[str, List[float]]] = {}
+        self._encoder_artifact_id: Dict[str, Optional[str]] = {}
         self._stats = RetrievalStats()
         self._use_vector = False
         self._use_remap = False
@@ -212,6 +227,9 @@ class PrismRAGRetrievalBackend:
         self._versions[partition] = version
         self._stats.partition_versions[partition] = version
         self._vector_64[partition] = {}
+        self._vector_384[partition] = {}
+        enc_id = _encoder_artifact_id()
+        self._encoder_artifact_id[partition] = enc_id
 
         if not self._use_vector:
             self._loaded[partition] = bool(rows)
@@ -236,20 +254,25 @@ class PrismRAGRetrievalBackend:
                 tenant_id=self._tenant_id,
                 projector_cache=self._projector_cache,
             )
-            self._vector_64[partition][str(doc["id"])] = vec64
+            cid = str(doc["id"])
+            self._vector_64[partition][cid] = vec64
+            self._vector_384[partition][cid] = list(vec)
             cat = self._assign_category(text, doc)
-            ids.append(str(doc["id"]))
+            ids.append(cid)
             documents.append(text)
             embeddings.append(vec)
-            metadatas.append(
-                {
-                    "topic": str(doc.get("topic", "")),
-                    "source": str(doc.get("source") or ""),
-                    "id": str(doc["id"]),
-                    "category_slug": cat,
-                    "partition": partition,
-                }
-            )
+            meta = {
+                "topic": str(doc.get("topic", "")),
+                "source": str(doc.get("source") or ""),
+                "id": cid,
+                "category_slug": cat,
+                "partition": partition,
+            }
+            if enc_id:
+                meta["encoder_artifact_id"] = enc_id
+            if version is not None:
+                meta["partition_version"] = str(version)
+            metadatas.append(meta)
 
         # Replace partition contents: delete existing ids then add
         try:
@@ -349,6 +372,14 @@ class PrismRAGRetrievalBackend:
             v64 = vec_map.get(str(doc_id))
             if v64 is not None:
                 chunk["vector_64"] = list(v64)
+            v384 = (self._vector_384.get(part) or {}).get(str(doc_id))
+            if v384 is not None:
+                chunk["vector"] = list(v384)
+            chunk["partition"] = part
+            chunk["partition_version"] = self._versions.get(part)
+            enc = self._encoder_artifact_id.get(part)
+            if enc:
+                chunk["encoder_artifact_id"] = enc
             out.append(chunk)
         if out:
             return out
@@ -387,3 +418,43 @@ class PrismRAGRetrievalBackend:
 
     def stats(self) -> RetrievalStats:
         return self._stats
+
+    def bump_partition_version(self, partition: str = "default") -> int:
+        cur = self._versions.get(partition)
+        try:
+            n = int(str(cur or "0")) + 1
+        except ValueError:
+            n = 1
+        self._versions[partition] = str(n)
+        self._stats.partition_versions[partition] = str(n)
+        self._loaded[partition] = False
+        if partition == "default":
+            self._loaded_flag = False
+        self._stats.ready_partitions = tuple(p for p, ok in self._loaded.items() if ok)
+        self._fallback.bump_partition_version(partition)
+        return n
+
+    def get_chunk_vectors(
+        self,
+        chunk_ids: Sequence[str],
+        *,
+        partition: str = "default",
+    ) -> Dict[str, ChunkVectorRecord]:
+        part = partition or "default"
+        vec_map = self._vector_384.get(part) or {}
+        version = self._versions.get(part)
+        enc = self._encoder_artifact_id.get(part)
+        out: Dict[str, ChunkVectorRecord] = {}
+        for cid in chunk_ids:
+            key = str(cid)
+            vec = vec_map.get(key)
+            if vec is None:
+                continue
+            out[key] = ChunkVectorRecord(
+                chunk_id=key,
+                vector_384=list(vec),
+                partition=part,
+                version=version,
+                encoder_artifact_id=enc,
+            )
+        return out

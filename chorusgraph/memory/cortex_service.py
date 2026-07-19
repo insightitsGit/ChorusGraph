@@ -182,6 +182,49 @@ class CortexMemoryService:
         """Right-to-forget — delegates to Cortex Memory.forget (graph + answer cache)."""
         return self.ensure_memory().forget(source_id)
 
+    def on_event(self, callback: Any) -> Any:
+        """
+        Subscribe to PrismCortex 0.3.0 ``MemoryEvent`` notifications
+        (accommodate / conflict / forget) for PrismShine cache invalidation.
+        Returns an unsubscribe callable.
+        """
+        mem = self.ensure_memory()
+        return mem.on_event(callback)
+
+    def bind_cache_revalidate(self, sidecar: Any, *, threshold: float = 0.55) -> Any:
+        """
+        On Cortex correction/forget events, mark L1 sidecar rows for force refresh.
+
+        Uses ``mark_revalidate`` with an embedding of the corrected subject/value text
+        when available; otherwise a no-op for events without text.
+        """
+        from chorusgraph.cache_gate import mark_revalidate
+        from chorusgraph.policy.embedder_guard import build_guarded_cache
+
+        cache = build_guarded_cache(f"cortex-reval-{self.tenant_id}")
+
+        def _handler(ev: Any) -> None:
+            kind = getattr(getattr(ev, "kind", None), "value", None) or str(
+                getattr(ev, "kind", "")
+            )
+            if kind not in ("accommodate", "forget", "conflict_resolved"):
+                return
+            parts = [
+                getattr(ev, "subject", None) or "",
+                getattr(ev, "relation", None) or "",
+                getattr(ev, "new_value", None) or getattr(ev, "old_value", None) or "",
+            ]
+            text = " ".join(p for p in parts if p).strip()
+            if not text:
+                return
+            try:
+                raw = cache._embedder.embed(text)
+                mark_revalidate(sidecar, query_vector=raw, threshold=threshold)
+            except Exception:
+                return
+
+        return self.on_event(_handler)
+
 
 def get_cortex_service(
     *,

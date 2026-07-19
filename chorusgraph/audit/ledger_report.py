@@ -130,6 +130,16 @@ def ledger_audit_to_dict(result: LedgerAuditResult) -> Dict[str, Any]:
         "cost_estimate_available": False,
         "schema_gap": SCHEMA_GAP_NOTE,
         "disclaimer": LEDGER_DISCLAIMER,
+        "custom_steps": [
+            {
+                "node": s.node,
+                "kind": s.kind,
+                "detail": s.detail,
+                "duration_ms": s.duration_ms,
+            }
+            for s in result.steps
+            if s.kind
+        ],
     }
 
 
@@ -161,6 +171,13 @@ def format_ledger_console_report(result: LedgerAuditResult) -> str:
         lines.append("Mean duration by node (measured):")
         for node, ms in sorted(result.node_duration_ms.items(), key=lambda x: -x[1]):
             lines.append(f"  {node}: {ms:.1f} ms")
+    custom = [s for s in result.steps if s.kind]
+    if custom:
+        lines.append("")
+        lines.append("Custom ledger steps (kind/detail):")
+        for s in custom:
+            detail = s.detail or {}
+            lines.append(f"  {s.node}: kind={s.kind} detail={detail}")
     lines.append("")
     lines.append(f"Cost estimate: not available — {SCHEMA_GAP_NOTE}")
     lines.append("")

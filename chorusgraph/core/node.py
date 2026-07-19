@@ -72,6 +72,12 @@ class NodeContext:
     branch_payload: Optional[Dict[str, Any]] = None
     run_config: Optional[Dict[str, Any]] = None
     parent_run_id: Optional[str] = None
+    # ADR-008 / PrismShine — optional provider-boundary hooks (inert when unset).
+    llm_callable: Optional[Callable[[str, str], str]] = field(default=None, repr=False)
+    before_llm: Optional[Callable[..., Any]] = field(default=None, repr=False)
+    after_llm: Optional[Callable[..., Any]] = field(default=None, repr=False)
+    consumes: Optional[List[str]] = None
+    llm_calls_made: int = field(default=0, repr=False)
 
     def read(self) -> Dict[str, Any]:
         view = self.state.view()
@@ -89,6 +95,31 @@ class NodeContext:
         if self.resume_value is not None:
             return self.resume_value
         raise NodeInterrupt(payload)
+
+    def call_llm(self, system: str, user: str, *, model: Optional[Callable[[str, str], str]] = None) -> str:
+        """
+        Provider-boundary LLM call (ADR-008).
+
+        Fires ``before_llm`` / ``after_llm`` interceptors registered on the compiled
+        graph. Prefer this over calling a raw model so PrismShine can halt before tokens.
+        """
+        from chorusgraph.core.intercept import run_llm_with_interceptors
+
+        llm = model or self.llm_callable
+        if llm is None:
+            raise ValueError(
+                "NodeContext.call_llm requires a model= callable or ctx.llm_callable"
+            )
+        out = run_llm_with_interceptors(
+            ctx=self,
+            system=system,
+            user=user,
+            model=llm,
+            before_llm=self.before_llm,
+            after_llm=self.after_llm,
+        )
+        self.llm_calls_made += 1
+        return out
 
     def publish(
         self,

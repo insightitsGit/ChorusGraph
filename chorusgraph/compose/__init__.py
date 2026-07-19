@@ -14,6 +14,7 @@ from chorusgraph.compose.defaults import (
     default_sidecar,
     default_tool_registry,
 )
+from chorusgraph.compose.chunk_vectors import ChunkVectorRecord
 from chorusgraph.compose.ports import (
     CacheBackend,
     MemoryBackend,
@@ -32,6 +33,7 @@ from chorusgraph.compose.stack import ChorusStack
 
 __all__ = [
     "CacheBackend",
+    "ChunkVectorRecord",
     "ChorusStack",
     "CortexMemoryBackend",
     "KeywordRetrievalBackend",

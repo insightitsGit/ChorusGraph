@@ -2,6 +2,24 @@
 
 All notable changes to ChorusGraph are documented here (semver).
 
+## [1.3.0] — 2026-07-18
+
+### Added
+- **LLM call interceptors (ADR-008):** `NodeContext.call_llm`, `CompiledGraph.register_interceptor(before_llm=..., after_llm=...)`, `InterceptDecision` (proceed / halt / reroute), `Agent.with_interceptors`. Hooks fire at the provider boundary — not around whole BSP nodes. Opt-in; unmarked callables unchanged.
+- **Cache force-refresh:** sidecar `must_revalidate`, `mark_revalidate(...)`, `Decision.force_refresh` + `created_at`. `CacheInterceptor` skips only when `is_hit and not force_refresh`. REPLAY_SAFE skip semantics unchanged when the bit is unset.
+- **Warm public API:** `RetrievalBackend.bump_partition_version` / `get_chunk_vectors` (384-d `ChunkVectorRecord`) on PrismRAG + `ChorusStack` helpers. Keyword backend returns `{}` for vectors.
+- **Ledger `kind` / `detail`:** optional fields on `LedgerStep`; Sqlite sink round-trip; `make_custom_step` for e.g. `shine.verdict`; `chorusgraph-audit` surfaces custom steps. Cache-gate steps record `created_at` / `force_refresh` in detail.
+- **`consumes` metadata:** `Graph.add_node(..., consumes=[...])` → IR + `NodeContext.consumes`.
+- **Encoder artifact id:** stamped on warm partition meta / retrieve chunks when `prismlang.encoder.model_id()` is available.
+- **Docs:** [`ADR-008`](docs/ADR-008-llm-call-interceptors.md), CACHE_PROFILES §9, PLUGINS warm 384-d API.
+
+### Changed
+- Package version **1.3.0**.
+- **Dependency floors:** `prismlang>=0.1.2`, `prismlib-plus>=0.8.0` (HitMeta / `CacheEntry.created_at` for cache-decision detail).
+- **Cortex extra:** `prismcortex[prism-plus,gemini]>=0.3.0` — uses `[prism-plus]` (mutually exclusive with `[prism]`) so installs stay compatible with core `prismlib-plus`.
+- **Cortex events:** `CortexMemoryService.on_event` / `bind_cache_revalidate` for PrismShine L1 force-refresh on corrections.
+- **Note:** Standalone [`prismlib` 0.5.0](https://pypi.org/project/prismlib/0.5.0/) is the open-core twin; ChorusGraph consumes the `prism` namespace via **prismlib-plus** and must not install both extras.
+
 ## [1.0.0] — 2026-07-05 — Enterprise track (P1_Enterprice1)
 
 ### Added

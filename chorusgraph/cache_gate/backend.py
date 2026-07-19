@@ -25,11 +25,20 @@ class CacheCandidate:
     raw_embedding_384: np.ndarray
     category_slug: str
     scope_id: str = "global"
+    # prismlib-plus ≥0.8.0 CacheEntry.created_at when available
+    created_at: Optional[float] = None
+
+
+def _load_entry(cache: PrismCache, packet_id: str) -> Any:
+    entry = cache._store.load(packet_id)
+    if entry is None or entry.is_expired():
+        return None
+    return entry
 
 
 def _load_value(cache: PrismCache, packet_id: str) -> Any:
-    entry = cache._store.load(packet_id)
-    if entry is None or entry.is_expired():
+    entry = _load_entry(cache, packet_id)
+    if entry is None:
         return None
     return entry.response
 
@@ -40,17 +49,19 @@ def _entry_to_candidate(
     *,
     score: float = 1.0,
 ) -> Optional[CacheCandidate]:
-    value = _load_value(cache, meta.packet_id)
-    if value is None:
+    entry = _load_entry(cache, meta.packet_id)
+    if entry is None:
         return None
+    created = getattr(entry, "created_at", None)
     return CacheCandidate(
         packet_id=meta.packet_id,
         constructive_score=score,
-        value=value,
+        value=entry.response,
         query_text=meta.canonical_query,
         raw_embedding_384=meta.raw_embedding_384,
         category_slug=meta.category_slug,
         scope_id=meta.scope_id,
+        created_at=float(created) if created is not None else None,
     )
 
 
@@ -101,6 +112,7 @@ def recall(
             raw_384 = meta.raw_embedding_384
             slug = meta.category_slug
             sid = meta.scope_id
+        created = getattr(entry, "created_at", None)
         candidates.append(
             CacheCandidate(
                 packet_id=hit.packet_id,
@@ -110,6 +122,7 @@ def recall(
                 raw_embedding_384=raw_384,
                 category_slug=slug,
                 scope_id=sid,
+                created_at=float(created) if created is not None else None,
             )
         )
     return candidates

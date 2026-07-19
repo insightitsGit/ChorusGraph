@@ -53,15 +53,20 @@ def _step_to_row(step: LedgerStep) -> dict:
     return {
         "node": step.node,
         "edge_taken": step.edge_taken,
+        "route_via": step.route_via,
         "rule_chain": step.rule_chain,
         "duration_ms": step.duration_ms,
         "timestamp": step.timestamp.isoformat(),
         "cache_hit": step.cache_hit,
         "cache_score": step.cache_score,
         "grounding_score": step.grounding_score,
+        "parent_run_id": step.parent_run_id,
+        "subgraph_node": step.subgraph_node,
         "error_code": step.error_code,
         "error_kind": step.error_kind,
         "retryable": step.retryable,
+        "kind": step.kind,
+        "detail": step.detail,
     }
 
 
@@ -71,15 +76,20 @@ def _row_to_step(data: dict) -> LedgerStep:
     return LedgerStep(
         node=data["node"],
         edge_taken=data.get("edge_taken"),
+        route_via=data.get("route_via"),
         rule_chain=data.get("rule_chain"),
         duration_ms=int(data.get("duration_ms") or 0),
         timestamp=timestamp,
         cache_hit=data.get("cache_hit"),
         cache_score=data.get("cache_score"),
         grounding_score=data.get("grounding_score"),
+        parent_run_id=data.get("parent_run_id"),
+        subgraph_node=data.get("subgraph_node"),
         error_code=data.get("error_code"),
         error_kind=data.get("error_kind"),
         retryable=data.get("retryable"),
+        kind=data.get("kind"),
+        detail=data.get("detail"),
     )
 
 

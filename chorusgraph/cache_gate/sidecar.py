@@ -7,7 +7,7 @@ import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import List, Optional, Sequence, Union
 
 import numpy as np
 
@@ -26,6 +26,7 @@ class SidecarEntry:
     fingerprint_key: str = ""
     valid_from: float = 0.0
     valid_until: Optional[float] = None
+    must_revalidate: bool = False
 
 
 class SidecarStore:
@@ -68,6 +69,14 @@ class SidecarStore:
                 ON cache_sidecar (scope_id, category_slug, canonical_query)
                 """
             )
+            cols = {
+                r[1]
+                for r in self._conn.execute("PRAGMA table_info(cache_sidecar)").fetchall()
+            }
+            if "must_revalidate" not in cols:
+                self._conn.execute(
+                    "ALTER TABLE cache_sidecar ADD COLUMN must_revalidate INTEGER NOT NULL DEFAULT 0"
+                )
             self._conn.commit()
 
     def put(
@@ -91,8 +100,8 @@ class SidecarStore:
                 """
                 INSERT OR REPLACE INTO cache_sidecar
                     (packet_id, raw_embedding, category_slug, cache_policy, canonical_query,
-                     scope_id, keying, fingerprint_key, valid_from, valid_until)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                     scope_id, keying, fingerprint_key, valid_from, valid_until, must_revalidate)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
                 """,
                 (
                     packet_id,
@@ -114,12 +123,13 @@ class SidecarStore:
             row = self._conn.execute(
                 """
                 SELECT packet_id, raw_embedding, category_slug, cache_policy, canonical_query,
-                       scope_id, keying, fingerprint_key, valid_from, valid_until
+                       scope_id, keying, fingerprint_key, valid_from, valid_until,
+                       COALESCE(must_revalidate, 0)
                 FROM cache_sidecar WHERE packet_id = ?
                 """,
                 (packet_id,),
             ).fetchone()
-        if row is None or len(row) < 10:
+        if row is None or len(row) < 11:
             return None
         (
             pid,
@@ -132,6 +142,7 @@ class SidecarStore:
             fp_key,
             valid_from,
             valid_until,
+            must_revalidate,
         ) = row
         vec = np.frombuffer(blob, dtype=np.float32)
         return SidecarEntry(
@@ -145,7 +156,64 @@ class SidecarStore:
             fingerprint_key=fp_key or "",
             valid_from=float(valid_from or 0),
             valid_until=float(valid_until) if valid_until is not None else None,
+            must_revalidate=bool(must_revalidate),
         )
+
+    def mark_revalidate(
+        self,
+        packet_ids: Optional[Sequence[str]] = None,
+        *,
+        query_vector: Optional[np.ndarray] = None,
+        threshold: float = 0.55,
+    ) -> int:
+        """
+        Mark sidecar entries must-revalidate on next hit (PrismShine consistency).
+
+        Pass ``packet_ids`` and/or a ``query_vector`` (cosine ≥ threshold vs stored 384-d).
+        Returns number of rows marked.
+        """
+        ids: set[str] = set(str(p) for p in (packet_ids or []))
+        if query_vector is not None:
+            q = np.asarray(query_vector, dtype=np.float32).ravel()
+            qn = float(np.linalg.norm(q))
+            if qn > 1e-12:
+                q = q / qn
+                for entry in self._iter_all():
+                    v = entry.raw_embedding_384.astype(np.float32).ravel()
+                    vn = float(np.linalg.norm(v))
+                    if vn < 1e-12:
+                        continue
+                    score = float(np.dot(q, v / vn))
+                    if score >= threshold:
+                        ids.add(entry.packet_id)
+        if not ids:
+            return 0
+        with self._lock:
+            for pid in ids:
+                self._conn.execute(
+                    "UPDATE cache_sidecar SET must_revalidate = 1 WHERE packet_id = ?",
+                    (pid,),
+                )
+            self._conn.commit()
+        return len(ids)
+
+    def clear_revalidate(self, packet_id: str) -> None:
+        with self._lock:
+            self._conn.execute(
+                "UPDATE cache_sidecar SET must_revalidate = 0 WHERE packet_id = ?",
+                (packet_id,),
+            )
+            self._conn.commit()
+
+    def _iter_all(self) -> List[SidecarEntry]:
+        with self._lock:
+            rows = self._conn.execute("SELECT packet_id FROM cache_sidecar").fetchall()
+        out: List[SidecarEntry] = []
+        for (pid,) in rows:
+            e = self.get(pid)
+            if e:
+                out.append(e)
+        return out
 
     def is_expired(self, entry: SidecarEntry, *, now: float) -> bool:
         if entry.valid_until is None:

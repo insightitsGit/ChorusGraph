@@ -111,7 +111,7 @@ stack = ChorusStack.defaults(tenant_id="acme").with_retrieval(backend)
 retrieve_node = stack.to_retrieve_handler(topic="policy", top_k=6)
 ```
 
-### Optional: warm chunk vectors (next-release improvement)
+### Optional: warm chunk vectors (1.1.0+) / public 384-d read (1.3.0)
 
 **When to use:** Production RAG hubs that reuse a stable knowledge corpus across turns (site KB,
 guidelines, docs agents). Especially when catalog/DB rows change independently of markdown docs.
@@ -128,6 +128,13 @@ backend.index(catalog_rows, partition="catalog", version="cat-42")
 stack = ChorusStack.defaults(tenant_id="acme").with_retrieval(backend)
 stack.warm_retrieval(partition="kb_markdown")
 assert stack.retrieval_ready(partition="kb_markdown")
+
+# PrismShine zero-re-embed: read warm 384-d vectors without re-encoding
+recs = stack.get_chunk_vectors(["chunk-1", "chunk-2"], partition="kb_markdown")
+# recs["chunk-1"].vector_384  # len 384; .version / .encoder_artifact_id when available
+
+# Fact-correction / STALE_CACHE_REUSE: bump version (no auto re-index)
+stack.bump_partition_version("kb_markdown")  # returns int; stored as str
 
 retrieve_node = stack.to_retrieve_handler(
     topic="site_kb",
@@ -163,11 +170,14 @@ class MyBackend:
     def warm(self, *, partition=None): ...
     def is_ready(self, *, partition=None) -> bool: ...
     def stats(self) -> RetrievalStats: ...
+    def bump_partition_version(self, partition="default") -> int: ...  # optional (1.3.0)
+    def get_chunk_vectors(self, chunk_ids, *, partition="default") -> dict: ...  # optional
 ```
 
 Required chunk keys: `id`, `topic`, `text`, `source`, `category_slug`, `score`.
-Warm vector path should also attach `vector_64` (len 64). `warm` / `is_ready` / `stats` are
-optional for custom backends; stack helpers no-op when missing.
+Warm vector path should also attach `vector_64` (len 64). `warm` / `is_ready` / `stats` /
+`bump_partition_version` / `get_chunk_vectors` are optional for custom backends; stack helpers
+no-op or raise clearly when missing.
 
 ---
 

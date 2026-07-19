@@ -28,6 +28,7 @@ Ship **optional warm chunk vectors** as an additive L2 improvement:
 | Chunks carry `vector_64` | Free Resonance rerank without hot-path embed |
 | `RetrieveConfig.rerank_policy` | Opt-in: `vectors_only` / `require`; default `embed_missing` (1.0.x) |
 | `RetrievalStats` | `query_embeds` vs `corpus_embeds` observability |
+| `get_chunk_vectors` / `bump_partition_version` (**1.3.0**) | Public 384-d read + version bump for PrismShine zero-re-embed / STALE_CACHE_REUSE |
 
 **Defaults stay 1.0.x-compatible.** Adopters enable the feature explicitly.
 
@@ -57,6 +58,7 @@ Ship **optional warm chunk vectors** as an additive L2 improvement:
 ## Consequences
 
 - Built-in `KeywordRetrievalBackend` and `PrismRAGRetrievalBackend` implement `warm` / `is_ready` / `stats`
+- **1.3.0:** PrismRAG also implements `get_chunk_vectors` (384-d) and `bump_partition_version` (returns `int`, stores `str`); keyword returns `{}` for vectors
 - Custom backends may omit those methods; stack helpers no-op / return ready
 - Website Hub should wire `ChorusStack` retrieval + cache ports and call `warm_retrieval()` at startup (separate dogfood work)
 

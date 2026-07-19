@@ -48,7 +48,7 @@ python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 python -m pip install -U pip setuptools wheel
 pip install -e ".[dev,gemini,benchmark-healthcare,cortex]"
-pip install "prismlib-plus>=0.7.0"
+pip install "prismlib-plus>=0.8.0" "prismlang>=0.1.2"
 ```
 
 See [`docs/INSTALL.md`](docs/INSTALL.md) for optional extras (`retrieval`,

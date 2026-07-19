@@ -219,6 +219,27 @@ class ChorusStack:
             warm(partition=partition)
         return self
 
+    def bump_partition_version(self, partition: str = "default") -> int:
+        """Bump warm-index partition version (PrismShine STALE_CACHE_REUSE)."""
+        backend = self.resolve_retrieval()
+        bump = getattr(backend, "bump_partition_version", None)
+        if not callable(bump):
+            raise TypeError(f"{type(backend).__name__} does not support bump_partition_version")
+        return int(bump(partition))
+
+    def get_chunk_vectors(
+        self,
+        chunk_ids: Any,
+        *,
+        partition: str = "default",
+    ) -> Any:
+        """Public read of warm-index 384-d vectors (PrismShine zero-re-embed)."""
+        backend = self.resolve_retrieval()
+        getter = getattr(backend, "get_chunk_vectors", None)
+        if not callable(getter):
+            return {}
+        return getter(chunk_ids, partition=partition)
+
     def retrieval_ready(self, partition: Optional[str] = None) -> bool:
         """True when retrieval partition(s) are warm (or backend has no readiness API)."""
         backend = self.resolve_retrieval()

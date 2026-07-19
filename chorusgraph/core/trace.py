@@ -77,6 +77,8 @@ class RouteTracker:
         error_code: Optional[str] = None,
         error_kind: Optional[str] = None,
         retryable: Optional[bool] = None,
+        kind: Optional[str] = None,
+        detail: Optional[Dict[str, Any]] = None,
     ) -> LedgerStep:
         chain = _stringify_rule_chain(rule_chain)
         step = LedgerStep(
@@ -93,6 +95,8 @@ class RouteTracker:
             error_code=error_code,
             error_kind=error_kind,
             retryable=retryable,
+            kind=kind,
+            detail=detail,
         )
         self.ledger.add_step(step)
         metrics = get_metrics()

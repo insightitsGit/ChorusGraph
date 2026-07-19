@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
@@ -30,6 +30,9 @@ class LedgerStep(BaseModel):
     error_code: Optional[str] = None
     error_kind: Optional[str] = None
     retryable: Optional[bool] = None
+    # Stable third-party contract (PrismShine shine.verdict, etc.) — optional / additive.
+    kind: Optional[str] = None
+    detail: Optional[Dict[str, Any]] = None
 
 
 class RouteLedger(BaseModel):
